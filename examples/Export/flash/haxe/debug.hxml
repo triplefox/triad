@@ -1,0 +1,17 @@
+-main ApplicationMain 
+-D nme_install_tool
+-D fdb
+-cp Source
+-lib nme
+-lib hxJson2
+-lib format
+-lib triad
+-lib temperate
+-D web
+-swf-version 11.0
+-swf9 Export/flash/bin/TriadNME.swf
+-swf-header 800:600:60:ffffff
+-cp Export/flash/haxe
+-D fdb
+--no-inline
+-debug
