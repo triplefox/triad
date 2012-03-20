@@ -19,6 +19,10 @@ import flash.ui.Keyboard;
 class Console extends Sprite
 {
 	
+	// Envision Console 2.0....	
+	// Something that lets me throw in tuning variables really quickly.
+	// more clicky.
+	
 	public static var inst : Console;
 	
 	public var consoleInner : Sprite;

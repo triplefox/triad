@@ -53,7 +53,7 @@
   <options>
     <option showHiddenPaths="False" />
     <option testMovie="Custom" />
-    <option testMovieCommand="flash" />
+    <option testMovieCommand="neko" />
   </options>
   <!-- Plugin storage -->
   <storage />
