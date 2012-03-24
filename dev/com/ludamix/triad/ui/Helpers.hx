@@ -6,11 +6,7 @@ import nme.display.BitmapData;
 import nme.display.SimpleButton;
 import com.ludamix.triad.ui.Rect9;
 import com.ludamix.triad.ui.CascadingText;
-import com.ludamix.triad.ui.layout.LayoutAlign;
 import com.ludamix.triad.ui.layout.LayoutBuilder;
-import com.ludamix.triad.ui.layout.LayoutDef;
-import com.ludamix.triad.ui.layout.LayoutPackingMethod;
-import com.ludamix.triad.ui.layout.LayoutSizing;
 import com.ludamix.triad.tools.Color;
 import nme.text.TextFieldAutoSize;
 

@@ -1,8 +1,5 @@
 package com.ludamix.triad.ui.layout;
 
-import com.ludamix.triad.ui.layout.LayoutDef;
-import com.ludamix.triad.ui.layout.LayoutAlign;
-
 import haxe.Unserializer;
 import nme.display.DisplayObject;
 import nme.display.DisplayObjectContainer;

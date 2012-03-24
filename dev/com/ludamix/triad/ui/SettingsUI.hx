@@ -14,11 +14,6 @@ import com.ludamix.triad.ui.HSlider6;
 import com.ludamix.triad.ui.Helpers;
 import com.ludamix.triad.ui.Rect9;
 import com.ludamix.triad.ui.layout.LayoutBuilder;
-import com.ludamix.triad.ui.layout.LayoutDef;
-import com.ludamix.triad.ui.layout.LayoutAlign;
-import com.ludamix.triad.ui.layout.LayoutPackingMethod;
-import com.ludamix.triad.ui.layout.LayoutSizing;
-import com.ludamix.triad.ui.layout.PaddingDef;
 
 class SettingsUI extends Sprite
 {

@@ -5,13 +5,12 @@ class AssetReloading
 	
 	public function new():Void 
 	{
-		AssetCache.initPoll(onChange);
+		AssetCache.initPoll(onChange, "assets","../../../../Assets");
 	}
 	
-	public function onChange()
+	public function onChange(change : Array<ChangedAsset>)
 	{
-		trace("change");
-		trace(AssetCache.getText("README.txt"));
+		trace(Lambda.map(change, function(a:ChangedAsset) { return a.id; } ));
 	}
 	
 }

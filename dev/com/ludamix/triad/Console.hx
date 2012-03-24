@@ -21,7 +21,26 @@ class Console extends Sprite
 	
 	// Envision Console 2.0....	
 	// Something that lets me throw in tuning variables really quickly.
-	// more clicky.
+	// more clicky. more of a "palette" of stuff.
+	// we run an "app launcher" interface.
+	// one of the apps is a logging tool, of course.
+	// another app is hscript.
+	// goal of apps is to be so easy to make that you just do that instead of hacking it in.
+	// apps need to be able to run over the gameplay as well. Hmm. So they're kind of a concern of the view.
+	// I can get it all from this UI... I just need a difference between "close" and "background" modes.
+	// what do I mean for "background?" "tear off" sort of works.
+	// and then when you bring the appview up again, the torn off app just moves back into that context.
+	
+	// The high-level control should all take place over the entity system. Dogfood it! Prove it!
+	// Tear-off also introduces a new hotkey to toggle it.
+	
+	/*             tear\ |   x
+	 *                  \|
+	 * appview           |apps
+	 *                   |
+	 *                   |
+	 *                   |
+	 * */
 	
 	public static var inst : Console;
 	

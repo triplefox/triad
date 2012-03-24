@@ -2,7 +2,8 @@
 //typedef MyExample = Blackjack;
 //typedef MyExample = Invaders;
 //typedef MyExample = EntitySystem;
-typedef MyExample = AssetReloading;
+//typedef MyExample = AssetReloading;
+typedef MyExample = Assistant;
 
 class Main
 {

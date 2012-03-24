@@ -1,114 +1,94 @@
 package com.ludamix.triad;
 
-#if macro
-import haxe.macro.Expr;
-import haxe.macro.Context;
-import neko.Sys;
-#else
 import haxe.io.Bytes;
+import haxe.Resource;
 import nme.Assets;
 import nme.display.BitmapData;
 import nme.events.TimerEvent;
 import nme.media.Sound;
-import nme.net.URLRequest;
 import nme.text.Font;
 import nme.utils.Timer;
-#end
-
 #if neko
-import neko.FileSystem;
-import neko.io.File;
+	import neko.FileSystem;
+	import neko.io.File;
 #else cpp
-import cpp.FileSystem;
-import cpp.io.File;
+	import cpp.FileSystem;
+	import cpp.io.File;
 #end
 
-#if flash
-typedef AssetCache = Assets;
-#else
+typedef ChangedAsset = {id:String,path:String,type:String,stat:FileStat};
+
 class AssetCache
 {
-
-	@:macro public static function getAssetPath()
+	
+	// A layer over the Asset functionality to provide fast iterations.
+	// You have to provide your own integration. (MVC-style architecture helps!)
+	
+	#if flash
+	public static function initPoll(_, __, ___){}
+	#else
+	
+	private static var t : Timer;
+	private static var statCache : Hash<ChangedAsset>;
+	private static var onChange : Array<ChangedAsset>->Void;
+	private static var resourceNames : Hash<String>;
+	private static var resourceTypes : Hash<String>;
+	
+	public static function initPoll(onChange, src_pathname:String, rename_pathname:String)
 	{
-		// to support this properly I have to dive into all the code in InstallerBase so that the nmml is
-		// correctly parsed. Lots of XML junk to work through.
-		
-		// I also have to distinguish between "name" "rename" and "path" refs now.
-		// On the bright side, now I can return a precompiled list of all assets!
-		
-		return {pos:Context.currentPos(),expr:EConst(CString(Sys.getCwd()))};
-	}	
-	
-	
-	#if macro #else
-	public static var t : Timer;
-	public static var statCache : Hash<FileStat>;
-	public static var onChange : Void->Void;
-	public static var asset_path = getAssetPath();
-	private static inline var sep = "/";
-	
-	public static function initPoll(onChange)
-	{
+		Reflect.field(nme.installer.Assets, "initialize")();
+		resourceNames = Reflect.field(nme.installer.Assets, "resourceNames");
+		resourceTypes = Reflect.field(nme.installer.Assets, "resourceTypes");
 		AssetCache.onChange = onChange;
 		t = new Timer(100);
 		t.addEventListener(TimerEvent.TIMER, doPoll);
 		t.start();
 		statCache = new Hash();
-		initialRecursion("");
-	}
-	
-	private static function initialRecursion(dir:String)
-	{
-		trace(dir);
-		for (n in FileSystem.readDirectory(asset_path + dir))
+		for (id in resourceNames.keys())
 		{
-			statCache.set(dir + sep + n, FileSystem.stat(asset_path + dir + sep + n));
-			if (FileSystem.isDirectory(asset_path + dir + sep + n))
-			{
-				initialRecursion(dir + sep + n);
-			}
+			var path = resourceNames.get(id);
+			path = StringTools.replace(path, src_pathname, rename_pathname);
+			resourceNames.set(id, path);
+			statCache.set(id, { id:id, path:path, type:resourceTypes.get(id), stat:FileSystem.stat(path)});
 		}
 	}
 	
 	public static function doPoll(_):Void 
 	{
-		var change = false;
-		for (n in statCache.keys())
+		var change = new Array<ChangedAsset>();
+		for (n in statCache)
 		{
-			var cs = FileSystem.stat(asset_path + sep + n);
-			if (cs.mtime.getTime() != statCache.get(n).mtime.getTime())
-				{ statCache.set(n, cs); change = true; }
+			var check = FileSystem.stat(n.path);
+			if (check.mtime.getTime() != n.stat.mtime.getTime())
+				{ n.stat = check;  change.push(n); }
 		}
-		if (change) onChange();
-	}
-	
-	public static function getText(id)
-	{
-		return File.getContent(asset_path + sep + id);		
-	}
-	
-	public static function getBitmapData(id, ?useCache=true)
-	{
-		return BitmapData.load(asset_path + sep + id);		
-	}
-	
-	public static function getBytes(id)
-	{
-		return Bytes.ofString(File.getContent(asset_path + sep + id));		
-	}
-	
-	public static function getFont(id)
-	{
-		return Font.load(asset_path + sep + id);
-	}
-	
-	public static function getSound(id)
-	{
-		// we don't have a synchronous means of updating sound assets...
-		return Assets.getSound(id);
+		if (change.length>0) onChange(change);
 	}
 	#end
 	
+	public static inline function getText(id)
+	{
+		return nme.installer.Assets.getText(id);
+	}
+	
+	public static inline function getBitmapData(id, ?useCache=true)
+	{
+		return nme.installer.Assets.getBitmapData(id,false);
+	}
+	
+	public static inline function getBytes(id)
+	{
+		return nme.installer.Assets.getBytes(id);
+	}
+	
+	public static inline function getFont(id)
+	{
+		return nme.installer.Assets.getFont(id);
+	}
+	
+	public static inline function getSound(id)
+	{
+		return nme.installer.Assets.getSound(id);
+	}
+	
 }
-#end

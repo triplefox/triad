@@ -6,7 +6,7 @@
 -lib hxJson2
 -lib format
 -lib triad
--lib temperate
+-lib hscript
 -D web
 -swf-version 11.0
 -swf9 Export/flash/bin/TriadNME.swf

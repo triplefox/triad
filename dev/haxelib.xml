@@ -2,5 +2,5 @@
     <user name="jhofmann"/>
     <tag v="game"/>
     <description>Triad game library</description>
-    <version name="0.0.1">Not ready for public consumption yet.</version>
+    <version name="0.0.2">Not ready for public consumption yet.</version>
 </project>

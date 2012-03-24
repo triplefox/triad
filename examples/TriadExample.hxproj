@@ -31,7 +31,7 @@
     <library name="hxJson2" />
     <library name="format" />
     <library name="triad" />
-    <library name="temperate" />
+    <library name="hscript" />
   </haxelib>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
@@ -53,7 +53,7 @@
   <options>
     <option showHiddenPaths="False" />
     <option testMovie="Custom" />
-    <option testMovieCommand="neko" />
+    <option testMovieCommand="flash" />
   </options>
   <!-- Plugin storage -->
   <storage />
