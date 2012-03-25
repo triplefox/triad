@@ -1,9 +1,9 @@
 //typedef MyExample = GUITests;
 //typedef MyExample = Blackjack;
 //typedef MyExample = Invaders;
-//typedef MyExample = EntitySystem;
+typedef MyExample = EntitySystem;
 //typedef MyExample = AssetReloading;
-typedef MyExample = Assistant;
+//typedef MyExample = Assistant;
 
 class Main
 {

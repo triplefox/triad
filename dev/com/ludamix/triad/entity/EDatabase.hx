@@ -53,7 +53,7 @@ class EDatabase
 		return new ERow(getFreeId(), h);
 	}
 	
-	public inline function call(target : ERow, listener : String, ?payload : Dynamic=null,
+	public inline function call(target : ERow, listener : String, ?payload : Dynamic = null,
 		?stack : Array<ERow>=null) : Dynamic
 	{
 		if (stack==null)
@@ -118,26 +118,19 @@ class ERow
 	}
 	
 	public inline function call(db : EDatabase,
-		stack : Array<ERow>, listener : String, ?payload : Dynamic=null) : Dynamic
+		stack : Array<ERow>, listener : String, ?payload : Dynamic = null) : Dynamic
 	{
+		var result = null;
 		var lar : Array<Dynamic> = listeners.get(listener);
 		if (lar != null)
 		{
 			stack.push(this);
-			if (lar.length == 1)
-				return lar[0](db, stack.copy(), payload)
-			else if (lar.length == 0)
-				return null;
-			else
+			for (l in lar)
 			{
-				var retvals = new Array<Dynamic>();
-				for (l in lar)
-					retvals.push(l(db, stack.copy(), payload));
-				return retvals;
+				result = l(db, stack.copy(), payload);
 			}
 		}
-		else
-			return null;
+		return result;
 	}
 	
 	public inline function listen(name : String, call : EListener)
