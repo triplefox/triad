@@ -41,6 +41,8 @@ class Assets {
 			resourceTypes.set ("assets/slider.png", "image");
 			resourceNames.set ("assets/slider2.png", "assets/slider2.png");
 			resourceTypes.set ("assets/slider2.png", "image");
+			resourceNames.set ("assets/VGA9x16.png", "assets/VGA9x16.png");
+			resourceTypes.set ("assets/VGA9x16.png", "image");
 			
 			initialized = true;
 			

@@ -29,12 +29,20 @@ class Assets {
 			
 			resourceNames.set ("assets/cards.png", "assets/cards.png");
 			resourceTypes.set ("assets/cards.png", "image");
+			resourceNames.set ("assets/checkbox.png", "assets/checkbox.png");
+			resourceTypes.set ("assets/checkbox.png", "image");
 			resourceNames.set ("assets/frame.png", "assets/frame.png");
 			resourceTypes.set ("assets/frame.png", "image");
 			resourceNames.set ("assets/frame2.png", "assets/frame2.png");
 			resourceTypes.set ("assets/frame2.png", "image");
+			resourceNames.set ("assets/sfx_test.mp3", "assets/sfx_test.mp3");
+			resourceTypes.set ("assets/sfx_test.mp3", "music");
 			resourceNames.set ("assets/slider.png", "assets/slider.png");
 			resourceTypes.set ("assets/slider.png", "image");
+			resourceNames.set ("assets/slider2.png", "assets/slider2.png");
+			resourceTypes.set ("assets/slider2.png", "image");
+			resourceNames.set ("assets/VGA9x16.png", "assets/VGA9x16.png");
+			resourceTypes.set ("assets/VGA9x16.png", "image");
 			
 			initialized = true;
 			

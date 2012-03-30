@@ -81,18 +81,34 @@ Void Assets_obj::initialize( ){
 			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",31)
 			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/cards.png"),HX_CSTRING("image"));
 			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",32)
-			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/frame.png"),HX_CSTRING("assets/frame.png"));
+			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/checkbox.png"),HX_CSTRING("assets/checkbox.png"));
 			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",33)
-			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/frame.png"),HX_CSTRING("image"));
+			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/checkbox.png"),HX_CSTRING("image"));
 			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",34)
-			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/frame2.png"),HX_CSTRING("assets/frame2.png"));
+			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/frame.png"),HX_CSTRING("assets/frame.png"));
 			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",35)
-			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/frame2.png"),HX_CSTRING("image"));
+			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/frame.png"),HX_CSTRING("image"));
 			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",36)
-			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/slider.png"),HX_CSTRING("assets/slider.png"));
+			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/frame2.png"),HX_CSTRING("assets/frame2.png"));
 			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",37)
-			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/slider.png"),HX_CSTRING("image"));
+			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/frame2.png"),HX_CSTRING("image"));
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",38)
+			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/sfx_test.mp3"),HX_CSTRING("assets/sfx_test.mp3"));
 			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",39)
+			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/sfx_test.mp3"),HX_CSTRING("music"));
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",40)
+			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/slider.png"),HX_CSTRING("assets/slider.png"));
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",41)
+			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/slider.png"),HX_CSTRING("image"));
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",42)
+			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/slider2.png"),HX_CSTRING("assets/slider2.png"));
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",43)
+			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/slider2.png"),HX_CSTRING("image"));
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",44)
+			::nme::installer::Assets_obj::resourceNames->set(HX_CSTRING("assets/VGA9x16.png"),HX_CSTRING("assets/VGA9x16.png"));
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",45)
+			::nme::installer::Assets_obj::resourceTypes->set(HX_CSTRING("assets/VGA9x16.png"),HX_CSTRING("image"));
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",47)
 			::nme::installer::Assets_obj::initialized = true;
 		}
 	}
@@ -104,9 +120,9 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC0(Assets_obj,initialize,(void))
 
 ::String Assets_obj::getResourceName( ::String id){
 	HX_SOURCE_PUSH("Assets_obj::getResourceName")
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",46)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",54)
 	::nme::installer::Assets_obj::initialize();
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",47)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",55)
 	return ::nme::installer::Assets_obj::resourceNames->get(id);
 }
 
@@ -117,31 +133,31 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Assets_obj,getResourceName,return )
 bool useCache = __o_useCache.Default(true);
 	HX_SOURCE_PUSH("Assets_obj::getBitmapData");
 {
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",52)
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",60)
 		::nme::installer::Assets_obj::initialize();
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",54)
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",62)
 		if (((bool(::nme::installer::Assets_obj::resourceTypes->exists(id)) && bool((::nme::installer::Assets_obj::resourceTypes->get(id) == HX_CSTRING("image")))))){
-			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",54)
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",62)
 			if (((bool(useCache) && bool(::nme::installer::Assets_obj::cachedBitmapData->exists(id))))){
-				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",56)
+				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",64)
 				return ::nme::installer::Assets_obj::cachedBitmapData->get(id);
 			}
 			else{
-				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",62)
+				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",70)
 				::nme::display::BitmapData data = ::nme::display::BitmapData_obj::load(::nme::installer::Assets_obj::resourceNames->get(id),null());
-				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",64)
+				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",72)
 				if ((useCache)){
-					HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",64)
+					HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",72)
 					::nme::installer::Assets_obj::cachedBitmapData->set(id,data);
 				}
-				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",70)
+				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",78)
 				return data;
 			}
 		}
 		else{
-			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",76)
-			::haxe::Log_obj::trace(((HX_CSTRING("[nme.Assets] There is no BitmapData asset with an ID of \"") + id) + HX_CSTRING("\"")),hx::SourceInfo(HX_CSTRING("Assets.hx"),76,HX_CSTRING("nme.installer.Assets"),HX_CSTRING("getBitmapData")));
-			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",78)
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",84)
+			::haxe::Log_obj::trace(((HX_CSTRING("[nme.Assets] There is no BitmapData asset with an ID of \"") + id) + HX_CSTRING("\"")),hx::SourceInfo(HX_CSTRING("Assets.hx"),84,HX_CSTRING("nme.installer.Assets"),HX_CSTRING("getBitmapData")));
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",86)
 			return null();
 		}
 	}
@@ -152,17 +168,17 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC2(Assets_obj,getBitmapData,return )
 
 ::nme::utils::ByteArray Assets_obj::getBytes( ::String id){
 	HX_SOURCE_PUSH("Assets_obj::getBytes")
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",87)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",95)
 	::nme::installer::Assets_obj::initialize();
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",89)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",97)
 	if ((::nme::installer::Assets_obj::resourceNames->exists(id))){
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",89)
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",97)
 		return ::nme::utils::ByteArray_obj::readFile(::nme::installer::Assets_obj::resourceNames->get(id));
 	}
 	else{
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",95)
-		::haxe::Log_obj::trace(((HX_CSTRING("[nme.Assets] There is no String or ByteArray asset with an ID of \"") + id) + HX_CSTRING("\"")),hx::SourceInfo(HX_CSTRING("Assets.hx"),95,HX_CSTRING("nme.installer.Assets"),HX_CSTRING("getBytes")));
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",97)
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",103)
+		::haxe::Log_obj::trace(((HX_CSTRING("[nme.Assets] There is no String or ByteArray asset with an ID of \"") + id) + HX_CSTRING("\"")),hx::SourceInfo(HX_CSTRING("Assets.hx"),103,HX_CSTRING("nme.installer.Assets"),HX_CSTRING("getBytes")));
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",105)
 		return null();
 	}
 }
@@ -172,17 +188,17 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Assets_obj,getBytes,return )
 
 ::nme::text::Font Assets_obj::getFont( ::String id){
 	HX_SOURCE_PUSH("Assets_obj::getFont")
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",106)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",114)
 	::nme::installer::Assets_obj::initialize();
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",108)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",116)
 	if (((bool(::nme::installer::Assets_obj::resourceTypes->exists(id)) && bool((::nme::installer::Assets_obj::resourceTypes->get(id) == HX_CSTRING("font")))))){
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",108)
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",116)
 		return ::nme::text::Font_obj::__new(::nme::installer::Assets_obj::resourceNames->get(id));
 	}
 	else{
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",114)
-		::haxe::Log_obj::trace(((HX_CSTRING("[nme.Assets] There is no Font asset with an ID of \"") + id) + HX_CSTRING("\"")),hx::SourceInfo(HX_CSTRING("Assets.hx"),114,HX_CSTRING("nme.installer.Assets"),HX_CSTRING("getFont")));
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",116)
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",122)
+		::haxe::Log_obj::trace(((HX_CSTRING("[nme.Assets] There is no Font asset with an ID of \"") + id) + HX_CSTRING("\"")),hx::SourceInfo(HX_CSTRING("Assets.hx"),122,HX_CSTRING("nme.installer.Assets"),HX_CSTRING("getFont")));
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",124)
 		return null();
 	}
 }
@@ -192,26 +208,26 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Assets_obj,getFont,return )
 
 ::nme::media::Sound Assets_obj::getSound( ::String id){
 	HX_SOURCE_PUSH("Assets_obj::getSound")
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",125)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",133)
 	::nme::installer::Assets_obj::initialize();
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",127)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",135)
 	if ((::nme::installer::Assets_obj::resourceTypes->exists(id))){
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",127)
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",135)
 		if (((::nme::installer::Assets_obj::resourceTypes->get(id) == HX_CSTRING("sound")))){
-			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",129)
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",137)
 			return ::nme::media::Sound_obj::__new(::nme::net::URLRequest_obj::__new(::nme::installer::Assets_obj::resourceNames->get(id)),null(),false);
 		}
 		else{
-			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",133)
+			HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",141)
 			if (((::nme::installer::Assets_obj::resourceTypes->get(id) == HX_CSTRING("music")))){
-				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",133)
+				HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",141)
 				return ::nme::media::Sound_obj::__new(::nme::net::URLRequest_obj::__new(::nme::installer::Assets_obj::resourceNames->get(id)),null(),true);
 			}
 		}
 	}
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",141)
-	::haxe::Log_obj::trace(((HX_CSTRING("[nme.Assets] There is no Sound asset with an ID of \"") + id) + HX_CSTRING("\"")),hx::SourceInfo(HX_CSTRING("Assets.hx"),141,HX_CSTRING("nme.installer.Assets"),HX_CSTRING("getSound")));
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",143)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",149)
+	::haxe::Log_obj::trace(((HX_CSTRING("[nme.Assets] There is no Sound asset with an ID of \"") + id) + HX_CSTRING("\"")),hx::SourceInfo(HX_CSTRING("Assets.hx"),149,HX_CSTRING("nme.installer.Assets"),HX_CSTRING("getSound")));
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",151)
 	return null();
 }
 
@@ -220,15 +236,15 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Assets_obj,getSound,return )
 
 ::String Assets_obj::getText( ::String id){
 	HX_SOURCE_PUSH("Assets_obj::getText")
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",150)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",158)
 	::nme::utils::ByteArray bytes = ::nme::installer::Assets_obj::getBytes(id);
-	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",152)
+	HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",160)
 	if (((bytes == null()))){
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",152)
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",160)
 		return null();
 	}
 	else{
-		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",156)
+		HX_SOURCE_POS("Export/cpp/windows/haxe/nme/installer/Assets.hx",164)
 		return bytes->readUTFBytes(bytes->length);
 	}
 }

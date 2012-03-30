@@ -18,10 +18,10 @@ class ApplicationMain
 		wx.App.boot(function()
 		{
 			
-			frame = wx.Frame.create(null, null, "TriadNME", null, { width: 512, height: 512 });
+			frame = wx.Frame.create(null, null, "TriadNME", null, { width: 720, height: 400 });
 			
 			#if nme
-			var stage = wx.NMEStage.create(frame, null, null, { width: 512, height: 512 });
+			var stage = wx.NMEStage.create(frame, null, null, { width: 720, height: 400 });
 			#end
 			
 			Main.main();
@@ -36,7 +36,7 @@ class ApplicationMain
 		
 		nme.Lib.create(function()
 			{ 
-				if (512 == 0 && 512 == 0)
+				if (720 == 0 && 400 == 0)
 				{
 					nme.Lib.current.stage.align = nme.display.StageAlign.TOP_LEFT;
 					nme.Lib.current.stage.scaleMode = nme.display.StageScaleMode.NO_SCALE;
@@ -44,7 +44,7 @@ class ApplicationMain
 				
 				Main.main(); 
 			},
-			512, 512, 
+			720, 400, 
 			60, 
 			0xffffff,
 			(true ? nme.Lib.HARDWARE : 0) |
@@ -74,6 +74,13 @@ class ApplicationMain
 			
 		}
 		
+		if (inName == "assets/checkbox.png")
+		{
+			
+			return nme.Assets.getBitmapData ("assets/checkbox.png");
+			
+		}
+		
 		if (inName == "assets/frame.png")
 		{
 			
@@ -88,10 +95,31 @@ class ApplicationMain
 			
 		}
 		
+		if (inName == "assets/sfx_test.mp3")
+		{
+			
+			return nme.Assets.getSound ("assets/sfx_test.mp3");
+			
+		}
+		
 		if (inName == "assets/slider.png")
 		{
 			
 			return nme.Assets.getBitmapData ("assets/slider.png");
+			
+		}
+		
+		if (inName == "assets/slider2.png")
+		{
+			
+			return nme.Assets.getBitmapData ("assets/slider2.png");
+			
+		}
+		
+		if (inName == "assets/VGA9x16.png")
+		{
+			
+			return nme.Assets.getBitmapData ("assets/VGA9x16.png");
 			
 		}
 		

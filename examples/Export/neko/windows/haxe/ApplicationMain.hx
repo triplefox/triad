@@ -18,10 +18,10 @@ class ApplicationMain
 		wx.App.boot(function()
 		{
 			
-			frame = wx.Frame.create(null, null, "TriadNME", null, { width: 800, height: 600 });
+			frame = wx.Frame.create(null, null, "TriadNME", null, { width: 720, height: 400 });
 			
 			#if nme
-			var stage = wx.NMEStage.create(frame, null, null, { width: 800, height: 600 });
+			var stage = wx.NMEStage.create(frame, null, null, { width: 720, height: 400 });
 			#end
 			
 			Main.main();
@@ -36,7 +36,7 @@ class ApplicationMain
 		
 		nme.Lib.create(function()
 			{ 
-				if (800 == 0 && 600 == 0)
+				if (720 == 0 && 400 == 0)
 				{
 					nme.Lib.current.stage.align = nme.display.StageAlign.TOP_LEFT;
 					nme.Lib.current.stage.scaleMode = nme.display.StageScaleMode.NO_SCALE;
@@ -44,7 +44,7 @@ class ApplicationMain
 				
 				Main.main(); 
 			},
-			800, 600, 
+			720, 400, 
 			60, 
 			0xffffff,
 			(true ? nme.Lib.HARDWARE : 0) |
@@ -113,6 +113,13 @@ class ApplicationMain
 		{
 			
 			return nme.Assets.getBitmapData ("assets/slider2.png");
+			
+		}
+		
+		if (inName == "assets/VGA9x16.png")
+		{
+			
+			return nme.Assets.getBitmapData ("assets/VGA9x16.png");
 			
 		}
 		

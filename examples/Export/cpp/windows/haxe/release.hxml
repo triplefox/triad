@@ -5,7 +5,7 @@
 -lib hxJson2
 -lib format
 -lib triad
--lib temperate
+-lib hscript
 -D desktop
 -cp Export/cpp/windows/haxe
 -cp Export/cpp/haxe

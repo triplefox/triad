@@ -15,8 +15,17 @@
 #ifndef INCLUDED_nme_display_IBitmapDrawable
 #include <nme/display/IBitmapDrawable.h>
 #endif
+#ifndef INCLUDED_nme_events_EventDispatcher
+#include <nme/events/EventDispatcher.h>
+#endif
+#ifndef INCLUDED_nme_events_IEventDispatcher
+#include <nme/events/IEventDispatcher.h>
+#endif
 #ifndef INCLUDED_nme_installer_Assets
 #include <nme/installer/Assets.h>
+#endif
+#ifndef INCLUDED_nme_media_Sound
+#include <nme/media/Sound.h>
 #endif
 
 Void ApplicationMain_obj::__construct()
@@ -57,7 +66,7 @@ Void ApplicationMain_obj::main( ){
 		HX_END_LOCAL_FUNC0((void))
 
 		HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",37)
-		::nme::Lib_obj::create( Dynamic(new _Function_1_1()),(int)512,(int)512,(int)60,(int)16777215,(int((int((int((int((int((int(::nme::Lib_obj::HARDWARE) | int(::nme::Lib_obj::RESIZABLE))) | int((int)0))) | int((int)0))) | int((int)0))) | int((int)0))) | int((int)0)),HX_CSTRING("TriadNME"),::ApplicationMain_obj::getAsset(HX_CSTRING("icon.png")));
+		::nme::Lib_obj::create( Dynamic(new _Function_1_1()),(int)720,(int)400,(int)60,(int)16777215,(int((int((int((int((int((int(::nme::Lib_obj::HARDWARE) | int(::nme::Lib_obj::RESIZABLE))) | int((int)0))) | int((int)0))) | int((int)0))) | int((int)0))) | int((int)0)),HX_CSTRING("TriadNME"),::ApplicationMain_obj::getAsset(HX_CSTRING("icon.png")));
 	}
 return null();
 }
@@ -73,21 +82,41 @@ Dynamic ApplicationMain_obj::getAsset( ::String inName){
 		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/cards.png"),null());
 	}
 	HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",77)
-	if (((inName == HX_CSTRING("assets/frame.png")))){
+	if (((inName == HX_CSTRING("assets/checkbox.png")))){
 		HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",78)
-		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/frame.png"),null());
+		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/checkbox.png"),null());
 	}
 	HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",84)
-	if (((inName == HX_CSTRING("assets/frame2.png")))){
+	if (((inName == HX_CSTRING("assets/frame.png")))){
 		HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",85)
-		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/frame2.png"),null());
+		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/frame.png"),null());
 	}
 	HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",91)
-	if (((inName == HX_CSTRING("assets/slider.png")))){
+	if (((inName == HX_CSTRING("assets/frame2.png")))){
 		HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",92)
-		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/slider.png"),null());
+		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/frame2.png"),null());
 	}
 	HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",98)
+	if (((inName == HX_CSTRING("assets/sfx_test.mp3")))){
+		HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",99)
+		return ::nme::installer::Assets_obj::getSound(HX_CSTRING("assets/sfx_test.mp3"));
+	}
+	HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",105)
+	if (((inName == HX_CSTRING("assets/slider.png")))){
+		HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",106)
+		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/slider.png"),null());
+	}
+	HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",112)
+	if (((inName == HX_CSTRING("assets/slider2.png")))){
+		HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",113)
+		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/slider2.png"),null());
+	}
+	HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",119)
+	if (((inName == HX_CSTRING("assets/VGA9x16.png")))){
+		HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",120)
+		return ::nme::installer::Assets_obj::getBitmapData(HX_CSTRING("assets/VGA9x16.png"),null());
+	}
+	HX_SOURCE_POS("Export/cpp/windows/haxe/ApplicationMain.hx",126)
 	return null();
 }
 

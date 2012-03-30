@@ -42,6 +42,14 @@ class Assets {
 			resourceTypes.set ("assets/slider.png", "image");
 			resourceClasses.set ("assets/slider2.png", NME_assets_slider2_png);
 			resourceTypes.set ("assets/slider2.png", "image");
+			resourceClasses.set ("assets/test_01.mid", NME_assets_test_01_mid);
+			resourceTypes.set ("assets/test_01.mid", "asset");
+			resourceClasses.set ("assets/test_02.mid", NME_assets_test_02_mid);
+			resourceTypes.set ("assets/test_02.mid", "asset");
+			resourceClasses.set ("assets/test_03.mid", NME_assets_test_03_mid);
+			resourceTypes.set ("assets/test_03.mid", "asset");
+			resourceClasses.set ("assets/VGA9x16.png", NME_assets_vga9x16_png);
+			resourceTypes.set ("assets/VGA9x16.png", "image");
 			
 			initialized = true;
 			

@@ -5,7 +5,7 @@
 #include <hxcpp.h>
 #endif
 
-HX_DECLARE_CLASS0(GUITests)
+HX_DECLARE_CLASS0(ASCIITest)
 HX_DECLARE_CLASS0(Main)
 
 
@@ -28,7 +28,7 @@ class Main_obj : public hx::Object{
 		void __Mark(HX_MARK_PARAMS);
 		::String __ToString() const { return HX_CSTRING("Main"); }
 
-		static ::GUITests example; /* REM */ 
+		static ::ASCIITest example; /* REM */ 
 		static int W; /* REM */ 
 		static int H; /* REM */ 
 		static Void main( );

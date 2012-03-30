@@ -1,3 +1,5 @@
+package com.ludamix.triad.grid;
+
 class AbstractGrid<T>
 {
 	
@@ -8,7 +10,8 @@ class AbstractGrid<T>
 	// FOR OVERRIDE:
 	public function copyTo(prev: T, idx : Int) {}
 	
-	public var TSIZE : Float;
+	public var twidth : Float;
+	public var theight : Float;
 	
 	// conversion functions: c<input><output>
 	// types are:
@@ -28,7 +31,7 @@ class AbstractGrid<T>
 	{ var x = idx % worldW;  return {y : Std.int((idx - x)/worldW), x: x }; }
 	
 	public inline function c1x(idx:Int) : {x : Float, y : Float}
-	{ var p = c1p(idx); return {x:0.+p.x*TSIZE, y:0.+p.y*TSIZE }; }
+	{ var p = c1p(idx); return {x:0.+p.x*twidth, y:0.+p.y*theight }; }
 	
 	public inline function c1t(idx:Int) : Null<T>
 	{ return world[idx]; }
@@ -49,19 +52,19 @@ class AbstractGrid<T>
 	{ return c2t(p.x, p.y);  }
 	
 	public inline function cffp(x:Float, y:Float) : { x:Int, y:Int }
-	{ return { x:Std.int(x/TSIZE), y:Std.int(y/TSIZE) }; }
+	{ return { x:Std.int(x/twidth), y:Std.int(y/theight) }; }
 	
 	public inline function cxp(p : { x:Float, y:Float } ) : { x:Int, y:Int }
 	{ return cffp(p.x,p.y); }
 	
 	public inline function cpx(p : { x:Int, y:Int } ) : { x:Float, y:Float}
-	{ return { x:p.x * TSIZE, y:p.y * TSIZE }; }
+	{ return { x:p.x * twidth, y:p.y * theight }; }
 	
 	public inline function c2x(x:Int, y:Int) : { x:Float, y:Float}
-	{ return { x:0.+x * TSIZE, y:0.+y * TSIZE }; }
+	{ return { x:0.+x * twidth, y:0.+y * theight }; }
 	
 	public inline function cff1(x:Float, y:Float) : Int
-	{ return c21(Std.int(x/TSIZE),Std.int(y/TSIZE)); }
+	{ return c21(Std.int(x/twidth),Std.int(y/theight)); }
 
 	public inline function cx1(p : { x:Float, y:Float } ) : Int
 	{ return cff1(p.x,p.y); }
@@ -72,9 +75,10 @@ class AbstractGrid<T>
 	public inline function cxt(p : { x:Float, y:Float } ) : Null<T>
 	{ return cfft(p.x, p.y); }
 	
-	public function new(worldw : Int, worldh : Int, TSIZE : Float, populate : Array<T>)
+	public function new(worldw : Int, worldh : Int, twidth : Float, theight : Float, populate : Array<T>)
 	{
-		this.TSIZE = TSIZE;
+		this.twidth = twidth;
+		this.theight = theight;
 		
 		this.worldW = worldw;
 		this.worldH = worldh;
@@ -146,7 +150,7 @@ class AbstractGrid<T>
 	
 	public inline function pixelInBounds(x : Float, y : Float)
 	{
-		return (x >= 0 && y >= 0 && x < worldW*TSIZE && y < worldH*TSIZE);
+		return (x >= 0 && y >= 0 && x < worldW*twidth && y < worldH*theight);
 	}
 	
 }

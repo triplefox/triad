@@ -8,6 +8,7 @@
 #include <nme/display/Bitmap.h>
 HX_DECLARE_CLASS0(Hash)
 HX_DECLARE_CLASS4(com,ludamix,triad,blitter,Blitter)
+HX_DECLARE_CLASS4(com,ludamix,triad,blitter,BlitterQueueInfos)
 HX_DECLARE_CLASS2(nme,display,Bitmap)
 HX_DECLARE_CLASS2(nme,display,BitmapData)
 HX_DECLARE_CLASS2(nme,display,DisplayObject)
@@ -41,7 +42,8 @@ class Blitter_obj : public ::nme::display::Bitmap_obj{
 		::String __ToString() const { return HX_CSTRING("Blitter"); }
 
 		::Hash spriteCache; /* REM */ 
-		Dynamic spriteQueue; /* REM */ 
+		::Hash tileCache; /* REM */ 
+		Array< Array< ::com::ludamix::triad::blitter::BlitterQueueInfos > > spriteQueue; /* REM */ 
 		Array< ::nme::geom::Rectangle > eraseQueue; /* REM */ 
 		int fillColor; /* REM */ 
 		virtual int getFillColor( );
@@ -58,6 +60,9 @@ class Blitter_obj : public ::nme::display::Bitmap_obj{
 
 		virtual Void queueBD( ::nme::display::BitmapData spr,int x,int y,int z);
 		Dynamic queueBD_dyn();
+
+		virtual Void queueBDRect( ::nme::display::BitmapData spr,::nme::geom::Rectangle rect,int x,int y,int z);
+		Dynamic queueBDRect_dyn();
 
 		virtual Void update( );
 		Dynamic update_dyn();

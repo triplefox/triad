@@ -19,27 +19,6 @@
   <file name="src/nme/display/JointStyle.cpp">
    <depend name="include/nme/display/JointStyle.h"/>
   </file>
-  <file name="src/GUITests.cpp">
-   <depend name="include/GUITests.h"/>
-   <depend name="include/com/ludamix/triad/ui/HSlider5.h"/>
-   <depend name="include/com/ludamix/triad/ui/Rect9.h"/>
-   <depend name="include/com/ludamix/triad/ui/SliderDrawMode.h"/>
-   <depend name="include/nme/Lib.h"/>
-   <depend name="include/nme/display/BitmapData.h"/>
-   <depend name="include/nme/display/DisplayObject.h"/>
-   <depend name="include/nme/display/DisplayObjectContainer.h"/>
-   <depend name="include/nme/display/Graphics.h"/>
-   <depend name="include/nme/display/IBitmapDrawable.h"/>
-   <depend name="include/nme/display/InteractiveObject.h"/>
-   <depend name="include/nme/display/MovieClip.h"/>
-   <depend name="include/nme/display/Sprite.h"/>
-   <depend name="include/nme/display/Stage.h"/>
-   <depend name="include/nme/events/Event.h"/>
-   <depend name="include/nme/events/EventDispatcher.h"/>
-   <depend name="include/nme/events/IEventDispatcher.h"/>
-   <depend name="include/nme/events/MouseEvent.h"/>
-   <depend name="include/nme/installer/Assets.h"/>
-  </file>
   <file name="src/StringTools.cpp">
    <depend name="include/StringTools.h"/>
   </file>
@@ -54,17 +33,6 @@
   <file name="src/nme/errors/EOFError.cpp">
    <depend name="include/nme/errors/EOFError.h"/>
    <depend name="include/nme/errors/Error.h"/>
-  </file>
-  <file name="src/nme/display/Bitmap.cpp">
-   <depend name="include/nme/display/Bitmap.h"/>
-   <depend name="include/nme/display/BitmapData.h"/>
-   <depend name="include/nme/display/DisplayObject.h"/>
-   <depend name="include/nme/display/Graphics.h"/>
-   <depend name="include/nme/display/IBitmapDrawable.h"/>
-   <depend name="include/nme/display/PixelSnapping.h"/>
-   <depend name="include/nme/events/EventDispatcher.h"/>
-   <depend name="include/nme/events/IEventDispatcher.h"/>
-   <depend name="include/nme/geom/Matrix.h"/>
   </file>
   <file name="src/nme/display/GradientType.cpp">
    <depend name="include/nme/display/GradientType.h"/>
@@ -89,7 +57,10 @@
    <depend name="include/nme/Lib.h"/>
    <depend name="include/nme/display/BitmapData.h"/>
    <depend name="include/nme/display/IBitmapDrawable.h"/>
+   <depend name="include/nme/events/EventDispatcher.h"/>
+   <depend name="include/nme/events/IEventDispatcher.h"/>
    <depend name="include/nme/installer/Assets.h"/>
+   <depend name="include/nme/media/Sound.h"/>
   </file>
   <file name="src/nme/Lib.cpp">
    <depend name="include/Std.h"/>
@@ -109,6 +80,10 @@
    <depend name="include/nme/events/IEventDispatcher.h"/>
    <depend name="include/nme/net/URLRequest.h"/>
   </file>
+  <file name="src/haxe/Resource.cpp">
+   <depend name="include/haxe/Resource.h"/>
+   <depend name="include/haxe/io/Bytes.h"/>
+  </file>
   <file name="src/nme/text/Font.cpp">
    <depend name="include/nme/Loader.h"/>
    <depend name="include/nme/text/Font.h"/>
@@ -123,7 +98,7 @@
    <depend name="include/cpp/rtti/FieldNumericIntegerLookup.h"/>
   </file>
   <file name="src/Main.cpp">
-   <depend name="include/GUITests.h"/>
+   <depend name="include/ASCIITest.h"/>
    <depend name="include/Main.h"/>
   </file>
   <file name="src/nme/events/ProgressEvent.cpp">
@@ -132,9 +107,6 @@
   </file>
   <file name="src/nme/geom/Point.cpp">
    <depend name="include/nme/geom/Point.h"/>
-  </file>
-  <file name="src/com/ludamix/triad/tools/MathTools.cpp">
-   <depend name="include/com/ludamix/triad/tools/MathTools.h"/>
   </file>
   <file name="src/Std.cpp">
    <depend name="include/Std.h"/>
@@ -281,6 +253,46 @@
    <depend name="include/nme/events/EventDispatcher.h"/>
    <depend name="include/nme/events/IEventDispatcher.h"/>
   </file>
+  <file name="src/com/ludamix/triad/blitter/Blitter.cpp">
+   <depend name="include/Hash.h"/>
+   <depend name="include/com/ludamix/triad/blitter/Blitter.h"/>
+   <depend name="include/com/ludamix/triad/blitter/BlitterQueueInfos.h"/>
+   <depend name="include/com/ludamix/triad/blitter/BlitterTileInfos.h"/>
+   <depend name="include/nme/display/Bitmap.h"/>
+   <depend name="include/nme/display/BitmapData.h"/>
+   <depend name="include/nme/display/DisplayObject.h"/>
+   <depend name="include/nme/display/IBitmapDrawable.h"/>
+   <depend name="include/nme/display/PixelSnapping.h"/>
+   <depend name="include/nme/events/EventDispatcher.h"/>
+   <depend name="include/nme/events/IEventDispatcher.h"/>
+   <depend name="include/nme/geom/Point.h"/>
+   <depend name="include/nme/geom/Rectangle.h"/>
+  </file>
+  <file name="src/com/ludamix/triad/blitter/BlitterTileInfos.cpp">
+   <depend name="include/com/ludamix/triad/blitter/BlitterTileInfos.h"/>
+   <depend name="include/nme/display/BitmapData.h"/>
+   <depend name="include/nme/display/IBitmapDrawable.h"/>
+   <depend name="include/nme/geom/Rectangle.h"/>
+  </file>
+  <file name="src/com/ludamix/triad/blitter/BlitterQueueInfos.cpp">
+   <depend name="include/com/ludamix/triad/blitter/BlitterQueueInfos.h"/>
+   <depend name="include/nme/display/BitmapData.h"/>
+   <depend name="include/nme/display/IBitmapDrawable.h"/>
+   <depend name="include/nme/geom/Rectangle.h"/>
+  </file>
+  <file name="src/com/ludamix/triad/grid/IntGrid.cpp">
+   <depend name="include/com/ludamix/triad/grid/AbstractGrid.h"/>
+   <depend name="include/com/ludamix/triad/grid/IntGrid.h"/>
+  </file>
+  <file name="src/nme/utils/Timer.cpp">
+   <depend name="include/haxe/Timer.h"/>
+   <depend name="include/nme/errors/Error.h"/>
+   <depend name="include/nme/events/Event.h"/>
+   <depend name="include/nme/events/EventDispatcher.h"/>
+   <depend name="include/nme/events/IEventDispatcher.h"/>
+   <depend name="include/nme/events/TimerEvent.h"/>
+   <depend name="include/nme/utils/Timer.h"/>
+  </file>
   <file name="src/cpp/zip/Flush.cpp">
    <depend name="include/cpp/zip/Flush.h"/>
   </file>
@@ -289,34 +301,58 @@
    <depend name="include/Std.h"/>
    <depend name="include/StringBuf.h"/>
   </file>
-  <file name="src/com/ludamix/triad/ui/SliderDrawMode.cpp">
-   <depend name="include/com/ludamix/triad/ui/SliderDrawMode.h"/>
-  </file>
-  <file name="src/com/ludamix/triad/ui/HSlider5.cpp">
+  <file name="src/com/ludamix/triad/blitter/ASCIIMap.cpp">
    <depend name="include/Std.h"/>
-   <depend name="include/com/ludamix/triad/ui/HSlider5.h"/>
-   <depend name="include/com/ludamix/triad/ui/SliderDrawMode.h"/>
-   <depend name="include/nme/Lib.h"/>
+   <depend name="include/com/ludamix/triad/blitter/ASCIIMap.h"/>
+   <depend name="include/com/ludamix/triad/blitter/ASCIISheet.h"/>
+   <depend name="include/com/ludamix/triad/blitter/BlitterTileInfos.h"/>
+   <depend name="include/com/ludamix/triad/grid/AbstractGrid.h"/>
+   <depend name="include/com/ludamix/triad/grid/IntGrid.h"/>
+   <depend name="include/nme/display/Bitmap.h"/>
    <depend name="include/nme/display/BitmapData.h"/>
    <depend name="include/nme/display/DisplayObject.h"/>
-   <depend name="include/nme/display/DisplayObjectContainer.h"/>
-   <depend name="include/nme/display/Graphics.h"/>
    <depend name="include/nme/display/IBitmapDrawable.h"/>
-   <depend name="include/nme/display/InteractiveObject.h"/>
-   <depend name="include/nme/display/MovieClip.h"/>
-   <depend name="include/nme/display/Sprite.h"/>
-   <depend name="include/nme/display/Stage.h"/>
-   <depend name="include/nme/events/Event.h"/>
+   <depend name="include/nme/display/PixelSnapping.h"/>
    <depend name="include/nme/events/EventDispatcher.h"/>
    <depend name="include/nme/events/IEventDispatcher.h"/>
-   <depend name="include/nme/events/MouseEvent.h"/>
-   <depend name="include/nme/geom/Matrix.h"/>
    <depend name="include/nme/geom/Point.h"/>
    <depend name="include/nme/geom/Rectangle.h"/>
+  </file>
+  <file name="src/nme/display/Bitmap.cpp">
+   <depend name="include/nme/display/Bitmap.h"/>
+   <depend name="include/nme/display/BitmapData.h"/>
+   <depend name="include/nme/display/DisplayObject.h"/>
+   <depend name="include/nme/display/Graphics.h"/>
+   <depend name="include/nme/display/IBitmapDrawable.h"/>
+   <depend name="include/nme/display/PixelSnapping.h"/>
+   <depend name="include/nme/events/EventDispatcher.h"/>
+   <depend name="include/nme/events/IEventDispatcher.h"/>
+   <depend name="include/nme/geom/Matrix.h"/>
   </file>
   <file name="src/haxe/Timer.cpp">
    <depend name="include/haxe/Timer.h"/>
    <depend name="include/nme/Loader.h"/>
+  </file>
+  <file name="src/com/ludamix/triad/AssetCache.cpp">
+   <depend name="include/Date.h"/>
+   <depend name="include/Hash.h"/>
+   <depend name="include/Reflect.h"/>
+   <depend name="include/StringTools.h"/>
+   <depend name="include/com/ludamix/triad/AssetCache.h"/>
+   <depend name="include/cpp/FileSystem.h"/>
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/nme/display/BitmapData.h"/>
+   <depend name="include/nme/display/IBitmapDrawable.h"/>
+   <depend name="include/nme/events/Event.h"/>
+   <depend name="include/nme/events/EventDispatcher.h"/>
+   <depend name="include/nme/events/IEventDispatcher.h"/>
+   <depend name="include/nme/events/TimerEvent.h"/>
+   <depend name="include/nme/installer/Assets.h"/>
+   <depend name="include/nme/media/Sound.h"/>
+   <depend name="include/nme/text/Font.h"/>
+   <depend name="include/nme/utils/ByteArray.h"/>
+   <depend name="include/nme/utils/IDataInput.h"/>
+   <depend name="include/nme/utils/Timer.h"/>
   </file>
   <file name="src/nme/utils/Endian.cpp">
    <depend name="include/nme/utils/Endian.h"/>
@@ -402,6 +438,15 @@
   </file>
   <file name="src/nme/display/StageDisplayState.cpp">
    <depend name="include/nme/display/StageDisplayState.h"/>
+  </file>
+  <file name="src/com/ludamix/triad/blitter/ASCIISheet.cpp">
+   <depend name="include/com/ludamix/triad/blitter/ASCIISheet.h"/>
+   <depend name="include/com/ludamix/triad/blitter/BlitterTileInfos.h"/>
+   <depend name="include/nme/display/BitmapData.h"/>
+   <depend name="include/nme/display/IBitmapDrawable.h"/>
+   <depend name="include/nme/geom/ColorTransform.h"/>
+   <depend name="include/nme/geom/Matrix.h"/>
+   <depend name="include/nme/geom/Rectangle.h"/>
   </file>
   <file name="src/Reflect.cpp">
    <depend name="include/Reflect.h"/>
@@ -524,8 +569,33 @@
    <depend name="include/nme/utils/ByteArray.h"/>
    <depend name="include/nme/utils/IDataInput.h"/>
   </file>
+  <file name="src/ASCIITest.cpp">
+   <depend name="include/ASCIITest.h"/>
+   <depend name="include/com/ludamix/triad/blitter/ASCIIMap.h"/>
+   <depend name="include/com/ludamix/triad/blitter/ASCIISheet.h"/>
+   <depend name="include/com/ludamix/triad/grid/AbstractGrid.h"/>
+   <depend name="include/com/ludamix/triad/grid/IntGrid.h"/>
+   <depend name="include/nme/Lib.h"/>
+   <depend name="include/nme/display/Bitmap.h"/>
+   <depend name="include/nme/display/BitmapData.h"/>
+   <depend name="include/nme/display/DisplayObject.h"/>
+   <depend name="include/nme/display/DisplayObjectContainer.h"/>
+   <depend name="include/nme/display/IBitmapDrawable.h"/>
+   <depend name="include/nme/display/InteractiveObject.h"/>
+   <depend name="include/nme/display/MovieClip.h"/>
+   <depend name="include/nme/display/Sprite.h"/>
+   <depend name="include/nme/display/Stage.h"/>
+   <depend name="include/nme/events/Event.h"/>
+   <depend name="include/nme/events/EventDispatcher.h"/>
+   <depend name="include/nme/events/IEventDispatcher.h"/>
+   <depend name="include/nme/installer/Assets.h"/>
+  </file>
   <file name="src/nme/media/ID3Info.cpp">
    <depend name="include/nme/media/ID3Info.h"/>
+  </file>
+  <file name="src/com/ludamix/triad/grid/AbstractGrid.cpp">
+   <depend name="include/Std.h"/>
+   <depend name="include/com/ludamix/triad/grid/AbstractGrid.h"/>
   </file>
   <file name="src/nme/media/Sound.cpp">
    <depend name="include/nme/Loader.h"/>
@@ -555,10 +625,6 @@
    <depend name="include/nme/events/EventDispatcher.h"/>
    <depend name="include/nme/events/FocusEvent.h"/>
    <depend name="include/nme/events/IEventDispatcher.h"/>
-  </file>
-  <file name="src/nme/events/Event.cpp">
-   <depend name="include/nme/events/Event.h"/>
-   <depend name="include/nme/events/EventPhase.h"/>
   </file>
   <file name="src/nme/display/MovieClip.cpp">
    <depend name="include/nme/display/DisplayObject.h"/>
@@ -656,6 +722,14 @@
   <file name="src/nme/text/FontStyle.cpp">
    <depend name="include/nme/text/FontStyle.h"/>
   </file>
+  <file name="src/nme/events/TimerEvent.cpp">
+   <depend name="include/nme/events/Event.h"/>
+   <depend name="include/nme/events/TimerEvent.h"/>
+  </file>
+  <file name="src/nme/events/Event.cpp">
+   <depend name="include/nme/events/Event.h"/>
+   <depend name="include/nme/events/EventPhase.h"/>
+  </file>
   <file name="src/nme/display/StageQuality.cpp">
    <depend name="include/nme/display/StageQuality.h"/>
   </file>
@@ -712,21 +786,6 @@
   </file>
   <file name="src/nme/display/CapsStyle.cpp">
    <depend name="include/nme/display/CapsStyle.h"/>
-  </file>
-  <file name="src/com/ludamix/triad/ui/Rect9.cpp">
-   <depend name="include/com/ludamix/triad/ui/Rect9.h"/>
-   <depend name="include/nme/display/BitmapData.h"/>
-   <depend name="include/nme/display/DisplayObject.h"/>
-   <depend name="include/nme/display/DisplayObjectContainer.h"/>
-   <depend name="include/nme/display/Graphics.h"/>
-   <depend name="include/nme/display/IBitmapDrawable.h"/>
-   <depend name="include/nme/display/InteractiveObject.h"/>
-   <depend name="include/nme/display/Sprite.h"/>
-   <depend name="include/nme/events/EventDispatcher.h"/>
-   <depend name="include/nme/events/IEventDispatcher.h"/>
-   <depend name="include/nme/geom/Matrix.h"/>
-   <depend name="include/nme/geom/Point.h"/>
-   <depend name="include/nme/geom/Rectangle.h"/>
   </file>
   <file name="src/nme/display/IBitmapDrawable.cpp">
    <depend name="include/nme/display/IBitmapDrawable.h"/>

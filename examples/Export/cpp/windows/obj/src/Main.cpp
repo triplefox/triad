@@ -1,7 +1,7 @@
 #include <hxcpp.h>
 
-#ifndef INCLUDED_GUITests
-#include <GUITests.h>
+#ifndef INCLUDED_ASCIITest
+#include <ASCIITest.h>
 #endif
 #ifndef INCLUDED_Main
 #include <Main.h>
@@ -25,7 +25,7 @@ Dynamic Main_obj::__Create(hx::DynamicArray inArgs)
 	result->__construct();
 	return result;}
 
-::GUITests Main_obj::example;
+::ASCIITest Main_obj::example;
 
 int Main_obj::W;
 
@@ -34,8 +34,8 @@ int Main_obj::H;
 Void Main_obj::main( ){
 {
 		HX_SOURCE_PUSH("Main_obj::main")
-		HX_SOURCE_POS("Source/Main.hx",14)
-		::Main_obj::example = ::GUITests_obj::__new();
+		HX_SOURCE_POS("Source/Main.hx",18)
+		::Main_obj::example = ::ASCIITest_obj::__new();
 	}
 return null();
 }
@@ -78,7 +78,7 @@ Dynamic Main_obj::__SetField(const ::String &inName,const Dynamic &inValue)
 		if (HX_FIELD_EQ(inName,"H") ) { H=inValue.Cast< int >(); return inValue; }
 		break;
 	case 7:
-		if (HX_FIELD_EQ(inName,"example") ) { example=inValue.Cast< ::GUITests >(); return inValue; }
+		if (HX_FIELD_EQ(inName,"example") ) { example=inValue.Cast< ::ASCIITest >(); return inValue; }
 	}
 	return super::__SetField(inName,inValue);
 }
@@ -116,7 +116,7 @@ void Main_obj::__register()
 void Main_obj::__boot()
 {
 	hx::Static(example);
-	hx::Static(W) = (int)512;
-	hx::Static(H) = (int)512;
+	hx::Static(W) = (int)720;
+	hx::Static(H) = (int)400;
 }
 

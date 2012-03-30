@@ -5,6 +5,7 @@
 -lib hxJson2
 -lib format
 -lib triad
+-lib hscript
 -D desktop
 -cp Export/neko/windows/haxe
 -cp Export/neko/haxe

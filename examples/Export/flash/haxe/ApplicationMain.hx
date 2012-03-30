@@ -85,6 +85,26 @@ class ApplicationMain {
             return Assets.getBitmapData ("assets/slider2.png");
          
 		
+		if (inName=="assets/test_01.mid")
+			 
+            return Assets.getBytes ("assets/test_01.mid");
+         
+		
+		if (inName=="assets/test_02.mid")
+			 
+            return Assets.getBytes ("assets/test_02.mid");
+         
+		
+		if (inName=="assets/test_03.mid")
+			 
+            return Assets.getBytes ("assets/test_03.mid");
+         
+		
+		if (inName=="assets/VGA9x16.png")
+			 
+            return Assets.getBitmapData ("assets/VGA9x16.png");
+         
+		
 		
 		return null;
 		
@@ -132,4 +152,20 @@ class ApplicationMain {
 
 	
 		class NME_assets_slider2_png extends nme.display.BitmapData { public function new () { super (0, 0); } }
+	
+
+	
+		class NME_assets_test_01_mid extends nme.utils.ByteArray { }
+	
+
+	
+		class NME_assets_test_02_mid extends nme.utils.ByteArray { }
+	
+
+	
+		class NME_assets_test_03_mid extends nme.utils.ByteArray { }
+	
+
+	
+		class NME_assets_vga9x16_png extends nme.display.BitmapData { public function new () { super (0, 0); } }
 	

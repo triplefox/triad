@@ -1,3 +1,5 @@
+package com.ludamix.triad.grid;
+
 class ObjectGrid<T> extends AbstractGrid<T>
 {
 	

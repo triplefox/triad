@@ -10,5 +10,5 @@
 -D web
 -swf-version 11.0
 -swf9 Export/flash/bin/TriadNME.swf
--swf-header 800:600:60:ffffff
+-swf-header 720:400:60:ffffff
 -cp Export/flash/haxe

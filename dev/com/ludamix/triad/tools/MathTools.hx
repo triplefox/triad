@@ -61,4 +61,17 @@ class MathTools
 		return Math.max(min, Math.min(max, val));
 	}
 	
+	public static inline function bestOf(vals : Iterable<Dynamic>, makecomparable : Dynamic->Dynamic,
+		compare : Dynamic->Dynamic->Bool, start : Dynamic) : Dynamic
+	{
+		var best = makecomparable(start);
+		for (n in vals)
+		{
+			var test = makecomparable(n);
+			if (compare(test, best))
+				best = test;
+		}
+		return best;
+	}
+	
 }

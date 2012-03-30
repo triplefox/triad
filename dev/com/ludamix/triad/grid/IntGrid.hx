@@ -1,3 +1,5 @@
+package com.ludamix.triad.grid;
+
 class IntGrid extends AbstractGrid<Int>
 {
 	

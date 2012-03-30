@@ -8,15 +8,22 @@ import nme.events.TimerEvent;
 import nme.media.Sound;
 import nme.text.Font;
 import nme.utils.Timer;
+
+
+#if flash
+#else
+
 #if neko
 	import neko.FileSystem;
 	import neko.io.File;
-#else cpp
+#else
 	import cpp.FileSystem;
 	import cpp.io.File;
 #end
 
 typedef ChangedAsset = {id:String,path:String,type:String,stat:FileStat};
+
+#end
 
 class AssetCache
 {

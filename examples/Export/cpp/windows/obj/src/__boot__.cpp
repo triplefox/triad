@@ -3,12 +3,10 @@
 #include <cpp/io/_Process/Stdout.h>
 #include <cpp/io/_Process/Stdin.h>
 #include <nme/display/JointStyle.h>
-#include <GUITests.h>
 #include <StringTools.h>
 #include <nme/geom/Matrix.h>
 #include <Date.h>
 #include <nme/errors/EOFError.h>
-#include <nme/display/Bitmap.h>
 #include <nme/display/GradientType.h>
 #include <nme/display/TriangleCulling.h>
 #include <nme/media/SoundTransform.h>
@@ -16,13 +14,13 @@
 #include <nme/geom/Rectangle.h>
 #include <ApplicationMain.h>
 #include <nme/Lib.h>
+#include <haxe/Resource.h>
 #include <nme/text/Font.h>
 #include <nme/events/KeyboardEvent.h>
 #include <cpp/rtti/FieldNumericIntegerLookup.h>
 #include <Main.h>
 #include <nme/events/ProgressEvent.h>
 #include <nme/geom/Point.h>
-#include <com/ludamix/triad/tools/MathTools.h>
 #include <Std.h>
 #include <nme/display/StageScaleMode.h>
 #include <nme/display/LineScaleMode.h>
@@ -50,11 +48,17 @@
 #include <nme/geom/Transform.h>
 #include <nme/display/StageAlign.h>
 #include <nme/display/ManagedStage.h>
+#include <com/ludamix/triad/blitter/Blitter.h>
+#include <com/ludamix/triad/blitter/BlitterTileInfos.h>
+#include <com/ludamix/triad/blitter/BlitterQueueInfos.h>
+#include <com/ludamix/triad/grid/IntGrid.h>
+#include <nme/utils/Timer.h>
 #include <cpp/zip/Flush.h>
 #include <IntHash.h>
-#include <com/ludamix/triad/ui/SliderDrawMode.h>
-#include <com/ludamix/triad/ui/HSlider5.h>
+#include <com/ludamix/triad/blitter/ASCIIMap.h>
+#include <nme/display/Bitmap.h>
 #include <haxe/Timer.h>
+#include <com/ludamix/triad/AssetCache.h>
 #include <nme/utils/Endian.h>
 #include <nme/geom/ColorTransform.h>
 #include <nme/errors/RangeError.h>
@@ -72,6 +76,7 @@
 #include <nme/display/SpreadMethod.h>
 #include <nme/display/Tilesheet.h>
 #include <nme/display/StageDisplayState.h>
+#include <com/ludamix/triad/blitter/ASCIISheet.h>
 #include <Reflect.h>
 #include <nme/events/JoystickEvent.h>
 #include <cpp/zip/Uncompress.h>
@@ -83,11 +88,12 @@
 #include <nme/events/MouseEvent.h>
 #include <nme/display/Graphics.h>
 #include <nme/net/URLLoader.h>
+#include <ASCIITest.h>
 #include <nme/media/ID3Info.h>
+#include <com/ludamix/triad/grid/AbstractGrid.h>
 #include <nme/media/Sound.h>
 #include <nme/utils/IDataInput.h>
 #include <nme/events/FocusEvent.h>
-#include <nme/events/Event.h>
 #include <nme/display/MovieClip.h>
 #include <nme/display/Sprite.h>
 #include <nme/display/DisplayObjectContainer.h>
@@ -98,6 +104,8 @@
 #include <nme/events/EventDispatcher.h>
 #include <nme/media/SoundLoaderContext.h>
 #include <nme/text/FontStyle.h>
+#include <nme/events/TimerEvent.h>
+#include <nme/events/Event.h>
 #include <nme/display/StageQuality.h>
 #include <nme/display/InterpolationMethod.h>
 #include <cpp/Sys.h>
@@ -110,7 +118,6 @@
 #include <cpp/FileKind.h>
 #include <nme/display/BlendMode.h>
 #include <nme/display/CapsStyle.h>
-#include <com/ludamix/triad/ui/Rect9.h>
 #include <nme/display/IBitmapDrawable.h>
 #include <haxe/io/BytesBuffer.h>
 
@@ -120,12 +127,10 @@ hx::RegisterResources( hx::GetResources() );
 ::cpp::io::_Process::Stdout_obj::__register();
 ::cpp::io::_Process::Stdin_obj::__register();
 ::nme::display::JointStyle_obj::__register();
-::GUITests_obj::__register();
 ::StringTools_obj::__register();
 ::nme::geom::Matrix_obj::__register();
 ::Date_obj::__register();
 ::nme::errors::EOFError_obj::__register();
-::nme::display::Bitmap_obj::__register();
 ::nme::display::GradientType_obj::__register();
 ::nme::display::TriangleCulling_obj::__register();
 ::nme::media::SoundTransform_obj::__register();
@@ -133,13 +138,13 @@ hx::RegisterResources( hx::GetResources() );
 ::nme::geom::Rectangle_obj::__register();
 ::ApplicationMain_obj::__register();
 ::nme::Lib_obj::__register();
+::haxe::Resource_obj::__register();
 ::nme::text::Font_obj::__register();
 ::nme::events::KeyboardEvent_obj::__register();
 ::cpp::rtti::FieldNumericIntegerLookup_obj::__register();
 ::Main_obj::__register();
 ::nme::events::ProgressEvent_obj::__register();
 ::nme::geom::Point_obj::__register();
-::com::ludamix::triad::tools::MathTools_obj::__register();
 ::Std_obj::__register();
 ::nme::display::StageScaleMode_obj::__register();
 ::nme::display::LineScaleMode_obj::__register();
@@ -167,11 +172,17 @@ hx::RegisterResources( hx::GetResources() );
 ::nme::geom::Transform_obj::__register();
 ::nme::display::StageAlign_obj::__register();
 ::nme::display::ManagedStage_obj::__register();
+::com::ludamix::triad::blitter::Blitter_obj::__register();
+::com::ludamix::triad::blitter::BlitterTileInfos_obj::__register();
+::com::ludamix::triad::blitter::BlitterQueueInfos_obj::__register();
+::com::ludamix::triad::grid::IntGrid_obj::__register();
+::nme::utils::Timer_obj::__register();
 ::cpp::zip::Flush_obj::__register();
 ::IntHash_obj::__register();
-::com::ludamix::triad::ui::SliderDrawMode_obj::__register();
-::com::ludamix::triad::ui::HSlider5_obj::__register();
+::com::ludamix::triad::blitter::ASCIIMap_obj::__register();
+::nme::display::Bitmap_obj::__register();
 ::haxe::Timer_obj::__register();
+::com::ludamix::triad::AssetCache_obj::__register();
 ::nme::utils::Endian_obj::__register();
 ::nme::geom::ColorTransform_obj::__register();
 ::nme::errors::RangeError_obj::__register();
@@ -189,6 +200,7 @@ hx::RegisterResources( hx::GetResources() );
 ::nme::display::SpreadMethod_obj::__register();
 ::nme::display::Tilesheet_obj::__register();
 ::nme::display::StageDisplayState_obj::__register();
+::com::ludamix::triad::blitter::ASCIISheet_obj::__register();
 ::Reflect_obj::__register();
 ::nme::events::JoystickEvent_obj::__register();
 ::cpp::zip::Uncompress_obj::__register();
@@ -200,11 +212,12 @@ hx::RegisterResources( hx::GetResources() );
 ::nme::events::MouseEvent_obj::__register();
 ::nme::display::Graphics_obj::__register();
 ::nme::net::URLLoader_obj::__register();
+::ASCIITest_obj::__register();
 ::nme::media::ID3Info_obj::__register();
+::com::ludamix::triad::grid::AbstractGrid_obj::__register();
 ::nme::media::Sound_obj::__register();
 ::nme::utils::IDataInput_obj::__register();
 ::nme::events::FocusEvent_obj::__register();
-::nme::events::Event_obj::__register();
 ::nme::display::MovieClip_obj::__register();
 ::nme::display::Sprite_obj::__register();
 ::nme::display::DisplayObjectContainer_obj::__register();
@@ -215,6 +228,8 @@ hx::RegisterResources( hx::GetResources() );
 ::nme::events::EventDispatcher_obj::__register();
 ::nme::media::SoundLoaderContext_obj::__register();
 ::nme::text::FontStyle_obj::__register();
+::nme::events::TimerEvent_obj::__register();
+::nme::events::Event_obj::__register();
 ::nme::display::StageQuality_obj::__register();
 ::nme::display::InterpolationMethod_obj::__register();
 ::cpp::Sys_obj::__register();
@@ -227,7 +242,6 @@ hx::RegisterResources( hx::GetResources() );
 ::cpp::FileKind_obj::__register();
 ::nme::display::BlendMode_obj::__register();
 ::nme::display::CapsStyle_obj::__register();
-::com::ludamix::triad::ui::Rect9_obj::__register();
 ::nme::display::IBitmapDrawable_obj::__register();
 ::haxe::io::BytesBuffer_obj::__register();
 ::nme::utils::ByteArray_obj::__init__();
@@ -249,7 +263,6 @@ hx::RegisterResources( hx::GetResources() );
 ::cpp::io::_Process::Stdout_obj::__boot();
 ::haxe::io::BytesBuffer_obj::__boot();
 ::nme::display::IBitmapDrawable_obj::__boot();
-::com::ludamix::triad::ui::Rect9_obj::__boot();
 ::nme::display::CapsStyle_obj::__boot();
 ::nme::display::BlendMode_obj::__boot();
 ::List_obj::__boot();
@@ -257,6 +270,8 @@ hx::RegisterResources( hx::GetResources() );
 ::haxe::io::Input_obj::__boot();
 ::nme::display::InterpolationMethod_obj::__boot();
 ::nme::display::StageQuality_obj::__boot();
+::nme::events::Event_obj::__boot();
+::nme::events::TimerEvent_obj::__boot();
 ::nme::text::FontStyle_obj::__boot();
 ::nme::media::SoundLoaderContext_obj::__boot();
 ::nme::events::EventDispatcher_obj::__boot();
@@ -266,11 +281,12 @@ hx::RegisterResources( hx::GetResources() );
 ::nme::display::DisplayObjectContainer_obj::__boot();
 ::nme::display::Sprite_obj::__boot();
 ::nme::display::MovieClip_obj::__boot();
-::nme::events::Event_obj::__boot();
 ::nme::events::FocusEvent_obj::__boot();
 ::nme::utils::IDataInput_obj::__boot();
 ::nme::media::Sound_obj::__boot();
+::com::ludamix::triad::grid::AbstractGrid_obj::__boot();
 ::nme::media::ID3Info_obj::__boot();
+::ASCIITest_obj::__boot();
 ::nme::net::URLLoader_obj::__boot();
 ::nme::display::Graphics_obj::__boot();
 ::nme::events::MouseEvent_obj::__boot();
@@ -281,6 +297,7 @@ hx::RegisterResources( hx::GetResources() );
 ::haxe::io::Eof_obj::__boot();
 ::nme::events::JoystickEvent_obj::__boot();
 ::Reflect_obj::__boot();
+::com::ludamix::triad::blitter::ASCIISheet_obj::__boot();
 ::nme::display::StageDisplayState_obj::__boot();
 ::nme::display::Tilesheet_obj::__boot();
 ::nme::display::SpreadMethod_obj::__boot();
@@ -297,10 +314,16 @@ hx::RegisterResources( hx::GetResources() );
 ::nme::errors::RangeError_obj::__boot();
 ::nme::geom::ColorTransform_obj::__boot();
 ::nme::utils::Endian_obj::__boot();
+::com::ludamix::triad::AssetCache_obj::__boot();
 ::haxe::Timer_obj::__boot();
-::com::ludamix::triad::ui::HSlider5_obj::__boot();
-::com::ludamix::triad::ui::SliderDrawMode_obj::__boot();
+::nme::display::Bitmap_obj::__boot();
+::com::ludamix::triad::blitter::ASCIIMap_obj::__boot();
 ::IntHash_obj::__boot();
+::nme::utils::Timer_obj::__boot();
+::com::ludamix::triad::grid::IntGrid_obj::__boot();
+::com::ludamix::triad::blitter::BlitterQueueInfos_obj::__boot();
+::com::ludamix::triad::blitter::BlitterTileInfos_obj::__boot();
+::com::ludamix::triad::blitter::Blitter_obj::__boot();
 ::nme::display::ManagedStage_obj::__boot();
 ::nme::display::StageAlign_obj::__boot();
 ::nme::geom::Transform_obj::__boot();
@@ -324,12 +347,12 @@ hx::RegisterResources( hx::GetResources() );
 ::nme::display::LineScaleMode_obj::__boot();
 ::nme::display::StageScaleMode_obj::__boot();
 ::Std_obj::__boot();
-::com::ludamix::triad::tools::MathTools_obj::__boot();
 ::nme::geom::Point_obj::__boot();
 ::nme::events::ProgressEvent_obj::__boot();
 ::Main_obj::__boot();
 ::nme::events::KeyboardEvent_obj::__boot();
 ::nme::text::Font_obj::__boot();
+::haxe::Resource_obj::__boot();
 ::nme::Lib_obj::__boot();
 ::ApplicationMain_obj::__boot();
 ::nme::geom::Rectangle_obj::__boot();
@@ -337,12 +360,10 @@ hx::RegisterResources( hx::GetResources() );
 ::nme::media::SoundTransform_obj::__boot();
 ::nme::display::TriangleCulling_obj::__boot();
 ::nme::display::GradientType_obj::__boot();
-::nme::display::Bitmap_obj::__boot();
 ::nme::errors::EOFError_obj::__boot();
 ::Date_obj::__boot();
 ::nme::geom::Matrix_obj::__boot();
 ::StringTools_obj::__boot();
-::GUITests_obj::__boot();
 ::nme::display::JointStyle_obj::__boot();
 }
 
