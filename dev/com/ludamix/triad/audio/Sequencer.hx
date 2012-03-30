@@ -9,28 +9,8 @@ import haxe.Timer;
 import com.ludamix.triad.tools.MathTools;
 import com.ludamix.triad.audio.MIDITuning;
 
-// Upgrade the synth to be able to modulate the sound in other ways and be able to load an instrument spec.
-
-// To emulate the MIDI style on-off, we encode id to == midi note number, and we include velocity with on events.
-// Our on-off is a bit more flexible, which is fine.
-// It looks like it should be straightforward to get basic Type 0 and Type 1 working - our internal format is like type 0.
-// Pitch bend and cc should be sufficient to do what I want for the near future - we can make the parser extensible
-// so that in a one-off project, I can add "this MIDI parameter does this thingy" and it Just Works.
-
-// A core difference between my method and the SiON implementation is that I want to compile to an internal sequencer
-// format, while SiON is making a new data structure that addresses voices like a MIDI implementation would.
-
-// What I want in my compiler is <input> -> Array<SequencerEvent>, 
-//     and then any number of Array<SequencerEvent> -> Array<SequencerEvent> transforms
-//	   this lets us resequence as desired.
-//     For PC speaker emulation, my final pass will remap all the channels to a single one and assign priorities instead.
-// I may drop effects for Molyjam.
-
-// The goal for the speaker emulation is to have some ability to do chirps and beeps, arpeggiations, vibrato...
-//     The way I can do this is, instead of pushing it into the synth, I have the MIDI parser generate an event schedule.
-//	   This keeps the synth simple, as the real PC speaker is.
-// I also want my basic RogueBoard implementation together, so that I have essentially a ZZT-like demo. 
-// Lastly, I should have a way to load up ASCII art - there's gotta be a viable tool out there for this!
+// TODO: Upgrade the synth, understand more MIDI events, be able to load an instrument spec.
+// TEST: Tempo variations!
 
 class SMFParser
 {
@@ -39,8 +19,12 @@ class SMFParser
 	// Should read type 0 and type 1 SMF, and allows a custom filtering function to be used to translate the raw events
 	// however you like.
 	
-	// Goal for today:
-	//    Get channels parsed correctly.
+	// To emulate the MIDI style on-off, we default id to == midi note number, and we include velocity with on events.
+	// Our on-off is a bit more flexible, which is fine.
+	
+	// Currently only does on and off, and ignores velocity, pitch, etc.
+	
+	// Example in https://github.com/triplefox/triad/blob/master/examples/Source/SynthTest.hx
 	
 	public static function load(sequencer : Sequencer, bytes:ByteArray, ?filter = null) : Array<SequencerEvent>
 	{
@@ -352,6 +336,8 @@ class SMFParser
 
 class FrameFXParser
 {
+	
+	// someday we'll add some fun effects like auto-arpeggiation etc.
 	
 	// compiles Array<SequencerEvent>->Array<SequencerEvent> - uses channel values to direct most mappings
 	
