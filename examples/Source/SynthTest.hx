@@ -54,7 +54,7 @@ class SynthTest
 		}
 		else
 		{
-			trace(seq.events[0]);
+			//trace(seq.events[0]);
 		}
 	}
 	

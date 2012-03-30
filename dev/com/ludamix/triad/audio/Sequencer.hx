@@ -10,7 +10,11 @@ import com.ludamix.triad.tools.MathTools;
 import com.ludamix.triad.audio.MIDITuning;
 
 // TODO: Upgrade the synth, understand more MIDI events, be able to load an instrument spec.
-// TEST: Tempo variations!
+
+// I am still not 100% sure about tempo changes, however they seem pretty stable in my current tests.
+// 		(I need to upgrade the synth quality to tell what's going on in the wing commander track)
+
+typedef SMFEvent = { tick:Int, type:Int, channel:Int, data:Dynamic };
 
 class SMFParser
 {
@@ -47,9 +51,10 @@ class SMFParser
 	public var format : Int;
 	public var numTracks : Int;
 	public var resolution : Int;
-	public var tempos : Array<{tick:Int,tempo:Int,beat:Float,bpm:Float}>;
+	public var tempos : Array<{tick:Int,tempo:Int,bpm:Float,frames:Float}>;
+	public var tracks:Array<Array<SMFEvent>>;
 	public var events:Array<SequencerEvent>;
-	public var filter : Int->Int->Dynamic->SMFParser->Void;
+	public var filter : SMFEvent->Int->Float->Sequencer->SequencerEvent;
 	public var bytes : ByteArray;
 	public var sequencer : Sequencer;
 
@@ -64,6 +69,7 @@ class SMFParser
 		numTracks = 0;
 		resolution = 0;
 		events = new Array();
+		tracks = new Array();
 		tempos = new Array();
 		
 		var len:Int = 0;
@@ -78,22 +84,88 @@ class SMFParser
 				// resolution tells us how our delta times relate to time signature
 				if ((resolution & 0x800) == 0) // we're using "ticks per beat" aka "pulses per quarter note" method
 				{
-					trace(resolution);
+					//trace(resolution);
 				}
 				else // we're using "frames per second" method - not implemented yet
 				{
 				}
 			case "MTrk": // start of track data
 				len = bytes.readUnsignedInt();
-				get_track(bytes);
+				tracks.push(get_track(bytes));
 			default:
 				len = bytes.readUnsignedInt();
 				bytes.position += len;
 			}
 		}
 		
-		trace(resolution);
-		trace(tempos);
+		// now we use the tick delta timings and tempo mapping to convert into sequencer frames, and
+		// do the final filtering.
+		
+		tempos.sort(function(a, b) { return a.tick - b.tick;  } );
+		
+		for (track in tracks)
+		{
+			var tempos_future = tempos.copy();
+			var tempos_past = new Array<{tick:Int,tempo:Int,bpm:Float,frames:Float}>();
+			var ticks = 0;
+			var frames = 0.;
+			var tempos_traversed = 0;
+			tempos_past.push(tempos_future.shift());
+			for (n in track)
+			{
+				tempos_traversed = 0;
+				
+				// The most difficult part of this conversion is the possibility of any number of tempo changes
+				// within an event delta.
+				
+				// To deal with these we check to see how many tempo boundaries we have crossed.
+				// Then we iterate through the previous tempos, until we've advanced enough ticks to
+				// resume "normal" operation.
+				
+				while (tempos_future.length>0 && (ticks + n.tick) > tempos_future[0].tick)
+				{
+					tempos_past.push(tempos_future.shift());
+					tempos_traversed += 1;
+				}
+				if (tempos_traversed > 0)
+				{
+					var tick_traversed = 0;
+					for (ct in 0...tempos_traversed)
+					{
+						
+						var ptr = tempos_past.length - 1 - (tempos_traversed - ct);
+						var ticks_advance = 0;
+						var frames_advance = 0.;
+						
+						if (ticks < tempos_past[ptr].tick)
+						{
+							ticks_advance = tempos_past[ptr].tick - ticks;
+						}
+						else
+						{
+							ticks_advance = tempos_past[ptr].tick - tempos_past[ptr + 1].tick;
+						}
+						
+						frames_advance = ticks_advance * tempos_past[ptr].frames;
+						tick_traversed += ticks_advance;
+						ticks += ticks_advance;
+						frames += frames_advance;
+						
+					}
+					ticks += n.tick - tick_traversed;
+					frames += (n.tick - tick_traversed) * tempos_past[tempos_past.length-1].frames;
+				}
+				else
+				{
+					ticks += n.tick;
+					frames += n.tick * tempos_past[tempos_past.length-1].frames;
+				}
+				
+				var result = filter(n, ticks, frames, sequencer);
+				if (result != null) events.push(result);
+				
+			}
+		}
 		
 		return events;
 		
@@ -161,59 +233,39 @@ class SMFParser
 	public static inline var RPN_FINE_TUNE = 1;
 	public static inline var RPN_COARSE_TUNE = 2;
 	
-	public static function default_filter(type:Int, channel : Int, data:Dynamic, parser : SMFParser)
+	public static function default_filter(smf:SMFEvent, ticks : Int, frames : Float, sequencer : Sequencer)
 	{
-		// note: internally, SMF channels are counting from 0; in human-readable form they're counted from 1.
+		if (smf.type == NOTE_ON && smf.data.velocity == 0) // optimize - part of specced behavior
+			smf.type = NOTE_OFF;
 		
-		if (type == NOTE_ON && data.velocity == 0) // optimize - part of specced behavior
-			type = NOTE_OFF;
-		
-		switch(type)
+		switch(smf.type)
 		{
 			case NOTE_ON:
-				parser.events.push(new SequencerEvent(SequencerEvent.NOTE_ON,
-					parser.sequencer.waveLengthOfMidiNote(data.note),
-												channel,
-												data.note,
-												Std.int(parser.sequencer.BPMToFrames(parser.beatsOf(parser.time),
-													parser.tempoAt(parser.time).bpm)),
-												channel));
+				return (new SequencerEvent(SequencerEvent.NOTE_ON,
+					sequencer.waveLengthOfMidiNote(smf.data.note),
+												smf.channel,
+												smf.data.note,
+												Std.int(frames),
+												smf.channel));
 			case NOTE_OFF:
-				parser.events.push(new SequencerEvent(SequencerEvent.NOTE_OFF,
-					parser.sequencer.waveLengthOfMidiNote(data.note),
-												channel,
-												data.note,
-												Std.int(parser.sequencer.BPMToFrames(parser.beatsOf(parser.time),
-													parser.tempoAt(parser.time).bpm)),
-												channel));
+				return (new SequencerEvent(SequencerEvent.NOTE_OFF,
+					sequencer.waveLengthOfMidiNote(smf.data.note),
+												smf.channel,
+												smf.data.note,
+												Std.int(frames),
+												smf.channel));
+			default:
+				return null;
 		}
 	}
 	
-	public inline function tempoAt(tick : Int)
-	{
-		// note that it's important to have the tempos ordered correctly for this...!
-		var pref = { tick:0, beat:0., tempo:Std.int(1. / 120.0 * 60000000), bpm:120.0 };
-		for (t in tempos)
-		{
-			if (t.tick <= tick)
-				{pref = t; break; }
-		}
-		return pref;
-	}
-	
-	public inline function beatsOf(tick : Int)
-	{
-		var tempo = tempoAt(tick);
-		
-		// to calculate the beat, we add the given bpm's beat
-		// to the tick/resolution/bpm calculation.
-		
-		return ((tick - tempo.tick) / resolution) + tempo.beat;		
-		
-	}
+	private function trackEvent(track : Array<SMFEvent>, tick : Int, type : Int, channel : Int, data : Dynamic)
+		{ track.push( { tick:tick, type:type, channel:channel, data:data }); }
 	
 	private function get_track(bytes:ByteArray)
 	{
+		
+		var track = new Array<SMFEvent>();
 		
 		var cont = true;
 		
@@ -266,10 +318,8 @@ class SMFParser
 					switch (metaEventType) {
 					case META_TEMPO:
 						var tempo = ((bytes.readUnsignedByte() << 16) | bytes.readUnsignedShort());
-						tempos.insert(0, { tick:time,
-							tempo:tempo,
-							beat:beatsOf(time),
-							bpm:60000000 / tempo});
+						var bpm = 60000000 / tempo;
+						tempos.push({ tick:time, tempo:tempo, bpm:bpm, frames:sequencer.BPMToFrames(1/resolution,bpm)});
 					case META_TIME_SIGNATURE:
 						// not properly implemented yet...
 						var value = (bytes.readUnsignedByte() << 16) | (1 << bytes.readUnsignedByte());
@@ -298,23 +348,24 @@ class SMFParser
 				switch (status_base) 
 				{
 					case PROGRAM_CHANGE:
-						filter(status_base, channel, bytes.readUnsignedByte(), this);
+						trackEvent(track, deltaTime, status_base, channel, bytes.readUnsignedByte());
 					case CHANNEL_PRESSURE:
-						filter(status_base, channel, bytes.readUnsignedByte(), this);
+						trackEvent(track, deltaTime, status_base, channel, bytes.readUnsignedByte());
 					case NOTE_OFF:
-						filter(status_base, channel, 
-							{note:bytes.readUnsignedByte(),velocity:bytes.readUnsignedByte()}, this);
+						trackEvent(track, deltaTime, status_base, channel, 
+							{note:bytes.readUnsignedByte(),velocity:bytes.readUnsignedByte()});
 					case NOTE_ON:
-						filter(status_base, channel, 
-							{note:bytes.readUnsignedByte(),velocity:bytes.readUnsignedByte()}, this);
+						trackEvent(track, deltaTime, status_base, channel, 
+							{note:bytes.readUnsignedByte(),velocity:bytes.readUnsignedByte()});
 					case KEY_PRESSURE:
-						filter(status_base, channel, 
-							{note:bytes.readUnsignedByte(),pressure:bytes.readUnsignedByte()}, this);
+						trackEvent(track, deltaTime, status_base, channel, 
+							{note:bytes.readUnsignedByte(),pressure:bytes.readUnsignedByte()});
 					case CONTROL_CHANGE:
-						filter(status_base, channel, 
-							(bytes.readUnsignedByte()<<16) | bytes.readUnsignedByte(), this);
+						trackEvent(track, deltaTime, status_base, channel, 
+							(bytes.readUnsignedByte()<<16) | bytes.readUnsignedByte());
 					case PITCH_BEND:
-						filter(status_base, channel, bytes.readUnsignedByte() | (bytes.readUnsignedByte() << 8), this);
+						trackEvent(track, deltaTime, status_base, channel, 
+							bytes.readUnsignedByte() | (bytes.readUnsignedByte() << 8));
 					default:
 						throw "error: bad status("+Std.string(status)+") " + Std.string(status_base) +
 							" on channel "+Std.string(channel)+" at "+Std.string(bytes.position);
@@ -322,6 +373,8 @@ class SMFParser
 			
 			}
 		}
+		
+		return track;
 		
 	}
 	

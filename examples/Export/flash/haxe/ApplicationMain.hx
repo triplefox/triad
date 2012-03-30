@@ -100,6 +100,16 @@ class ApplicationMain {
             return Assets.getBytes ("assets/test_03.mid");
          
 		
+		if (inName=="assets/test_04.mid")
+			 
+            return Assets.getBytes ("assets/test_04.mid");
+         
+		
+		if (inName=="assets/test_05.mid")
+			 
+            return Assets.getBytes ("assets/test_05.mid");
+         
+		
 		if (inName=="assets/VGA9x16.png")
 			 
             return Assets.getBitmapData ("assets/VGA9x16.png");
@@ -164,6 +174,14 @@ class ApplicationMain {
 
 	
 		class NME_assets_test_03_mid extends nme.utils.ByteArray { }
+	
+
+	
+		class NME_assets_test_04_mid extends nme.utils.ByteArray { }
+	
+
+	
+		class NME_assets_test_05_mid extends nme.utils.ByteArray { }
 	
 
 	

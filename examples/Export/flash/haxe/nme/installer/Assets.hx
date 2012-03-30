@@ -48,6 +48,10 @@ class Assets {
 			resourceTypes.set ("assets/test_02.mid", "asset");
 			resourceClasses.set ("assets/test_03.mid", NME_assets_test_03_mid);
 			resourceTypes.set ("assets/test_03.mid", "asset");
+			resourceClasses.set ("assets/test_04.mid", NME_assets_test_04_mid);
+			resourceTypes.set ("assets/test_04.mid", "asset");
+			resourceClasses.set ("assets/test_05.mid", NME_assets_test_05_mid);
+			resourceTypes.set ("assets/test_05.mid", "asset");
 			resourceClasses.set ("assets/VGA9x16.png", NME_assets_vga9x16_png);
 			resourceTypes.set ("assets/VGA9x16.png", "image");
 			
