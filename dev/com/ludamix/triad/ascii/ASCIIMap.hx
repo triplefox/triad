@@ -1,4 +1,4 @@
-package com.ludamix.triad.blitter;
+package com.ludamix.triad.ascii;
 
 import com.ludamix.triad.blitter.Blitter;
 import com.ludamix.triad.grid.IntGrid;

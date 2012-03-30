@@ -1,5 +1,5 @@
-import com.ludamix.triad.blitter.ASCIIMap;
-import com.ludamix.triad.blitter.ASCIISheet;
+import com.ludamix.triad.ascii.ASCIIMap;
+import com.ludamix.triad.ascii.ASCIISheet;
 import com.ludamix.triad.AssetCache;
 import nme.events.Event;
 import nme.Lib;
