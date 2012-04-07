@@ -1,4 +1,6 @@
-import com.ludamix.triad.AssetCache;
+import com.ludamix.triad.io.AssetCache;
+
+// Not for use in Flash.
 
 class AssetReloading
 {

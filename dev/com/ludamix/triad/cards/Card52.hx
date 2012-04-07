@@ -5,13 +5,13 @@ class Card52 extends Card
 	
 	public var idx : Int;
 	
-	public static inline var suitNames = ["Spades","Hearts","Diamonds","Clubs"]; // bridge ordering
-	public static inline var valueNames = ["Ace","2","3","4","5","6","7","8","9","10","Jack","Queen","King"];
+	public static inline var suit_names = ["Spades","Hearts","Diamonds","Clubs"]; // bridge ordering
+	public static inline var value_names = ["Ace","2","3","4","5","6","7","8","9","10","Jack","Queen","King"];
 	
 	public function suit() { return Std.int(idx % 4); }
 	public function value() { return Std.int(idx/4) + 1;	}
-	public function suitName() { return suitNames[Std.int(idx % 4)]; }
-	public function valueName() { return valueNames[Std.int(idx/4)];	}
+	public function suitName() { return suit_names[Std.int(idx % 4)]; }
+	public function valueName() { return value_names[Std.int(idx/4)];	}
 	
 	public function new(suit : Int, value : Int, ?owner : String) 
 	{

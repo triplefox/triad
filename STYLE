@@ -1,0 +1,54 @@
+-----------
+Line length
+
+Aim for ~120 max. Unless you have a good reason.
+
+That is out to -------------------------------------------------------------------------------------------------------->
+
+-----------
+Brace and indentation style
+
+public function foo()
+{
+	
+	...
+	
+}
+
+class Foo
+{
+	
+	public var x : Int;
+	public var y : Int;
+	public var z : Int;
+	
+	public function new(x,y,z) 
+	{ 
+		this.x = x;
+		this.y = y;
+		this.z = z;
+	}
+	
+	...
+	
+}
+
+or 
+
+public function mini() {        ...        }
+
+class Mini {public var x : Int; public var y : Int; public var z : Int; 
+	public function new(x,y,z) { this.x = x; this.y = y; this.z = z; } }
+
+If the function or class is taking more than 2-3 lines, don't use the mini style.
+
+-----------
+Naming conventions
+
+ClassNameIsCamelCase
+methodsAreLowerCamelCase
+variables_are_snaky_case
+compactvarsoksometimes (mostly as locals and really common stuff)
+CONSTANT_OR_GLOBAL
+
+If you aren't using a parameter you can call it "_" instead.

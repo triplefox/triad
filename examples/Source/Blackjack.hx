@@ -46,9 +46,9 @@ class Blackjack
 			Card52.spriteNaming);
 		game = new BlackjackGame();
 		deck = new BlittableDeck52([ 
-			{ hand:"deck", x : 64., y : 20.+SPRH/2, spacing : 0., max : 0., func : BlittableDeck52.render_pile },
-			{ hand:"player", x : 64., y : 128.+SPRH/2, spacing : 8., max : 512-128., func : BlittableDeck52.render_rowRight },
-			{ hand:"dealer", x : 64., y : 228.+SPRH/2, spacing : 8., max : 512-128., func : BlittableDeck52.render_rowRight }
+			{ hand:"deck", x : 64., y : 20.+SPRH/2, spacing : 0., max : 0., func : BlittableDeck52.renderPile },
+			{ hand:"player", x : 64., y : 128.+SPRH/2, spacing : 8., max : 512-128., func : BlittableDeck52.renderRowRight },
+			{ hand:"dealer", x : 64., y : 228.+SPRH/2, spacing : 8., max : 512-128., func : BlittableDeck52.renderRowRight }
 		], game, null);
 		
 		CommonStyle.init();

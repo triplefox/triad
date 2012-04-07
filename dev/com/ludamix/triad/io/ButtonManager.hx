@@ -1,4 +1,4 @@
-package com.ludamix.triad;
+package com.ludamix.triad.io;
 
 import nme.events.Event;
 import nme.events.KeyboardEvent;
@@ -108,8 +108,7 @@ class ButtonManager
 			return "Can't bind two keys at once!";
 		this.toBind = toBind;
 		this.onComplete = onComplete;
-		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN,
-		bind , false, 1, false);
+		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, bind, false, 1, false);
 		return ["Press the key for", toBind,"(ESC to cancel)"].join(" ");
 	}
 	

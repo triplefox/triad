@@ -22,7 +22,10 @@ class Audio
 	
 	public static var channels = new Hash<{snd:String,mixgroup:String,instance : SoundChannel, timestamp:Float, vol:Float}>();
 	
-	public static var mix : SharedObject;	
+	public static var SFXCHANNEL = "SFX";
+	public static var BGMCHANNEL = "BGM";
+	
+	public static var mix : SharedObject;
 	
 	public static function mixLevel(group : String) : Float
 	{
@@ -39,7 +42,8 @@ class Audio
 		var snd = Assets.getSound(soundname);
 		if (snd == null ) throw "Undefined sound asset " + soundname;
 		var sc = snd.play(startTime,loops,tfm);
-		channels.set(name, {vol:vol,snd:soundname,mixgroup:mixgroup,instance:sc,timestamp:Timer.stamp()+timestamp});			
+		channels.set(name, { vol:vol, snd:soundname, mixgroup:mixgroup, instance:sc, timestamp:Timer.stamp() + timestamp } );
+		return sc;
 	}
 	
 	private static function _channelStop(name:String)
@@ -82,7 +86,7 @@ class Audio
 	}
 	
 	public static function channelPlay(name:String, soundname : String, mixgroup : String,
-		startTime : Float, loops:Int, vol : Float, pan : Float, timestamp : Float, mode : ChannelMode)
+		startTime : Float, loops:Int, vol : Float, pan : Float, timestamp : Float, mode : ChannelMode) : SoundChannel
 	{
 		switch(mode)
 		{
@@ -90,28 +94,29 @@ class Audio
 				if (_timestampReady(name)) 
 				{ 
 					_channelStop(name); 
-					_channelPlay(name, soundname, mixgroup, startTime, loops, vol, pan, timestamp);
+					return _channelPlay(name, soundname, mixgroup, startTime, loops, vol, pan, timestamp);
 				}
 			case WaitForTimestampOrDifferent:
 				if (_timestampReady(name) || _soundDifferent(name,soundname)) 
 				{ 
 					_channelStop(name); 
-					_channelPlay(name, soundname, mixgroup, startTime, loops, vol, pan, timestamp);
+					return _channelPlay(name, soundname, mixgroup, startTime, loops, vol, pan, timestamp);
 				}
 			case OverwriteAlways:
 				_channelStop(name); 
-				_channelPlay(name, soundname, mixgroup, startTime, loops, vol, pan, timestamp);
+				return _channelPlay(name, soundname, mixgroup, startTime, loops, vol, pan, timestamp);
 			case OverwriteIfDifferentElseModify:
 				if (_soundDifferent(name,soundname)) 
 				{ 
 					_channelStop(name); 
-					_channelPlay(name, soundname, mixgroup, startTime, loops, vol, pan, timestamp);
+					return _channelPlay(name, soundname, mixgroup, startTime, loops, vol, pan, timestamp);
 				}
 				else
 					_channelModify(name, vol, pan);
 			case ModifyOnly:
 				_channelModify(name, vol, pan);
 		}
+		return null;
 	}
 	
 	public static function stop(name:String)
@@ -121,24 +126,24 @@ class Audio
 	
 	public static function play(name:String, ?vol = 1.0, ?pan = 0., ?timestamp = 0.1)
 	{	
-		channelPlay(name, name, "SFX", 0, 1, vol, pan, timestamp, WaitForTimestampOrDifferent);
+		return channelPlay(name, name, SFXCHANNEL, 0, 1, vol, pan, timestamp, WaitForTimestampOrDifferent);
 	}
 	
 	public static function playLoop(name:String, ?vol = 1.0, ?pan = 0., ?timestamp = 0.1)
 	{	
-		channelPlay(name, name, "SFX", 0, 9999999, vol, pan, timestamp, WaitForTimestampOrDifferent);
+		return channelPlay(name, name, SFXCHANNEL, 0, 9999999, vol, pan, timestamp, WaitForTimestampOrDifferent);
 	}
 	
 	public static function ambient(name : String, ?vol = 1.0, ?pan = 0.)
 	{
 		/* For ambient loops (e.g. wind, birds, etc.) */
-		channelPlay("ambient", name, "SFX", 0, 9999999, vol, pan, 0, OverwriteIfDifferentElseModify);
+		return channelPlay("ambient", name, SFXCHANNEL, 0, 9999999, vol, pan, 0, OverwriteIfDifferentElseModify);
 	}
 	
 	public static function music(name : String, ?vol = 1.0, ?pan = 0.)
 	{
 		/* For persistent music */
-		channelPlay("music", name, "BGM", 0, 9999999, vol, pan, 0, OverwriteIfDifferentElseModify);
+		return channelPlay("music", name, BGMCHANNEL, 0, 9999999, vol, pan, 0, OverwriteIfDifferentElseModify);
 	}
 	
 	public static function setMixgroup(name:String, setOn : Bool)

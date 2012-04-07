@@ -12,14 +12,20 @@ package com.ludamix.triad.entity;
  * When you need to be clean, you can use listener calls everywhere to attain as much abstraction as necessary;
  * When you need to grab data fast, you can dive into the raw database functionality.
  * 
- * Property bags and tagging are included to assist the creation of entity groups, queues, etc.
+ * The system has, built-in:
  * 
- * (Serializing this system effectively requires serialization of closures and is a major source of complexity)
+ * 	  1. Spawning: An array of "listener templates" is passed in. The templates are combined,
+ *       and the "spawn" listener is called by default.
+ *    2. Despawning: Entities have to ask to be despawnable via the createDespawnable template.
+ *       Then on calling "despawn" they are queued for removal. In the main loop, when flushEntities() is called,
+ *       the events in "on_despawn" are performed. This allows a mix of deferred and immediate actions to be taken.
+ *    2. Tags and property bags. Apply the createTag and createBag templates.
  * 
  */
 
 typedef ListenerHash = Hash<Array<Dynamic>>; 
-typedef EListener = Dynamic->Array<ERow>->Dynamic->Dynamic;
+typedef EStack = List<ERow>;
+typedef EListener = Dynamic->EStack->Dynamic->Dynamic;
 
 class EDatabase
 {
@@ -29,12 +35,14 @@ class EDatabase
 	
 	public var tags : Hash<Array<ERow>>;
 	public var bags : Array<Dynamic>;
+	public var removequeue : Array<ERow>;
 	
 	public function new()
 	{
 		rows = new IntHash();
 		tags = new Hash();
 		bags = new Array();
+		removequeue = new Array();
 		id_increment = 0;
 	}
 	
@@ -45,59 +53,117 @@ class EDatabase
 		return id_increment;
 	}
 	
-	public function spawn(listener_object : Dynamic)
+	public function spawn(listener_objects : Array<Dynamic>, ?andCall = "spawn")
  	{
+		// spawns an object based on any number of listener template objects stacked together
+		var obj : Dynamic = { };
+		for (lo in listener_objects)
+		{
+			for (f in Reflect.fields(lo))
+			{
+				var content : Dynamic = Reflect.field(lo, f);
+				var existing = Reflect.field(obj, f);
+				if (existing == null)
+				{
+					Reflect.setField(obj, f, content);
+				}
+				else
+				{
+					for (c in cast(content,Array<Dynamic>)) existing.push(c);
+				}
+			}
+		}
+		
 		var h = new ListenerHash();
-		for (f in Reflect.fields(listener_object))
-			h.set(f, Reflect.field(listener_object, f));
-		return new ERow(getFreeId(), h);
+		for (f in Reflect.fields(obj))
+		{
+			var content = Reflect.field(obj, f);
+			h.set(f, content);
+		}
+		var row = new ERow(getFreeId(), h);
+		rows.set(row.id, row);
+		if (andCall != null) call(row, andCall);
+		return row;
 	}
 	
 	public inline function call(target : ERow, listener : String, ?payload : Dynamic = null,
-		?stack : Array<ERow>=null) : Dynamic
+		?stack : EStack=null) : Dynamic
 	{
 		if (stack==null)
-			return target.call(this, new Array<ERow>(), listener, payload);
+			return target.call(this, new EStack(), listener, payload);
 		else
 			return target.call(this, stack, listener, payload);
 	}
 	
-	public function tag(db : EDatabase, stack : Array<ERow>, payload : {name:String,get:String,remove:String})
+	public function createTags(names_input : Array<String>)
 	{
-		var tagset : Array<ERow> = db.tags.get(payload.name);
-		if (tagset==null)
-		{
-			tagset = new Array(); db.tags.set(payload.name, tagset);
+		var names = new Array<String>();
+		
+		var do_spawn : Dynamic = null;
+		var do_get : Dynamic = null;
+		var do_tag : Dynamic = null;
+		var do_untag : Dynamic = null;
+		var on_despawn : Dynamic = null;
+		
+		do_get = function(db : EDatabase, stack : EStack, payload : Dynamic) 
+		{ if (payload == null) throw "pass in an array"; else 
+			{for (name in names) {payload.push(name);} return payload;} }
+		do_tag = function(db : EDatabase, stack : EStack, payload : Dynamic) 
+		{ 
+			names.push(payload);  
+			var tagset : Array<ERow> = tags.get(payload);
+			if (tagset==null)
+			{
+				tagset = new Array(); tags.set(payload, tagset);
+			}
+			tagset.push(stack.last());
 		}
-		tagset.push(stack[stack.length - 1]);
-		var on_remove : Dynamic = null;
-		var on_get : Dynamic = null;
-		on_get = function(db : EDatabase, stack : Array<ERow>, _payload : Dynamic) 
-		{ return payload.name; }
-		on_remove = function(db : EDatabase, stack : Array<ERow>, _payload : Dynamic) 
-			{ tagset.remove(stack[stack.length - 1]); 
-			  stack[stack.length - 1].unlisten(payload.get,on_get);
-			  stack[stack.length - 1].unlisten(payload.remove, on_remove); return true;  }
-		stack[stack.length - 1].listen(payload.get, on_get);
-		stack[stack.length - 1].listen(payload.remove, on_remove);
-		return {tagset:tagset,on_get:on_get,on_remove:on_remove};
+		do_untag = function(db : EDatabase, stack : EStack, payload : Dynamic) 
+		{ 
+			names.remove(payload);  
+			var tagset : Array<ERow> = tags.get(payload);
+			if (tagset!=null)
+			{
+				tagset.remove(stack.last());
+			}
+		}
+		do_spawn = function(db : EDatabase, stack : EStack, payload : Dynamic) 
+			{ for (name in names_input) {db.call(stack.last(), "tag", name);} }
+		on_despawn = function(db : EDatabase, stack : EStack, payload : Dynamic) 
+			{ for (name in names) { db.call(stack.last(), "untag", name); } }
+			return { tags:[do_get], tag:[do_tag], untag:[do_untag], spawn:[do_spawn], on_despawn:[on_despawn] };
 	}
 	
-	public function bag(db : EDatabase, stack : Array<ERow>, payload : { data:Dynamic, get:String, remove:String } )
+	public function createBag(name : String, data : Dynamic)
 	{
-		var _bag : Dynamic = payload.data;
-		bags.push(_bag);
-		var on_get : Dynamic = null;
-		var on_remove : Dynamic = null;
-		on_get = function(db : EDatabase, stack : Array<ERow>, _payload : Dynamic) 
-			{ return _bag; }
-		on_remove = function(db : EDatabase, stack : Array<ERow>, _payload : Dynamic) 
-			{ bags.remove(_bag);
-			  stack[stack.length - 1].unlisten(payload.get,on_get);
-			  stack[stack.length - 1].unlisten(payload.remove,on_remove); }
-		stack[stack.length - 1].listen(payload.get, on_get);
-		stack[stack.length - 1].listen(payload.remove, on_remove);
-		return {on_get:on_get,on_remove:on_remove};
+		var do_spawn : Dynamic = null;
+		var do_get : Dynamic = null;
+		var on_despawn : Dynamic = null;
+		do_spawn = function(db : EDatabase, stack : EStack, payload : Dynamic) 
+			{ bags.push(data); }
+		do_get = function(db : EDatabase, stack : EStack, payload : Dynamic) 
+			{ return data; }
+		on_despawn = function(db : EDatabase, stack : EStack, payload : Dynamic) 
+			{ bags.remove(data); }
+		return { name:[do_get], spawn:[do_spawn], on_despawn:[on_despawn] };		
+	}
+	
+	public function createDespawnable()
+	{
+		return {
+			despawn:[function(db : EDatabase, stack : EStack, payload : Dynamic)
+				{ var me = stack.last(); db.removequeue.remove(me); db.removequeue.push(me); } ]
+		};
+	}
+	
+	public function flushEntities()
+	{
+		while(removequeue.length>0)
+		{
+			var n = removequeue.pop();
+			call(n, "on_despawn");
+			rows.remove(n.id);
+		}
 	}
 	
 }
@@ -118,16 +184,18 @@ class ERow
 	}
 	
 	public inline function call(db : EDatabase,
-		stack : Array<ERow>, listener : String, ?payload : Dynamic = null) : Dynamic
+		stack : EStack, listener : String, ?payload : Dynamic = null) : Dynamic
 	{
 		var result = null;
 		var lar : Array<Dynamic> = listeners.get(listener);
 		if (lar != null)
 		{
-			stack.push(this);
+			stack.add(this);
 			for (l in lar)
 			{
-				result = l(db, stack.copy(), payload);
+				var copy = new EStack();
+				for (n in stack) copy.add(n);
+				result = l(db, copy, payload);
 			}
 		}
 		return result;

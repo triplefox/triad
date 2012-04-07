@@ -22,39 +22,39 @@ class BlitterTileInfos
 class Blitter extends Bitmap
 {
 	
-	public var spriteCache : Hash<BitmapData>;
-	public var tileCache : Hash<BlitterTileInfos>;
-	public var spriteQueue : Array<Array<BlitterQueueInfos>>;
-	public var eraseQueue : Array<Rectangle>;
+	public var sprite_cache : Hash<BitmapData>;
+	public var tile_cache : Hash<BlitterTileInfos>;
+	public var sprite_queue : Array<Array<BlitterQueueInfos>>;
+	public var erase_queue : Array<Rectangle>;
 	
-	public var fillColor : Int;
+	public var fill_color : Int;
 	
 	public inline function getFillColor() : BitmapInt32
 	{
 		#if neko
-			return {a:0xFF,rgb:fillColor};
+			return {a:0xFF,rgb:fill_color};
 		#else
-			return fillColor;
+			return fill_color;
 		#end
 	}
 	
 	public function new(width : Int, height : Int, transparent : Bool, color : Int, ?zlevels : Int = 32)
 	{
-		fillColor = color;
+		fill_color = color;
 			super(new BitmapData(width, height, transparent, getFillColor()));
-		spriteCache = new Hash();
-		tileCache = new Hash();
-		spriteQueue = new Array();
-		eraseQueue = new Array();
+		sprite_cache = new Hash();
+		tile_cache = new Hash();
+		sprite_queue = new Array();
+		erase_queue = new Array();
 		for (n in 0...zlevels)
 		{
-			spriteQueue.push(new Array());
+			sprite_queue.push(new Array());
 		}
 	}
 	
 	public inline function store(name : String, data : BitmapData)
 	{
-		spriteCache.set(name, data);
+		sprite_cache.set(name, data);
 	}
 	
 	public function storeTiles(bd : BitmapData, twidth : Int, theight : Int, naming : Int->String)
@@ -68,7 +68,7 @@ class Blitter extends Bitmap
 		{
 			while (x<bd.width)
 			{
-				tileCache.set(naming(ct), new BlitterTileInfos(bd, new Rectangle(x, y, twidth, theight)));
+				tile_cache.set(naming(ct), new BlitterTileInfos(bd, new Rectangle(x, y, twidth, theight)));
 				x += twidth;
 				ct++;
 			}
@@ -80,37 +80,37 @@ class Blitter extends Bitmap
 	
 	public inline function queueName(spr : String, x : Int, y : Int, z : Int)
 	{
-		if (tileCache.exists(spr))
+		if (tile_cache.exists(spr))
 		{
-			var tile = tileCache.get(spr);
-			spriteQueue[z].push( new BlitterQueueInfos(tile.bd, tile.rect, x, y));
+			var tile = tile_cache.get(spr);
+			sprite_queue[z].push( new BlitterQueueInfos(tile.bd, tile.rect, x, y));
 		}
-		else if (spriteCache.exists(spr))
+		else if (sprite_cache.exists(spr))
 		{
-			var sprite = spriteCache.get(spr);
-			spriteQueue[z].push( new BlitterQueueInfos(sprite, sprite.rect, x, y));
+			var sprite = sprite_cache.get(spr);
+			sprite_queue[z].push( new BlitterQueueInfos(sprite, sprite.rect, x, y));
 		}
 	}
 	
 	public inline function queueBD(spr : BitmapData, x : Int, y : Int, z : Int)
 	{
-		spriteQueue[z].push(new BlitterQueueInfos(spr, spr.rect, x, y));
+		sprite_queue[z].push(new BlitterQueueInfos(spr, spr.rect, x, y));
 	}
 	
 	public inline function queueBDRect(spr : BitmapData, rect : Rectangle, x : Int, y : Int, z : Int)
 	{
-		spriteQueue[z].push(new BlitterQueueInfos(spr, rect, x, y));
+		sprite_queue[z].push(new BlitterQueueInfos(spr, rect, x, y));
 	}
 	
 	public function update()
 	{
 		bitmapData.lock();
-		for (n in eraseQueue)
+		for (n in erase_queue)
 			bitmapData.fillRect(n, getFillColor());
-		eraseQueue = new Array();
+		erase_queue = new Array();
 		var pt = new Point(0., 0.);
 		var pt2 = new Point(0., 0.);
-		for (layer in this.spriteQueue)
+		for (layer in this.sprite_queue)
 		{
 			while (layer.length>0)
 			{
@@ -118,7 +118,7 @@ class Blitter extends Bitmap
 				pt.x = n.x;
 				pt.y = n.y;
 				bitmapData.copyPixels(n.bd, n.rect, pt, n.bd, pt2, true);
-				eraseQueue.push(n.rect);
+				erase_queue.push(n.rect);
 			}
 		}
 		bitmapData.unlock();

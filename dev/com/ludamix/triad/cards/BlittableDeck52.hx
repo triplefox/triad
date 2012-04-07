@@ -30,70 +30,70 @@ class BlittableDeck52 extends SubINode
 			return spacing;
 	}
 	
-	public static function render_pile(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, cardRect : AABB)
+	public static function renderPile(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, card_rect : AABB)
 	{
 		if (idx < 8) return new Point( x - Std.int(idx/2)*2, y - Std.int(idx/2)*2); else return new Point( x - 8, y - 8);
 	}
 	
-	public static function render_rowRight(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, cardRect : AABB)
+	public static function renderRowRight(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, card_rect : AABB)
 	{
-		var sp = space(spacing + cardRect.wf(), items, max);
+		var sp = space(spacing + card_rect.wf(), items, max);
 		return new Point( x+idx*sp, y);
 	}
 	
-	public static function render_rowLeft(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, cardRect : AABB)
+	public static function renderRowLeft(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, card_rect : AABB)
 	{
-		var sp = space(spacing + cardRect.wf(), items, max);
+		var sp = space(spacing + card_rect.wf(), items, max);
 		return new Point( x-idx*sp, y);
 	}
 	
-	public static function render_rowCenter(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, cardRect : AABB)
+	public static function renderRowCenter(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, card_rect : AABB)
 	{
-		var sp = space(spacing + cardRect.wf(), items, max);
+		var sp = space(spacing + card_rect.wf(), items, max);
 		var basePos = sp * idx;
 		var centerLine = items * sp / 2;
 		return new Point( x + basePos - centerLine, y);
 	}
 	
-	public static function render_colBottom(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, cardRect : AABB)
+	public static function renderColBottom(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, card_rect : AABB)
 	{
-		var sp = space(spacing + cardRect.hf(), items, max);
+		var sp = space(spacing + card_rect.hf(), items, max);
 		return new Point( x, -idx*sp+y);
 	}
 	
-	public static function render_colTop(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, cardRect : AABB)
+	public static function renderColTop(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, card_rect : AABB)
 	{
-		var sp = space(spacing + cardRect.hf(), items, max);
+		var sp = space(spacing + card_rect.hf(), items, max);
 		return new Point( x, idx*sp - max/2 + y);
 	}
 	
-	public static function render_colCenter(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, cardRect : AABB)
+	public static function renderColCenter(idx : Int, x : Float, y : Float, spacing : Float, items : Int, max : Int, card_rect : AABB)
 	{
-		var sp = space(spacing + cardRect.hf(), items, max);
+		var sp = space(spacing + card_rect.hf(), items, max);
 		var basePos = sp * idx;
 		var centerLine = items * sp / 2;
 		return new Point( x, y + basePos - centerLine);
 	}
 	
-	public inline function renderDeck(deck : Deck, blitter : Blitter, cardRect : AABB)
+	public inline function renderDeck(deck : Deck, blitter : Blitter, card_rect : AABB)
 	{
-		var r = rect(cardRect);
+		var r = rect(card_rect);
 		for (hdef in hands)
 		{
 			var hand = deck.hand(hdef.hand);
 			for (n in 0...hand.cards.length)
 			{
 				var spt = SubIPoint.fromFPoint(hdef.func(
-					n, hdef.x, hdef.y, hdef.spacing, hand.cards.length, hdef.max, cardRect) );
+					n, hdef.x, hdef.y, hdef.spacing, hand.cards.length, hdef.max, card_rect) );
 				spt.x += r.cx();
 				spt.y += r.cy();
 				renderCard(cast(hand.cards[n], Card52), 
-					spt, blitter, Std.int(Math.min(blitter.spriteQueue.length-1, n)));
+					spt, blitter, Std.int(Math.min(blitter.sprite_queue.length-1, n)));
 			}			
 		}
 	}
 	
-	public inline function testCards(deck : Deck, cardRect : AABB, mp : SubIPoint)
+	public inline function testCards(deck : Deck, card_rect : AABB, mp : SubIPoint)
 	{
 		var results = new Array<Card>();
 		for (hdef in hands)
@@ -102,8 +102,8 @@ class BlittableDeck52 extends SubINode
 			for (n in 0...hand.cards.length)
 			{
 				var spt = SubIPoint.fromFPoint(hdef.func(
-					n, hdef.x, hdef.y, hdef.spacing, hand.cards.length, hdef.max, cardRect) );
-				var r = rect(cardRect);
+					n, hdef.x, hdef.y, hdef.spacing, hand.cards.length, hdef.max, card_rect) );
+				var r = rect(card_rect);
 				r.x = spt.x + r.cx();	
 				r.y = spt.y + r.cy();
 				if (r.containsPoint(mp))

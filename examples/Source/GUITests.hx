@@ -1,4 +1,4 @@
-import com.ludamix.triad.ButtonManager;
+import com.ludamix.triad.io.ButtonManager;
 import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.audio.Audio;
 import com.ludamix.triad.ui.Helpers;
@@ -31,7 +31,7 @@ class GUITests
 											{ name:"Right", code:{keyCode:Keyboard.RIGHT,charCode:0}, group:"Movement" } ],
 											0);
 		Audio.init();
-											
+		
 		var bg = new Sprite();
 		bg.graphics.beginFill(0xFF00FF,1.0);
 		bg.graphics.drawRect(0, 0, Lib.current.stage.stageWidth, Lib.current.stage.stageHeight);

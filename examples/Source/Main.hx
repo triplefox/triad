@@ -1,9 +1,7 @@
-//typedef MyExample = GUITests;
+typedef MyExample = GUITests;
 //typedef MyExample = Blackjack;
-//typedef MyExample = Invaders;
-//typedef MyExample = EntitySystem;
 //typedef MyExample = ASCIITest;
-typedef MyExample = SynthTest;
+//typedef MyExample = SynthTest;
 //typedef MyExample = AssetReloading;
 //typedef MyExample = Assistant;
 

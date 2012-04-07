@@ -1,4 +1,4 @@
-package com.ludamix.triad;
+package com.ludamix.triad.io;
 
 import haxe.io.Bytes;
 import haxe.Resource;

@@ -50,7 +50,7 @@ class TriadAssistant extends Sprite
 				function(e:KeyboardEvent) { var kei : Int = e.keyCode; if (kei == keyToggle) { toggle(); }} );
 		if (keyTear > 0)
 			Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, 
-				function(e:KeyboardEvent) { var kei : Int = e.keyCode; if (kei == keyTear) { toggle_tear(); }} );
+				function(e:KeyboardEvent) { var kei : Int = e.keyCode; if (kei == keyTear) { toggleTear(); }} );
 		
 	}
 	
@@ -103,7 +103,7 @@ class TriadAssistant extends Sprite
 		}
 	}
 	
-	public function toggle_tear(?_)
+	public function toggleTear(?_)
 	{
 		switch(state)
 		{
@@ -129,9 +129,9 @@ class TriadAssistant extends Sprite
 		sidebar_internal = null;
 		
 		var app_names = Lambda.map(apps, function(a:Dynamic) 
-			{   var btn = Helpers.labelButtonRect9(buttondef, a.app_id()).button;
+			{   var btn = Helpers.labelButtonRect9(buttondef, a.appId()).button;
 				btn.addEventListener(MouseEvent.CLICK, function(_) { setApp(a); } );
-				return LDDisplayObject(btn, LAC(0, 0), a.app_id()); } );
+				return LDDisplayObject(btn, LAC(0, 0), a.appId()); } );
 		var app_ratios = Lambda.map(apps, function(a:Dynamic) 
 			{ return LSMinimum; } );
 		app_names.add(LDEmpty);

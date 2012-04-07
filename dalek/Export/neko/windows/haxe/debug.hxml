@@ -1,0 +1,14 @@
+-main ApplicationMain 
+-D nme_install_tool
+-cp Source
+-lib nme
+-lib hxJson2
+-lib format
+-lib triad
+-lib hscript
+-D desktop
+-cp Export/neko/windows/haxe
+-cp Export/neko/haxe
+-neko Export/neko/windows/obj/ApplicationMain.n
+--remap flash:nme
+-debug

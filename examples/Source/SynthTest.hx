@@ -1,3 +1,5 @@
+import com.ludamix.triad.audio.SMFParser;
+import com.ludamix.triad.audio.TableSynth;
 import nme.Assets;
 import nme.events.Event;
 import flash.events.SampleDataEvent;
@@ -6,6 +8,8 @@ import nme.media.Sound;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.audio.Audio;
 import com.ludamix.triad.ui.SettingsUI;
+
+// Not for use outside Flash.
 
 class SynthTest
 {
@@ -18,7 +22,7 @@ class SynthTest
 		Audio.init({Volume:{vol:1.0,on:true}},true);
 		seq = new Sequencer();
 		for (n in 0...64)
-			seq.addSynth(new SquareWave());
+			seq.addSynth(new TableSynth());
 		for (n in 0...16)
 			seq.addChannel(seq.synths);
 		
@@ -31,14 +35,14 @@ class SynthTest
 		
 		seq.play("synth", "Volume");
 		
-		events = SMFParser.load(seq, Assets.getBytes("assets/test_03.mid"));
+		events = SMFParser.load(seq, Assets.getBytes("assets/test_04.mid"));
 		for (n in events)
 		{
 			if (n.channel == 9 || n.channel == 11) // mute some instruments that translate poorly
 				n.type = SequencerEvent.NOTE_OFF;
 		}
 		
-		CommonStyle.init();
+		CommonStyle.init(null,"assets/sfx_test.mp3");
 		
 		Lib.current.stage.addChild(CommonStyle.settings);
 		

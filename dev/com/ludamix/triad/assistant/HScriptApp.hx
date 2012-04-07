@@ -27,7 +27,7 @@ class HScriptApp extends AssistantApp
 		this.interp = interp;
 	}
 	
-	public override function app_id() { return "HScript"; }
+	public override function appId() { return "HScript"; }
 	
 	public override function init(assistant) 
 	{ 

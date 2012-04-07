@@ -60,7 +60,7 @@ class ASCIISheet
 				#else
 					var modsheet = new BitmapData(sheet.width, sheet.height, false, bg_color);
 				#end
-				modsheet.draw(sheet, new Matrix(), new ColorTransform(1.0, 1.0, 1.0, 1.0, rgb.r, rgb.g, rgb.b, 0));
+				modsheet.draw(sheet, new Matrix(), new ColorTransform(0.0, 0.0, 0.0, 1.0, rgb.r, rgb.g, rgb.b, 0));
 				storeTiles(modsheet, twidth, theight, fct);
 			}
 			fct++;

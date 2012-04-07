@@ -1,4 +1,4 @@
-package com.ludamix.triad;
+package com.ludamix.triad.io;
 
 import flash.display.Bitmap;
 import flash.display.BitmapData;

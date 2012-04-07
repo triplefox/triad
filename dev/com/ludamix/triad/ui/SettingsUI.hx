@@ -6,7 +6,7 @@ import nme.geom.Rectangle;
 import nme.events.MouseEvent;
 
 import com.ludamix.triad.audio.Audio;
-import com.ludamix.triad.ButtonManager;
+import com.ludamix.triad.io.ButtonManager;
 import com.ludamix.triad.ui.Button;
 import com.ludamix.triad.ui.CascadingText;
 import com.ludamix.triad.ui.CheckBox;
@@ -18,7 +18,7 @@ import com.ludamix.triad.ui.layout.LayoutBuilder;
 class SettingsUI extends Sprite
 {
 	
-	var onClose : Void->Void;
+	public var onClose : Void->Void;
 	var bindingUI : LayoutResult;
 	var layout : LayoutResult;
 	var bindings : ButtonManager;

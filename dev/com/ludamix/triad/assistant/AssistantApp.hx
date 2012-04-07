@@ -11,7 +11,7 @@ class AssistantApp extends Sprite
 	
 	public var assistant : TriadAssistant;
 	
-	public function app_id() { return "Appname"; }
+	public function appId() { return "Appname"; }
 	public function init(assistant) { this.assistant = assistant; }
 	
 	public function getSize()

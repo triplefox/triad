@@ -11,7 +11,7 @@ class LoggerApp extends AssistantApp
 	public var text : TextField;
 	public var buf : Int;
 	
-	public override function app_id() { return "Logger"; }
+	public override function appId() { return "Logger"; }
 	
 	public override function init(assistant) 
 	{ 

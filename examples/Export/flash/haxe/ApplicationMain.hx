@@ -110,9 +110,19 @@ class ApplicationMain {
             return Assets.getBytes ("assets/test_05.mid");
          
 		
+		if (inName=="assets/VGA8x16.png")
+			 
+            return Assets.getBitmapData ("assets/VGA8x16.png");
+         
+		
 		if (inName=="assets/VGA9x16.png")
 			 
             return Assets.getBitmapData ("assets/VGA9x16.png");
+         
+		
+		if (inName=="assets/xbintest.xbin")
+			 
+            return Assets.getBytes ("assets/xbintest.xbin");
          
 		
 		
@@ -185,5 +195,13 @@ class ApplicationMain {
 	
 
 	
+		class NME_assets_vga8x16_png extends nme.display.BitmapData { public function new () { super (0, 0); } }
+	
+
+	
 		class NME_assets_vga9x16_png extends nme.display.BitmapData { public function new () { super (0, 0); } }
+	
+
+	
+		class NME_assets_xbintest_xbin extends nme.utils.ByteArray { }
 	

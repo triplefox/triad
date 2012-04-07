@@ -18,28 +18,28 @@ class Deck
 		else { hands.set(name, new Hand(name)); return hands.get(name); }
 	}
 	
-	public function push(card : Card, ?handName : String)
+	public function push(card : Card, ?hand_name : String)
 	{
 		cards.push(card);
-		if (handName != null)
-			hand(handName).push(card);
+		if (hand_name != null)
+			hand(hand_name).push(card);
 	}
 	
-	public function drawAndMove(handFrom : String, handTo : String, ?position = -1)
+	public function drawAndMove(handFrom : String, hand_to : String, ?position = -1)
 	{
 		var c = hand(handFrom).draw();
-		moveCard(c, handTo, position);
+		moveCard(c, hand_to, position);
 		return c;
 	}
 	
-	public function moveCard(card : Card, handTo : String, ?position = -1)
+	public function moveCard(card : Card, hand_to : String, ?position = -1)
 	{
 		for (h in hands)
 			h.remove(card);
 		if (position==-1)
-			hand(handTo).insert(card, hand(handTo).cards.length);
+			hand(hand_to).insert(card, hand(hand_to).cards.length);
 		else
-			hand(handTo).insert(card, position);
+			hand(hand_to).insert(card, position);
 	}
 	
 	public function withAllCards(func : Dynamic->Void)
@@ -50,9 +50,9 @@ class Deck
 		}
 	}
 	
-	public function withCardsIn(handName : String, func : Dynamic->Void)
+	public function withCardsIn(hand_name : String, func : Dynamic->Void)
 	{
-		for (n in hand(handName).cards.copy())
+		for (n in hand(hand_name).cards.copy())
 		{
 			func(n);
 		}
