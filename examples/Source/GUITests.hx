@@ -6,9 +6,12 @@ import com.ludamix.triad.ui.CascadingText;
 import com.ludamix.triad.ui.HScrollbar6;
 import com.ludamix.triad.ui.layout.LayoutBuilder;
 import com.ludamix.triad.ui.HSlider6;
+import com.ludamix.triad.ui.ScrollArea;
 import com.ludamix.triad.ui.Rect9;
 import com.ludamix.triad.ui.SettingsUI;
 import nme.Assets;
+import nme.display.Bitmap;
+import nme.display.BitmapData;
 import nme.display.SimpleButton;
 import nme.display.Sprite;
 import nme.geom.Rectangle;
@@ -58,9 +61,16 @@ class GUITests
 		
 		Lib.current.stage.addChild(btn.button);
 		
-		var hs = new HSlider6(Assets.getBitmapData("assets/slider.png"), 16, 16, 120, 0.5, SliderRepeat, null);
-		var hs2 = new HSlider6(Assets.getBitmapData("assets/slider2.png"), 16, 16, 120, 0.5, SliderRepeat, null, 0, false);
-		var scroll = new HScrollbar6(Assets.getBitmapData("assets/scrollbar.png"), 16, 16, 120, {pos:0.5,size:0.01}, SliderRepeat, null, 0, true, true);
+		var scrollStyle1 = { bitmapdata: Assets.getBitmapData("assets/slider.png"), 
+			tile_w:16, tile_h:16, drawmode:SliderRepeat};
+		var scrollStyle2 = { bitmapdata: Assets.getBitmapData("assets/slider2.png"), 
+			tile_w:16, tile_h:16, drawmode:SliderRepeat};
+		var scrollStyle3 = { bitmapdata: Assets.getBitmapData("assets/scrollbar.png"), 
+			tile_w:16, tile_h:16, drawmode:SliderRepeat};
+		
+		var hs = new HSlider6(scrollStyle1, 120, 0.5, null);
+		var hs2 = new HSlider6(scrollStyle2, 120, 0.5, null, 0, false);
+		var scroll = new HScrollbar6(scrollStyle3, 120, {pos:0.5,size:0.01}, null, 0, true, true);
 		
 		var chk = Helpers.checkboxImage(Assets.getBitmapData("assets/checkbox.png"), 16, 16, false, function(_) { } );
 		chk.y = 200;		
@@ -113,13 +123,19 @@ class GUITests
 		
 		Lib.current.stage.addChild(moo.sprite);
 		
+		var testbmp = new Bitmap(new BitmapData(500, 500, false, 0xaa0000));
+		testbmp.bitmapData.noise(5454, 0x000000, 0xFFFFFF);
+		var sa = new ScrollArea(200, 200, testbmp, scrollStyle3);
+		Lib.current.stage.addChild(sa);
+		
 		var ns = new SettingsUI(new Rectangle(0, 0, Lib.current.stage.stageWidth, Lib.current.stage.stageHeight),
 			rr, { up:styleUp, down:styleDown, over:styleUp, sizing:BSSPad(10, 10) }, cascade, 
 				{img:Assets.getBitmapData("assets/checkbox.png"), tw:16, th:16 },
-				{img:Assets.getBitmapData("assets/slider.png"), tw:16, th:16, drawmode:SliderRepeat},
+				{bitmapdata:Assets.getBitmapData("assets/slider.png"), tile_w:16, tile_h:16, drawmode:SliderRepeat},
 				"assets/sfx_test.mp3", 
 				buttonmanager);
 		Lib.current.stage.addChild(ns);
+		
 		
 	}
 	

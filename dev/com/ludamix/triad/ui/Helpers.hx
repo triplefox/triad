@@ -5,6 +5,7 @@ import nme.display.Bitmap;
 import nme.display.BitmapData;
 import nme.display.SimpleButton;
 import com.ludamix.triad.ui.Rect9;
+import com.ludamix.triad.ui.HSlider6;
 import com.ludamix.triad.ui.CascadingText;
 import com.ludamix.triad.ui.layout.LayoutBuilder;
 import com.ludamix.triad.tools.Color;
@@ -17,7 +18,6 @@ enum ButtonSizingStrategy {
 	BSSFixed(w:Float,h:Float);
 	BSSPad(w:Float,h:Float);
 }
-
 
 class Helpers
 {

@@ -74,4 +74,12 @@ class MathTools
 		return best;
 	}
 	
+	public static inline function rescale(amin : Float, amax : Float, bmin : Float, bmax : Float, aval : Float) : Float
+	{
+		var adist = amax - amin;
+		var bdist = bmax - bmin;
+		var ratio = bdist / adist;
+		return bmin + (aval - amin) * ratio;
+	}
+	
 }

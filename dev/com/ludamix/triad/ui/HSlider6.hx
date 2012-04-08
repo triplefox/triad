@@ -14,6 +14,8 @@ import nme.display.Sprite;
 import nme.Lib;
 import nme.utils.Timer;
 
+typedef ScrollableStyle = {bitmapdata : BitmapData, tile_w : Int, tile_h : Int, drawmode : SliderDrawMode };
+
 class HSlider6 extends Sprite
 {
 	
@@ -51,11 +53,16 @@ class HSlider6 extends Sprite
 	private static inline var HRCAP = 5;
 	private static inline var HANDLE = 6;
 
-	public function new(base : BitmapData, tile_w : Int, tile_h : Int, total_w : Int, highlighted : Float, 
-		drawmode : SliderDrawMode, onSet : Float->Void, ?frame : Int = 0, ?settable : Bool = true)
+	public function new(style : ScrollableStyle, total_w : Int, 
+		highlighted : Float, onSet : Float->Void, ?frame : Int = 0, ?settable : Bool = true)
 	{
 		super();
 		
+		this.tile_w = style.tile_w;
+		this.tile_h = style.tile_h;
+		this.drawMode = style.drawmode;
+		
+		var base = style.bitmapdata;
 		var framecount = Std.int(base.height / tile_h);
 		frames = new Array<Array<BitmapData>>();
 		for (y in 0...framecount)
@@ -71,11 +78,8 @@ class HSlider6 extends Sprite
 			}
 		}
 		
-		this.tile_w = tile_w;
-		this.tile_h = tile_h;
 		this.total_w = total_w;
 		this.onSet = onSet;
-		this.drawMode = drawmode;
 		this.frame = frame;
 		this.settable = settable;
 		this.pingpong = false;

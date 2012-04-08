@@ -64,13 +64,18 @@ class HScrollbar6 extends Sprite
 	private static inline var SPINNER_UP = 6;
 	private static inline var SPINNER_DOWN = 7;
 
-	public function new(base : BitmapData, tile_w : Int, tile_h : Int, total_w : Int, 
-		highlighted : { pos:Float, size:Float }, drawmode : SliderDrawMode, onSet : Float->Void, 
+	public function new(style : ScrollableStyle, total_w : Int, 
+		highlighted : { pos:Float, size:Float }, onSet : Float->Void, 
 		?frame : Int = 0, ?settable : Bool = true, ?spinners : Bool = true, ?spin_amount : Float = 0.01,
 		?spin_buffer_time = 18)
 	{
 		super();
 		
+		this.tile_w = style.tile_w;
+		this.tile_h = style.tile_h;
+		this.drawMode = style.drawmode;
+		
+		var base = style.bitmapdata;
 		var framecount = Std.int(base.height / tile_h);
 		frames = new Array<Array<BitmapData>>();
 		for (y in 0...framecount)
@@ -86,10 +91,7 @@ class HScrollbar6 extends Sprite
 			}
 		}
 		
-		this.tile_w = tile_w;
-		this.tile_h = tile_h;
 		this.onSet = onSet;
-		this.drawMode = drawmode;
 		this.frame = frame;
 		this.settable = settable;
 		this.pingpong = false;
@@ -121,9 +123,10 @@ class HScrollbar6 extends Sprite
 		var bar_total = total_w - spinner_size;
 		var bar_middle = total_w - tile_w * 2 - spinner_size;
 		var bar_offset = spinners ? tile_w : 0;
+		
 		var highlight_total = Std.int(Math.max(tile_w * 2, highlighted.size * bar_total));
 		var highlight_middle = Std.int(highlight_total - tile_w * 2);
-		var highlight_pos = Std.int(bar_offset + MathTools.limit(0, bar_total - highlight_total, highlighted.pos * bar_total));
+		var highlight_pos = Std.int(MathTools.rescale(0.,1.,bar_offset,bar_offset+bar_total-highlight_total, highlighted.pos));
 		
 		// draw the spinners.
 		
@@ -269,16 +272,19 @@ class HScrollbar6 extends Sprite
 		
 		// A hideous stateful monster. I'm sorry.
 		
-		var spinner_size = spinners ? tile_w / total_w : 0.;
+		var spinner_size = spinners ? tile_w : 0.;
 		var spinner_l = spinner_size;
 		var spinner_r = 1. - spinner_size;
-		var bar_size = 1. - spinner_size * 2;
+		var bar_size = total_w - spinner_size * 2;
 		
-		var visual_size = MathTools.limit((tile_w * 2)/(total_w)/bar_size, 1., highlighted.size);
+		var highlight_size = MathTools.limit(tile_w * 2, bar_size, highlighted.size * bar_size);
 		
-		var pct = MathTools.limit(0., 1., (this.mouseX - tile_w) / (total_w - tile_w * 2));
+		var pct = MathTools.rescale(spinner_size, total_w - spinner_size - highlight_size, 
+				0., 1., mouseX - highlight_size/2);
 		
-		if (pct < spinner_l && !dragging && !spinner_r_down)
+		// we do a subtle transformation from bar+spinner position to bar-only position. Watch out!
+		
+		if (mouseX < spinner_size && !dragging && !spinner_r_down)
 		{
 			if (spin_buffer==0 || (spin_buffer>=spin_buffer_time))
 				pct = spinLeft();
@@ -286,7 +292,7 @@ class HScrollbar6 extends Sprite
 			spinner_l_down = true;
 			spin_buffer += 1;
 		}
-		else if (pct > spinner_r && !dragging && !spinner_l_down)
+		else if (mouseX > total_w - spinner_size && !dragging && !spinner_l_down)
 		{
 			if (spin_buffer==0 || (spin_buffer>=spin_buffer_time))
 				pct = spinRight();
@@ -299,10 +305,7 @@ class HScrollbar6 extends Sprite
 			spinner_l_down = false;
 			spinner_r_down = false;
 			dragging = true;
-			if (pct > highlighted.pos && pct < highlighted.pos + visual_size)
-				pct = highlighted.pos;
-			else if (pct >= highlighted.pos + visual_size)
-				pct = pct - visual_size;
+			//pct = pct - highlighted.size / 2;
 			spin_buffer = 0;
 		}
 		else
@@ -312,6 +315,8 @@ class HScrollbar6 extends Sprite
 			dragging = false;
 			pct = highlighted.pos;
 		}
+		
+		pct = MathTools.limit(0.,1.,pct);
 			
 		draw({pos:pct,size:highlighted.size});
 		if (onSet!=null)

@@ -27,13 +27,13 @@ class SettingsUI extends Sprite
 	var button : { up:LabelRect9Style, down:LabelRect9Style, over:LabelRect9Style, sizing:ButtonSizingStrategy };
 	var frame : Rect9Template;
 	var checkbox : {img:BitmapData,tw:Int,th:Int};
-	var slider : { img:BitmapData, tw:Int, th:Int, drawmode:SliderDrawMode };
+	var slider : ScrollableStyle;
 	var preserve : Array<Dynamic>;
 	
 	public function new(screenrect : Rectangle, frame : Rect9Template, 
 			button : { up:LabelRect9Style, down:LabelRect9Style, over:LabelRect9Style, sizing:ButtonSizingStrategy },
 			text : CascadingTextDef, checkbox : {img:BitmapData,tw:Int,th:Int},
-			slider : {img:BitmapData,tw:Int,th:Int,drawmode:SliderDrawMode},
+			slider : ScrollableStyle,
 		?testsound : String = null, ?bindings : ButtonManager = null, ?onClose : Void->Void = null, 
 		?desiredW : Float=400, ?desiredH : Float=350)
 	{
@@ -127,8 +127,7 @@ class SettingsUI extends Sprite
 		
 		var check = Helpers.checkboxImage(checkbox.img, checkbox.tw, checkbox.th, initToggle, function(_) { } );
 		
-		var widget = new HSlider6(this.slider.img, this.slider.tw, this.slider.th, 
-			120, initVal, this.slider.drawmode, null);
+		var widget = new HSlider6(this.slider, 120, initVal, null);
 		
 		var title = Helpers.quickLabel(text, name);
 		var label = Helpers.quickLabel(text, "100%");

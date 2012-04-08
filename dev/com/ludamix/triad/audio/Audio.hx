@@ -17,10 +17,18 @@ enum ChannelMode {
 	ModifyOnly;
 }
 
+typedef AudioChannel = {
+	snd : String,
+	mixgroup : String,
+	instance : SoundChannel,
+	timestamp : Float,
+	vol : Float
+}
+
 class Audio
 {
 	
-	public static var channels = new Hash<{snd:String,mixgroup:String,instance : SoundChannel, timestamp:Float, vol:Float}>();
+	public static var channels = new Hash<AudioChannel>();
 	
 	public static var SFXCHANNEL = "SFX";
 	public static var BGMCHANNEL = "BGM";
@@ -209,5 +217,5 @@ class Audio
 			obj.flush();
 		#end
 	}
-
+	
 }
