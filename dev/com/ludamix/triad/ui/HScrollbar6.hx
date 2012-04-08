@@ -282,8 +282,6 @@ class HScrollbar6 extends Sprite
 		var pct = MathTools.rescale(spinner_size, total_w - spinner_size - highlight_size, 
 				0., 1., mouseX - highlight_size/2);
 		
-		// we do a subtle transformation from bar+spinner position to bar-only position. Watch out!
-		
 		if (mouseX < spinner_size && !dragging && !spinner_r_down)
 		{
 			if (spin_buffer==0 || (spin_buffer>=spin_buffer_time))
@@ -305,7 +303,6 @@ class HScrollbar6 extends Sprite
 			spinner_l_down = false;
 			spinner_r_down = false;
 			dragging = true;
-			//pct = pct - highlighted.size / 2;
 			spin_buffer = 0;
 		}
 		else

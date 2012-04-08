@@ -35,12 +35,6 @@ class ScrollArea extends Sprite
 		this.mask_height = mask_height;
 		
 		scroll_mask = new Sprite();
-		scroll_mask.graphics.lineStyle(0, 0, 0);
-		scroll_mask.graphics.beginFill(0, 0);
-		scroll_mask.graphics.drawRect(0, 0, mask_width, mask_height);
-		scroll_mask.graphics.endFill();
-		
-		surface.mask = scroll_mask;
 		
 		scroll_h = new HScrollbar6(scroll_style, mask_width, { pos:0., size:1. }, setHorizontal);
 		scroll_v = new HScrollbar6(scroll_style, mask_height, { pos:0., size:1. }, setVertical);
@@ -57,41 +51,54 @@ class ScrollArea extends Sprite
 		eval();
 	}
 	
+	public inline function maskDraw(mw, mh)
+	{
+		scroll_mask.graphics.lineStyle(0, 0, 0);
+		scroll_mask.graphics.beginFill(0, 0);
+		scroll_mask.graphics.drawRect(0, 0, mw, mh);
+		scroll_mask.graphics.endFill();		
+		surface.mask = scroll_mask;
+	}
+	
+	public function calcSizing()
+	{
+		// we do two passes to discover the case where adding a bar to one forces a bar on the other.
+		
+		var mh = use_horizontal && surface.width > this.mask_width ? mask_height - scroll_h.tile_h : mask_height;
+		var mw = use_vertical && surface.height > this.mask_height ? mask_width - scroll_v.tile_w : mask_width;
+		mh = use_horizontal && surface.width > mw ? mask_height - scroll_h.tile_h : mask_height;
+		mw = use_vertical && surface.height > mh ? mask_width - scroll_v.tile_w : mask_width;
+		return { w:mw, h:mh };
+	}
+	
 	public function eval()
 	{
-		scroll_h.visible = use_horizontal && surface.width > this.mask_width;
-		scroll_v.visible = use_vertical && surface.height > this.mask_height;
+		var size = calcSizing();
 		
-		if (scroll_h.visible && scroll_v.visible)
-		{
-			scroll_h.total_w = mask_width - scroll_h.tile_w;
-			scroll_v.total_w = mask_height - scroll_v.tile_h;
+		scroll_h.visible = use_horizontal && surface.width > size.w;
+		scroll_v.visible = use_vertical && surface.height > size.h;
+		
+		maskDraw(size.w, size.h);
+		
+		scroll_h.total_w = size.w;
+		scroll_v.total_w = size.h;
 			
-			scroll_h.draw( { pos:scroll_h.highlighted.pos, size:mask_width / surface.width } );
-			scroll_v.draw( { pos:scroll_v.highlighted.pos, size:mask_height / surface.height } );
+		scroll_h.draw( { pos:scroll_h.highlighted.pos, size:size.w / surface.width } );
+		scroll_v.draw( { pos:scroll_v.highlighted.pos, size:size.h / surface.height } );
 			
-		}
-		else if (scroll_h.visible)
-		{
-			scroll_h.total_w = mask_width;
-			scroll_h.draw( { pos:scroll_h.highlighted.pos, size:mask_width / surface.width } );
-		}
-		else if (scroll_v.visible)
-		{
-			scroll_v.total_w = mask_height;
-			scroll_v.draw( { pos:scroll_v.highlighted.pos, size:mask_height / surface.height } );
-		}
 	}
 	
 	public function setHorizontal(pos : Float)
 	{
-		var w = surface.width - mask_width;
+		var size = calcSizing();
+		var w = surface.width - size.w;
 		surface.x = -pos * w;
 	}
 	
 	public function setVertical(pos : Float)
 	{
-		var h = surface.height - mask_height;
+		var size = calcSizing();
+		var h = surface.height - size.h;
 		surface.y = -pos * h;
 	}
 	

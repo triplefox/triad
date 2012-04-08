@@ -123,7 +123,7 @@ class GUITests
 		
 		Lib.current.stage.addChild(moo.sprite);
 		
-		var testbmp = new Bitmap(new BitmapData(500, 500, false, 0xaa0000));
+		var testbmp = new Bitmap(new BitmapData(500, 200, false, 0xaa0000));
 		testbmp.bitmapData.noise(5454, 0x000000, 0xFFFFFF);
 		var sa = new ScrollArea(200, 200, testbmp, scrollStyle3);
 		Lib.current.stage.addChild(sa);
