@@ -36,6 +36,8 @@ class Assets {
 			resourceTypes.set ("assets/frame.png", "image");
 			resourceClasses.set ("assets/frame2.png", NME_assets_frame2_png);
 			resourceTypes.set ("assets/frame2.png", "image");
+			resourceClasses.set ("assets/scrollbar.png", NME_assets_scrollbar_png);
+			resourceTypes.set ("assets/scrollbar.png", "image");
 			resourceClasses.set ("assets/sfx_test.mp3", NME_assets_sfx_test_mp3);
 			resourceTypes.set ("assets/sfx_test.mp3", "music");
 			resourceClasses.set ("assets/slider.png", NME_assets_slider_png);

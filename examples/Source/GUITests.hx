@@ -3,6 +3,7 @@ import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.audio.Audio;
 import com.ludamix.triad.ui.Helpers;
 import com.ludamix.triad.ui.CascadingText;
+import com.ludamix.triad.ui.HScrollbar6;
 import com.ludamix.triad.ui.layout.LayoutBuilder;
 import com.ludamix.triad.ui.HSlider6;
 import com.ludamix.triad.ui.Rect9;
@@ -59,17 +60,24 @@ class GUITests
 		
 		var hs = new HSlider6(Assets.getBitmapData("assets/slider.png"), 16, 16, 120, 0.5, SliderRepeat, null);
 		var hs2 = new HSlider6(Assets.getBitmapData("assets/slider2.png"), 16, 16, 120, 0.5, SliderRepeat, null, 0, false);
+		var scroll = new HScrollbar6(Assets.getBitmapData("assets/scrollbar.png"), 16, 16, 120, {pos:0.5,size:0.01}, SliderRepeat, null, 0, true, true);
 		
 		var chk = Helpers.checkboxImage(Assets.getBitmapData("assets/checkbox.png"), 16, 16, false, function(_) { } );
-		chk.y = 200;
+		chk.y = 200;		
 		Lib.current.stage.addChild(chk);
 		
 		// basic nested box model
 		
 		var moo = LayoutBuilder.create(0, 0, 800, 100, 
-			LDRect9(new Rect9(rr, 800, 80, true), LAC(0, 0), "panel", 
-				LDPad(Pad4(100,0,0,0),LACL(0,0),null,
-					LDDisplayObject(hs2,LAC(0,0),"slider"))));
+			LDRect9(new Rect9(rr, 800, 80, true), LAC(0, 0), "panel",
+				LDPackH(LPMMinimum,LAC(0,0),null,
+				[
+					LDPad(Pad4(100,0,0,0),LACL(0,0),null,
+					LDDisplayObject(hs2,LAC(0,0),"slider")),
+					LDPad(Pad4(100,0,0,0),LACL(0,0),null,
+					LDDisplayObject(scroll,LAC(0,0),"scrollbar")),
+				])
+				));
 		moo.keys.slider.beginAnimating(150., SAForever(ADPingpong));
 		
 		// complex packh/packv mixture
@@ -102,7 +110,7 @@ class GUITests
 			LDRect9(new Rect9(rr, 500, 500, true), LAC(0,0), null,
 				LDPackTable(3, LPMFixed(LSPixel(10, true)), LPMFixed(LSPixel(10, true)), LAC(0, 0), null, rList)));
 		*/
-				
+		
 		Lib.current.stage.addChild(moo.sprite);
 		
 		var ns = new SettingsUI(new Rectangle(0, 0, Lib.current.stage.stageWidth, Lib.current.stage.stageHeight),

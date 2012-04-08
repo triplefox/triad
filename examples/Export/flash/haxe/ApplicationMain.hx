@@ -70,6 +70,11 @@ class ApplicationMain {
             return Assets.getBitmapData ("assets/frame2.png");
          
 		
+		if (inName=="assets/scrollbar.png")
+			 
+            return Assets.getBitmapData ("assets/scrollbar.png");
+         
+		
 		if (inName=="assets/sfx_test.mp3")
 			 
             return Assets.getSound ("assets/sfx_test.mp3");
@@ -160,6 +165,10 @@ class ApplicationMain {
 
 	
 		class NME_assets_frame2_png extends nme.display.BitmapData { public function new () { super (0, 0); } }
+	
+
+	
+		class NME_assets_scrollbar_png extends nme.display.BitmapData { public function new () { super (0, 0); } }
 	
 
 	

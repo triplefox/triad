@@ -18,7 +18,7 @@ class HSlider6 extends Sprite
 {
 	
 	/*
-	 * Horizontal slider.
+	 * Horizontal slider in 6 parts (plus a handle).
 	 * Provide a bitmap containing these tiles:
 	 * Left endcap (container)
 	 * Bar (container)
@@ -30,9 +30,9 @@ class HSlider6 extends Sprite
 	 * */
 	
 	public var frames : Array<Array<BitmapData>>;
-	public var tileW : Int;
-	public var tileH : Int;
-	public var sliderW : Int;
+	public var tile_w : Int;
+	public var tile_h : Int;
+	public var total_w : Int;
 	public var onSet : Float->Void; // for clicking, not general events
 	public var drawMode : SliderDrawMode;
 	public var settable : Bool;
@@ -51,12 +51,12 @@ class HSlider6 extends Sprite
 	private static inline var HRCAP = 5;
 	private static inline var HANDLE = 6;
 
-	public function new(base : BitmapData, tileW : Int, tileH : Int, sliderW : Int, highlighted : Float, drawmode : SliderDrawMode, 
-		onSet : Float->Void, ?frame : Int = 0, ?settable : Bool = true)
+	public function new(base : BitmapData, tile_w : Int, tile_h : Int, total_w : Int, highlighted : Float, 
+		drawmode : SliderDrawMode, onSet : Float->Void, ?frame : Int = 0, ?settable : Bool = true)
 	{
 		super();
 		
-		var framecount = Std.int(base.height / tileH);
+		var framecount = Std.int(base.height / tile_h);
 		frames = new Array<Array<BitmapData>>();
 		for (y in 0...framecount)
 		{
@@ -64,16 +64,16 @@ class HSlider6 extends Sprite
 			frames.push(slices);
 			for (x in 0...7)
 			{
-					var bd = new BitmapData(tileW, tileH, true, Color.ARGB(0, 0));
-					bd.copyPixels(base, new Rectangle(x * tileW, y * tileH, tileW, tileH), new Point(0, 0), base, 
-						new Point(x * tileW, y * tileH), false);
+					var bd = new BitmapData(tile_w, tile_h, true, Color.ARGB(0, 0));
+					bd.copyPixels(base, new Rectangle(x * tile_w, y * tile_h, tile_w, tile_h), new Point(0, 0), base, 
+						new Point(x * tile_w, y * tile_h), false);
 					slices.push(bd);
 			}
 		}
 		
-		this.tileW = tileW;
-		this.tileH = tileH;
-		this.sliderW = sliderW;
+		this.tile_w = tile_w;
+		this.tile_h = tile_h;
+		this.total_w = total_w;
 		this.onSet = onSet;
 		this.drawMode = drawmode;
 		this.frame = frame;
@@ -92,27 +92,27 @@ class HSlider6 extends Sprite
 		this.highlighted = highlighted;
 		
 		var pos = 0;
-		var allocBar = sliderW - tileW * 2;
-		var allocHighlight = Std.int((sliderW - tileW) * highlighted);
-		var allocHandle = Std.int(sliderW * highlighted) - tileW;
+		var allocBar = total_w - tile_w * 2;
+		var allocHighlight = Std.int((total_w - tile_w) * highlighted);
+		var allocHandle = Std.int(total_w * highlighted) - tile_w;
 		
 		var slices = frames[frame];
 		for (s in slices)
 		{
 			if (pos > 5) break;
 			
-			var xPos : Int = 0;
+			var x_pos : Int = 0;
 			var mW : Int = 0;
 			var display = true;
 			
 			switch(pos)
 			{
-				case CLCAP: mW = tileW;
-				case CBAR: xPos = tileW; mW = allocBar;
-				case CRCAP: mW = tileW; xPos = sliderW - tileW;
-				case HLCAP: mW = Std.int(MathTools.limit(0, tileW, allocHighlight + tileW/2 ));
-				case HBAR: xPos = tileW; mW = Std.int(MathTools.limit(0, allocBar, allocHighlight - tileW/2));
-				case HRCAP: xPos = sliderW - tileW; mW = Std.int(MathTools.limit(0, tileW, allocHighlight - tileW/2 - allocBar ));
+				case CLCAP: mW = tile_w;
+				case CBAR: x_pos = tile_w; mW = allocBar;
+				case CRCAP: mW = tile_w; x_pos = total_w - tile_w;
+				case HLCAP: mW = Std.int(MathTools.limit(0, tile_w, allocHighlight + tile_w/2 ));
+				case HBAR: x_pos = tile_w; mW = Std.int(MathTools.limit(0, allocBar, allocHighlight - tile_w/2));
+				case HRCAP: x_pos = total_w - tile_w; mW = Std.int(MathTools.limit(0, tile_w, allocHighlight - tile_w/2 - allocBar ));
 			}
 			
 			if (mW > 0)
@@ -123,30 +123,30 @@ class HSlider6 extends Sprite
 					switch(drawMode)
 					{
 						case SliderCut:
-							var sX = allocBar / tileW;
+							var sX = allocBar / tile_w;
 							mtx.scale( sX, 1.);							
 						case SliderRepeat: {}
 						case SliderStretch:
-							var sX = mW / tileW;
+							var sX = mW / tile_w;
 							mtx.scale( sX, 1.);							
 					}
 				}
-				mtx.translate( xPos, 0);
+				mtx.translate( x_pos, 0);
 				
 				this.graphics.beginBitmapFill(s, mtx, true, true);
-				this.graphics.drawRect(xPos,0,mW,tileH);
+				this.graphics.drawRect(x_pos,0,mW,tile_h);
 				this.graphics.endFill();
 			}
 			
 			pos++;
 		}			
 		
-		var xPos = allocHighlight;
+		var x_pos = allocHighlight;
 		var mtx = new Matrix();
-		mtx.translate(xPos, 0);
+		mtx.translate(x_pos, 0);
 		
 		this.graphics.beginBitmapFill(slices[HANDLE], mtx);
-		this.graphics.drawRect(xPos,0,tileW,tileH);
+		this.graphics.drawRect(x_pos,0,tile_w,tile_h);
 		this.graphics.endFill();
 		
 		return highlighted;
@@ -154,17 +154,21 @@ class HSlider6 extends Sprite
 	
 	public function advanceFrame(ad : AnimDirection)
 	{
-		switch(ad)
+		if (frames.length == 1) frame = 0;
+		else
 		{
-			case ADForward:
-				frame = (frame + 1) % frames.length;
-			case ADBackward:
-				frame = frame - 1; if (frame < 0 ) frame = frames.length - 1;
-			case ADPingpong:
-				if (pingpong)
-					{ frame = (frame - 1); if (frame == 0) pingpong = !pingpong; }
-				else
-					{ frame = (frame + 1); if (frame == frames.length-1) pingpong = !pingpong; }
+			switch(ad)
+			{
+				case ADForward:
+					frame = (frame + 1) % frames.length;
+				case ADBackward:
+					frame = frame - 1; if (frame < 0 ) frame = frames.length - 1;
+				case ADPingpong:
+					if (pingpong)
+						{ frame = (frame - 1); if (frame == 0) pingpong = !pingpong; }
+					else
+						{ frame = (frame + 1); if (frame == frames.length-1) pingpong = !pingpong; }
+			}
 		}
 		
 		draw(this.highlighted);
@@ -203,7 +207,7 @@ class HSlider6 extends Sprite
 	public function onFrame(_)
 	{
 		
-		var pct = MathTools.limit(0., 1., (this.mouseX)/sliderW);
+		var pct = MathTools.limit(0., 1., (this.mouseX)/total_w);
 		
 		draw(pct);
 		if (onSet!=null)
