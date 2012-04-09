@@ -1,5 +1,9 @@
 package com.ludamix.triad.ui.layout;
 
+import com.ludamix.triad.tools.Color;
+import com.ludamix.triad.ui.ScrollArea;
+import com.ludamix.triad.ui.HSlider6;
+import flash.display.BitmapData;
 import haxe.Unserializer;
 import nme.display.DisplayObject;
 import nme.display.DisplayObjectContainer;
@@ -9,6 +13,10 @@ typedef LayoutResult = { keys:Dynamic, sprite:DisplayObject };
 
 class LayoutBuilder
 {
+	
+	// HACK: In flash target, resulting width and height of PackH/PackV does not fully include the last element -
+	// the padding between elements has an "off-by-one" effect. 
+	// We append an invisible pixel element to force the values to be correct.
 	
 	public inline static function create(x : Float, y : Float, w : Float, h : Float, lh : LayoutDef) : LayoutResult
 	{
@@ -61,6 +69,17 @@ class LayoutBuilder
 					th = Math.max(th, est.h);
 					tw += est.w;
 				}
+				
+				switch(packing)
+				{
+					case LPMFixed(_),LPMMinimum,LPMSpecified(_): {}
+					case LPMScroll(px_threshold, lpm_under, lpm_over, style, compact): 
+						if (compact)
+							tw = Math.min(px_threshold, tw);
+						else
+							tw = px_threshold;
+				}
+				
 				return {w:tw,h:th};
 			case LDPackV(packing, align, name, elements):
 				var tw = 0.;
@@ -71,13 +90,24 @@ class LayoutBuilder
 					tw = Math.max(tw, est.w);
 					th += est.h;
 				}
+				
+				switch(packing)
+				{
+					case LPMFixed(_),LPMMinimum,LPMSpecified(_): {}
+					case LPMScroll(px_threshold, lpm_under, lpm_over, style, compact): 
+						if (compact)
+							th = Math.min(px_threshold, th);
+						else
+							th = px_threshold;
+				}
+				
 				return {w:tw,h:th};
 			case LDPackTable(cols, packingH, packingV, align, name, elements):
 				// we go row-by-row.
 				var ct = 0;
 				var tw = 0.;
 				var th = 0.;
-				var rw = 0.;
+				var rw = 0.;	
 				var rh = 0.;
 				for (e in elements)
 				{
@@ -304,6 +334,25 @@ class LayoutBuilder
 						return process_function(packing, align, name, elements, ar);
 					case LPMSpecified(elementsizing):
 						return process_function(packing, align, name, elements, elementsizing);
+					case LPMScroll(px_threshold, lpm_under, lpm_over, style, compact):
+						// if minimum estimate is under threshold, use lpm_under, otherwise use lpm_over + ScrollArea.
+						var min_pack = estimateSize(LDPackH(lpm_over, align, name, elements));
+						if (min_pack.w > px_threshold)
+						{
+							
+							// HACK
+							var ec = elements.copy();
+							ec.push(LDDisplayObject(
+								new nme.display.Bitmap(new BitmapData(1, 1, true, Color.ARGB(0,0))), LAC(0, 0), null));
+							// HACK
+							
+							var result = rectangleData(0, 0, min_pack.w, rh, 
+								LDPackH(lpm_over, LATL(0, 0), name, ec), widgetDict);
+							var sv = new ScrollArea(Std.int(rw), Std.int(rh), result, style, false, true, compact);
+							return rectangleData(rx, ry, rw, rh, LDDisplayObject(sv,LATL(0,0),null), widgetDict);
+						}
+						else
+							return rectangleData(rx, ry, rw, rh, LDPackV(lpm_under, align, name, elements), widgetDict);
 				}
 			case LDPackV(packing, align, name, elements):
 				// please note - this is really, really similar to LDPackH, so if there's a problem in one
@@ -333,7 +382,7 @@ class LayoutBuilder
 						y += est.h;
 						ct++;
 					}
-					var alloc = y;						
+					var alloc = y;
 					var remainder = rh - alloc;
 					
 					// now we go back and fix all alignments using remainder and totalratio
@@ -369,6 +418,24 @@ class LayoutBuilder
 						return process_function(packing, align, name, elements, ar);
 					case LPMSpecified(elementsizing):
 						return process_function(packing, align, name, elements, elementsizing);
+					case LPMScroll(px_threshold, lpm_under, lpm_over, style, compact):
+						// if minimum estimate is under threshold, use lpm_under, otherwise use lpm_over + ScrollArea.
+						var min_pack = estimateSize(LDPackV(lpm_over, align, name, elements));
+						if (min_pack.h > px_threshold)
+						{
+							
+							// HACK
+							var ec = elements.copy();
+							ec.push(LDDisplayObject(new nme.display.Bitmap(new BitmapData(1, 1, true, Color.ARGB(0,0))), LAC(0, 0), null));
+							// HACK
+							
+							var result = rectangleData(0, 0, rw, min_pack.h, 
+								LDPackV(lpm_over, LATL(0, 0), name, ec), widgetDict);
+							var sv = new ScrollArea(Std.int(rw), Std.int(rh), result, style, false, true, compact);
+							return rectangleData(rx, ry, rw, rh, LDDisplayObject(sv,LATL(0,0),null), widgetDict);
+						}
+						else
+							return rectangleData(rx, ry, rw, rh, LDPackV(lpm_under, align, name, elements), widgetDict);
 				}				
 			case LDPackTable(cols, packingH, packingV, align, name, elements):
 				var pos = 0;
@@ -419,6 +486,8 @@ enum LayoutPackingMethod {
 	LPMMinimum;
 	LPMFixed(sizing : LayoutSizing);
 	LPMSpecified(elementsizing : Array<LayoutSizing>);
+	LPMScroll(px_threshold : Float, lpm_under : LayoutPackingMethod, lpm_over : LayoutPackingMethod, 
+	style : ScrollableStyle, compact : Bool);
 }
 
 // the types of padding we use. Applied on top of the inner sizing.

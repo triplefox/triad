@@ -52,3 +52,8 @@ compactvarsoksometimes (mostly as locals and really common stuff)
 CONSTANT_OR_GLOBAL
 
 If you aren't using a parameter you can call it "_" instead.
+
+-----------
+Other things
+
+Don't nest ternaries.

@@ -6,6 +6,8 @@ import com.ludamix.triad.ui.HScrollbar6;
 import nme.display.BitmapData;
 import nme.display.DisplayObject;
 import nme.display.Sprite;
+import nme.events.Event;
+import nme.geom.Rectangle;
 
 class ScrollArea extends Sprite
 {
@@ -15,12 +17,18 @@ class ScrollArea extends Sprite
 	public var scrollbar_compact : Bool;
 	
 	public var surface : DisplayObject;
-	public var scroll_mask : Sprite;
 	public var scroll_h : HScrollbar6;
 	public var scroll_v : HScrollbar6;
 	
 	public var mask_width : Int;
 	public var mask_height : Int;
+	
+	public var last_x : Float;
+	public var last_y : Float;
+	
+	#if flash
+	public var mask_sprite : Sprite;	
+	#end
 	
 	public function new(mask_width, mask_height, surface, 
 		scroll_style : ScrollableStyle, ?use_horizontal = true, ?use_vertical = true, ?scrollbar_compact = true)
@@ -35,7 +43,14 @@ class ScrollArea extends Sprite
 		this.mask_width = mask_width;
 		this.mask_height = mask_height;
 		
-		scroll_mask = new Sprite();
+		// we have to implement this different on different targets. Flash uses a mask and hates the scrollrect.
+		// Neko loves the scrollrect and crashes with a mask.
+		
+		#if flash
+		mask_sprite = new flash.display.Sprite();
+		mask_sprite.visible = false;
+		addChild(mask_sprite);
+		#end
 		
 		scroll_h = new HScrollbar6(scroll_style, mask_width, { pos:0., size:1. }, setHorizontal);
 		scroll_v = new HScrollbar6(scroll_style, mask_height, { pos:0., size:1. }, setVertical);
@@ -45,16 +60,12 @@ class ScrollArea extends Sprite
 		addChild(scroll_h);
 		addChild(scroll_v);
 		
+		last_x = 0.;
+		last_y = 0.;
 		eval();
-	}
-	
-	public inline function maskDraw(mw, mh)
-	{
-		scroll_mask.graphics.lineStyle(0, 0, 0);
-		scroll_mask.graphics.beginFill(0, 0);
-		scroll_mask.graphics.drawRect(0, 0, mw, mh);
-		scroll_mask.graphics.endFill();		
-		surface.mask = scroll_mask;
+		setHorizontal(0. );
+		setVertical(0. );
+		
 	}
 	
 	public function calcSizing()
@@ -73,14 +84,13 @@ class ScrollArea extends Sprite
 		return { w:mw, h:mh };
 	}
 	
-	public function eval()
+	public function eval(?_)
 	{
+		
 		var size = calcSizing();
 		
 		scroll_h.visible = use_horizontal && surface.width > size.w;
 		scroll_v.visible = use_vertical && surface.height > size.h;
-		
-		maskDraw(size.w, size.h);
 		
 		scroll_h.total_w = size.w;
 		scroll_v.total_w = size.h;
@@ -92,20 +102,40 @@ class ScrollArea extends Sprite
 		scroll_v.y = 0;
 		scroll_h.x = 0;
 		scroll_h.y = size.h;
+		
+		setScrollRect(size);
 	}
 	
 	public function setHorizontal(pos : Float)
 	{
 		var size = calcSizing();
 		var w = surface.width - size.w;
-		surface.x = -pos * w;
+		last_x = pos * w;
+		eval();
 	}
 	
 	public function setVertical(pos : Float)
 	{
 		var size = calcSizing();
 		var h = surface.height - size.h;
-		surface.y = -pos * h;
+		last_y = pos * h;
+		eval();
+	}
+	
+	public function setScrollRect(size)
+	{
+		#if flash
+			surface.x = -last_x;
+			surface.y = -last_y;
+			mask_sprite.graphics.clear();
+			mask_sprite.graphics.beginFill(0,0);
+			mask_sprite.graphics.lineStyle(0,0,0);
+			mask_sprite.graphics.drawRect(0, 0, size.w, size.h);
+			mask_sprite.graphics.endFill();
+			surface.mask = mask_sprite;
+		#else
+			surface.scrollRect = new Rectangle(last_x, last_y, size.w, size.h);
+		#end		
 	}
 	
 }

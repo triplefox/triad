@@ -28,12 +28,13 @@ class SettingsUI extends Sprite
 	var frame : Rect9Template;
 	var checkbox : {img:BitmapData,tw:Int,th:Int};
 	var slider : ScrollableStyle;
+	var scrollbar : ScrollableStyle;
 	var preserve : Array<Dynamic>;
 	
 	public function new(screenrect : Rectangle, frame : Rect9Template, 
 			button : { up:LabelRect9Style, down:LabelRect9Style, over:LabelRect9Style, sizing:ButtonSizingStrategy },
 			text : CascadingTextDef, checkbox : {img:BitmapData,tw:Int,th:Int},
-			slider : ScrollableStyle,
+			slider : ScrollableStyle, scrollbar : ScrollableStyle,
 		?testsound : String = null, ?bindings : ButtonManager = null, ?onClose : Void->Void = null, 
 		?desiredW : Float=400, ?desiredH : Float=350)
 	{
@@ -66,6 +67,8 @@ class SettingsUI extends Sprite
 			}
 		}		
 		
+		var finishGroup = new Array<LayoutDef>();
+		
 		if (bindings!=null)
 		{
 			
@@ -84,7 +87,7 @@ class SettingsUI extends Sprite
 			var dbuttonsprite = Helpers.labelButtonRect9(button, "Reset to Defaults").button;
 			var dbutton = LDDisplayObject(dbuttonsprite,LAC(0,0),"keyboardDefaults");
 			
-			elementList.push(dbutton);
+			finishGroup.push(dbutton);
 			
 			dbuttonsprite.onClick = function(_) { this.bindings.defaults(); 
 				for ( n in keys.keys() )
@@ -96,13 +99,21 @@ class SettingsUI extends Sprite
 		
 		}
 		
-		elementList.push(LDDisplayObject(Helpers.labelButtonRect9(button,"Ok").button,LAC(0,0),"ok"));
+		finishGroup.push(LDDisplayObject(Helpers.labelButtonRect9(button, "Ok").button, LAC(0, 0), "ok"));
+		
+		var bottom = LDPackH(LPMFixed(LSPixel(16, true)), LAC(0, 0), null, finishGroup);
+		var top = LDPackV(LPMScroll(desiredH - LayoutBuilder.estimateSize(bottom).h - 32, 
+				LPMFixed(LSRatio(1)), LPMFixed(LSPixel(8, true)), 
+				scrollbar, false), LAC(0,0), null, elementList);
+		var pad = LDPad(PadWH(8, 8, true), LAC(0, 0), null, LDEmpty);
+		
+		var elementList2 = [pad, top, pad,bottom, pad];
 		
 		var self = this;
 		
-		layout = LayoutBuilder.create(screenrect.x, screenrect.y, screenrect.width, screenrect.height,
+		layout = LayoutBuilder.create(screenrect.x, screenrect.y, screenrect.width, screenrect.height, 
 			LDRect9(new Rect9(frame, Std.int(desiredW), Std.int(desiredH), true), LAC(0, 0), "frame",
-				LDPackV(LPMFixed(LSRatio(1)), LAC(0,0), null, elementList)));
+			LDPackV(LPMMinimum, LAC(0, 0), null, elementList2)));
 		layout.keys.frame.mouseEnabled = false;
 		this.addChild(layout.sprite);
 		

@@ -29,8 +29,10 @@ class HScrollbar6 extends Sprite
 	 * Left endcap (highlight)
 	 * Bar (highlight)
 	 * Right endcap (highlight)
-	 * Spinner up
-	 * Spinner down
+	 * Spinner up (L)
+	 * Spinner down (L)
+	 * Spinner up (R)
+	 * Spinner down (R)
 	 * 
 	 * */
 	
@@ -61,8 +63,10 @@ class HScrollbar6 extends Sprite
 	private static inline var HLCAP = 3;
 	private static inline var HBAR = 4;
 	private static inline var HRCAP = 5;
-	private static inline var SPINNER_UP = 6;
-	private static inline var SPINNER_DOWN = 7;
+	private static inline var SPINNER_UP_L = 6;
+	private static inline var SPINNER_DOWN_L = 7;
+	private static inline var SPINNER_UP_R = 8;
+	private static inline var SPINNER_DOWN_R = 9;
 
 	public function new(style : ScrollableStyle, total_w : Int, 
 		highlighted : { pos:Float, size:Float }, onSet : Float->Void, 
@@ -82,12 +86,12 @@ class HScrollbar6 extends Sprite
 		{
 			var slices = new Array<BitmapData>();
 			frames.push(slices);
-			for (x in 0...8)
+			for (x in 0...10)
 			{
-					var bd = new BitmapData(tile_w, tile_h, true, Color.ARGB(0, 0));
-					bd.copyPixels(base, new Rectangle(x * tile_w, y * tile_h, tile_w, tile_h), new Point(0, 0), base, 
-						new Point(x * tile_w, y * tile_h), false);
-					slices.push(bd);
+				var bd = new BitmapData(tile_w, tile_h, true, Color.ARGB(0, 0));
+				bd.copyPixels(base, new Rectangle(Std.int(x * tile_w), Std.int(y * tile_h), tile_w, tile_h), 
+					new Point(0, 0), base, new Point(x * tile_w, y * tile_h), false);
+				slices.push(bd);
 			}
 		}
 		
@@ -132,22 +136,23 @@ class HScrollbar6 extends Sprite
 		
 		var slices = frames[frame];
 		
-		var s = slices[SPINNER_UP];
+		
+		var s = slices[SPINNER_UP_L];
 		if (spinner_l_down)
-			s = slices[SPINNER_DOWN];
+			s = slices[SPINNER_DOWN_L];
 		var mtx = new Matrix();
-		this.graphics.beginBitmapFill(s, mtx, true, true);
+		this.graphics.beginBitmapFill(s, mtx, false, true);
 		this.graphics.drawRect(0,0,tile_w,tile_h);
 		this.graphics.endFill();
 		
-		var s = slices[SPINNER_UP];
+		var s = slices[SPINNER_UP_R];
 		if (spinner_r_down)
-			s = slices[SPINNER_DOWN];
+			s = slices[SPINNER_DOWN_R];
 		var mtx = new Matrix();
-		mtx.rotate(Math.PI);
-		mtx.translate(tile_w/2, 0.);
-		this.graphics.beginBitmapFill(s, mtx, true, true);
-		this.graphics.drawRect(total_w - tile_w,0,tile_w,tile_h);
+		mtx.translate((total_w - spinner_size/2),0);
+		// the offset is kind of strange...tile_w - 1 seems to be correct
+		this.graphics.beginBitmapFill(s, mtx, false, true);
+		this.graphics.drawRect(total_w - spinner_size/2,0,tile_w,tile_h);
 		this.graphics.endFill();
 		
 		// draw the bars.
@@ -201,7 +206,7 @@ class HScrollbar6 extends Sprite
 				}
 				mtx.translate(x_pos, 0);
 				
-				this.graphics.beginBitmapFill(s, mtx, true, true);
+				this.graphics.beginBitmapFill(s, mtx, false, true);
 				this.graphics.drawRect(x_pos,0,mW,tile_h);
 				this.graphics.endFill();
 			}

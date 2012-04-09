@@ -29,11 +29,19 @@ class GUITests
 	public function new()
 	{
 		
-		buttonmanager = new ButtonManager([ { name:"Up", code:{keyCode:Keyboard.UP,charCode:0}, group:"Movement" },
-											{ name:"Down", code:{keyCode:Keyboard.DOWN,charCode:0}, group:"Movement" },
-											{ name:"Left", code:{keyCode:Keyboard.LEFT,charCode:0}, group:"Movement" },
-											{ name:"Right", code:{keyCode:Keyboard.RIGHT,charCode:0}, group:"Movement" } ],
-											0);
+		var keys = [
+			{ name:"Up", code:{keyCode:Keyboard.UP,charCode:0}, group:"Movement" },
+			{ name:"Down", code:{keyCode:Keyboard.DOWN,charCode:0}, group:"Movement" },
+			{ name:"Left", code: { keyCode:Keyboard.LEFT, charCode:0 }, group:"Movement" },
+			{ name:"Right", code: { keyCode:Keyboard.RIGHT, charCode:0 }, group:"Movement" }
+				];
+		
+		for (n in 0...10)
+		{
+			keys.push({name:"Foo"+Std.string(n),code:{keyCode:Keyboard.LEFT,charCode:0}, group:"Foo"});
+		}
+		
+		buttonmanager = new ButtonManager(keys, 2);
 		Audio.init();
 		
 		var bg = new Sprite();
@@ -123,15 +131,20 @@ class GUITests
 		
 		Lib.current.stage.addChild(moo.sprite);
 		
-		var testbmp = new Bitmap(new BitmapData(500, 500, false, 0xaa0000));
+		var testbmp = new Bitmap(new BitmapData(500, 500, false, Color.ARGB(0,0)));
+		#if flash
 		testbmp.bitmapData.noise(5454, 0x000000, 0xFFFFFF);
+		#end
 		var sa = new ScrollArea(200, 200, testbmp, scrollStyle3);
 		Lib.current.stage.addChild(sa);
+		sa.x = 100;
+		sa.y = 100;
 		
 		var ns = new SettingsUI(new Rectangle(0, 0, Lib.current.stage.stageWidth, Lib.current.stage.stageHeight),
 			rr, { up:styleUp, down:styleDown, over:styleUp, sizing:BSSPad(10, 10) }, cascade, 
 				{img:Assets.getBitmapData("assets/checkbox.png"), tw:16, th:16 },
 				{bitmapdata:Assets.getBitmapData("assets/slider.png"), tile_w:16, tile_h:16, drawmode:SliderRepeat},
+				{bitmapdata:Assets.getBitmapData("assets/scrollbar.png"), tile_w:16, tile_h:16, drawmode:SliderRepeat},
 				"assets/sfx_test.mp3", 
 				buttonmanager);
 		Lib.current.stage.addChild(ns);
