@@ -26,14 +26,14 @@ class SettingsUI extends Sprite
 	var text : CascadingTextDef;
 	var button : { up:LabelRect9Style, down:LabelRect9Style, over:LabelRect9Style, sizing:ButtonSizingStrategy };
 	var frame : Rect9Template;
-	var checkbox : {img:BitmapData,tw:Int,th:Int};
+	var checkbox : { bitmapdata:BitmapData, tile_w:Int, tile_h:Int };
 	var slider : ScrollableStyle;
 	var scrollbar : ScrollableStyle;
 	var preserve : Array<Dynamic>;
 	
 	public function new(screenrect : Rectangle, frame : Rect9Template, 
 			button : { up:LabelRect9Style, down:LabelRect9Style, over:LabelRect9Style, sizing:ButtonSizingStrategy },
-			text : CascadingTextDef, checkbox : {img:BitmapData,tw:Int,th:Int},
+			text : CascadingTextDef, checkbox : {bitmapdata:BitmapData,tile_w:Int,tile_h:Int},
 			slider : ScrollableStyle, scrollbar : ScrollableStyle,
 		?testsound : String = null, ?bindings : ButtonManager = null, ?onClose : Void->Void = null, 
 		?desiredW : Float=400, ?desiredH : Float=350)
@@ -136,7 +136,7 @@ class SettingsUI extends Sprite
 	public function addSlider(name : String, initVal : Float, initToggle : Bool, testsound : String)
 	{
 		
-		var check = Helpers.checkboxImage(checkbox.img, checkbox.tw, checkbox.th, initToggle, function(_) { } );
+		var check = Helpers.checkboxImage(checkbox.bitmapdata, checkbox.tile_w, checkbox.tile_h, initToggle, function(_) { } );
 		
 		var widget = new HSlider6(this.slider, 120, initVal, null);
 		

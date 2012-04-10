@@ -36,8 +36,9 @@ class CommonStyle
 		
 		settings = new SettingsUI(new Rectangle(0, 0, Lib.current.stage.stageWidth, Lib.current.stage.stageHeight),
 			rr, { up:styleUp, down:styleDown, over:styleUp, sizing:BSSPad(10, 10) }, cascade, 
-				{img:Assets.getBitmapData("assets/checkbox.png"), tw:16, th:16 },
-				{img:Assets.getBitmapData("assets/slider.png"), tw:16, th:16, drawmode:SliderRepeat},
+				{bitmapdata:Assets.getBitmapData("assets/checkbox.png"), tile_w:16, tile_h:16 },
+				{bitmapdata:Assets.getBitmapData("assets/slider.png"), tile_w:16, tile_h:16, drawmode:SliderRepeat},
+				{bitmapdata:Assets.getBitmapData("assets/scrollbar.png"), tile_w:16, tile_h:16, drawmode:SliderRepeat},
 				sound,buttonmanager);
 	}	
 	

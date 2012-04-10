@@ -15,10 +15,10 @@ interface SoftSynth
 	
 	public var buffer : Vector<Float>;
 	public var sequencer : Sequencer;
-	public var events : Array<SequencerEvent>;
 	
 	public function init(sequencer : Sequencer, buffersize : Int):Void;
 	public function write():Bool;
 	public function event(data : SequencerEvent, channel : SequencerChannel):Void;
+	public function getEvents():Array<SequencerEvent>;
 	
 }

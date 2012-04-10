@@ -29,12 +29,29 @@ class SequencerEvent
 	
 	public static inline var NOTE_ON = 1;
 	public static inline var NOTE_OFF = 2;
+	public static inline var PITCH_BEND = 3; // normalized around 0
+	public static inline var VOLUME = 4;
 	
 }
 
 class SequencerChannel
 {	
 	public var id : Int; public var outputs : Array<SoftSynth>;
+	
+	// TODO: Allow channels to take ownership of a common pool of outputs, so that polyphony per channel is possible
+	// without using an excessive # of synth instances. (simple sharing scheme does not work with pitch bends)
+	
+	// Here are all the situations I can think of:
+	//
+	// The channel reuses an existing synth.
+	// The channel broadcasts a unison event to the synths in use.
+	// The channel wants a new synth and it's available.
+	// The channel releases a synth.
+	//
+	// The issue that is causing trouble for me is that unison events should only apply to synths in use,
+	// but right now they apply to the pool of all used synths.
+	// One way to resolve this is to bulk up the channel state so that it contains all of the most recent unison events.
+	// Subsequently the synths use the channel state, not the synth state.
 	
 	public function new(id, outputs) 
 	{ 
@@ -44,14 +61,14 @@ class SequencerChannel
 	
 	public function priority(synth : SoftSynth) : Int
 	{
-		return MathTools.bestOf(synth.events, 
+		return MathTools.bestOf(synth.getEvents(), 
 			function(inp) { return inp; }, 
 			function(a, b) { return a.priority > b.priority; }, {priority:-1} ).priority;
 	}
 	
 	public function hasEvent(synth : SoftSynth, id : Int)
 	{
-		return Lambda.exists(synth.events, function(ev) { return ev.id == id; } );
+		return Lambda.exists(synth.getEvents(), function(ev) { return ev.id == id; } );
 	}
 	
 	public function pipe(ev : SequencerEvent)
@@ -114,7 +131,14 @@ class Sequencer
 		{ return (beat / (bpm / 60) * frameRate()); }
 		
 	public inline function waveLength(frequency : Float) { return sampleRate() / frequency; }
-	public inline function waveLengthOfMidiNote(note : Float) { return sampleRate() / tuning.midiNoteToFrequency(note); }
+	public inline function waveLengthOfBentNote(note : Float, pitch_bend : Int) 
+	{ 
+		return waveLength(tuning.midiNoteBentToFrequency(note, pitch_bend));
+	}
+	public inline function waveLengthOfBentFrequency(frequency : Float, pitch_bend : Int) 
+	{ 
+		return waveLengthOfBentNote(tuning.frequencyToMidiNote(frequency), pitch_bend);
+	}
 	
 	// we should really be using a priority queue but for now I'll sort the array each time we add events...
 	public function pushEvent(event : SequencerEvent, ?now = true)
@@ -124,7 +148,7 @@ class Sequencer
 				event.frame + this.frame, event.priority));
 		else
 			events.push(event);
-		events.sort(function(a, b) { return a.frame-b.frame; } );
+		sortEvents();
 	}
 	
 	public function pushEvents(events : Array<SequencerEvent>, ?now = true)
@@ -139,7 +163,14 @@ class Sequencer
 		{
 			for (n in events) this.events.push(n);
 		}
-		this.events.sort(function(a, b) { return a.frame-b.frame; } );
+		sortEvents();
+	}
+	
+	public function sortEvents()
+	{
+		events.sort(function(a, b) { 
+			if (a.frame == b.frame) { return (a.type - b.type); } // this favors note ends, lowering stuck likelihood
+			else return a.frame - b.frame; } );		
 	}
 	
 	public inline function addSynth(synth : SoftSynth) : SoftSynth 

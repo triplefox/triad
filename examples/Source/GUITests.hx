@@ -44,6 +44,8 @@ class GUITests
 		buttonmanager = new ButtonManager(keys, 2);
 		Audio.init();
 		
+		CommonStyle.init(buttonmanager,"assets/sfx_test.mp3");
+		
 		var bg = new Sprite();
 		bg.graphics.beginFill(0xFF00FF,1.0);
 		bg.graphics.drawRect(0, 0, Lib.current.stage.stageWidth, Lib.current.stage.stageHeight);
@@ -98,37 +100,6 @@ class GUITests
 				));
 		moo.keys.slider.beginAnimating(150., SAForever(ADPingpong));
 		
-		// complex packh/packv mixture
-			
-		/*var moo = LayoutBuilder.create(0, 0, 800, 100, 
-			LDRect9(new Rect9(rr, 800, 200, true), LAC(0, 0), "panel", 
-				LDPackV(LPMFixed(LSPixel(10,true)),LAC(0,0),null,[
-					LDPackH(LPMSpecified([LSRatio(1),LSRatio(2),LSPixel(10,true)]), LAC(0, 0), null, 
-					[LDRect9(new Rect9(rr, 50, 50, true), LAC(0, 0), null, LDEmpty),
-					 LDRect9(new Rect9(rr, 100, 50, true), LAC(0, 0), null, LDEmpty),
-					 LDRect9(new Rect9(rr, 70, 70, true), LAC(0, 0), null, LDEmpty)
-					 ]),
-					LDPackH(LPMSpecified([LSRatio(1),LSRatio(2),LSPixel(10,true)]), LAC(0, 0), null, 
-					[LDRect9(new Rect9(rr, 50, 50, true), LAC(0, 0), null, LDEmpty),
-					 LDRect9(new Rect9(rr, 100, 50, true), LAC(0, 0), null, LDEmpty),
-					 LDRect9(new Rect9(rr, 70, 70, true), LAC(0, 0), null, LDEmpty)
-					 ]),	 
-				])));
-		*/
-		
-		// packtable
-		
-		/*
-		var rList = new Array<LayoutDef>();
-		for (n in 0...9)
-		{
-			rList.push(LDRect9(new Rect9(rr, Std.int(Math.random()*100+10), Std.int(Math.random()*100+10), true), LAC(0, 0), null, LDEmpty));
-		}
-		var moo = LayoutBuilder.create(0, 0, 500, 500, 
-			LDRect9(new Rect9(rr, 500, 500, true), LAC(0,0), null,
-				LDPackTable(3, LPMFixed(LSPixel(10, true)), LPMFixed(LSPixel(10, true)), LAC(0, 0), null, rList)));
-		*/
-		
 		Lib.current.stage.addChild(moo.sprite);
 		
 		var testbmp = new Bitmap(new BitmapData(500, 500, false, Color.ARGB(0,0)));
@@ -140,15 +111,7 @@ class GUITests
 		sa.x = 100;
 		sa.y = 100;
 		
-		var ns = new SettingsUI(new Rectangle(0, 0, Lib.current.stage.stageWidth, Lib.current.stage.stageHeight),
-			rr, { up:styleUp, down:styleDown, over:styleUp, sizing:BSSPad(10, 10) }, cascade, 
-				{img:Assets.getBitmapData("assets/checkbox.png"), tw:16, th:16 },
-				{bitmapdata:Assets.getBitmapData("assets/slider.png"), tile_w:16, tile_h:16, drawmode:SliderRepeat},
-				{bitmapdata:Assets.getBitmapData("assets/scrollbar.png"), tile_w:16, tile_h:16, drawmode:SliderRepeat},
-				"assets/sfx_test.mp3", 
-				buttonmanager);
-		Lib.current.stage.addChild(ns);
-		
+		Lib.current.stage.addChild(CommonStyle.settings);
 		
 	}
 	

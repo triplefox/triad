@@ -6,10 +6,11 @@ import com.ludamix.triad.audio.Sequencer;
 
 typedef SMFEvent = { tick:Int, type:Int, channel:Int, data:Dynamic };
 
-// TODO: Understand more events.
-
-// I am still not 100% sure about tempo changes, however they seem pretty stable in my current tests.
-// 		(I need to upgrade the synth quality to tell what's going on in the wing commander track)
+/* TODO: Understand more events.
+   TODO: Refactor into two parsers: one only gives the raw midi data, and the other cleans it up.
+	  	 The goal should be to allow midi data to be streamed in. This also means changing my methods to be a bit
+		 less "batch-y."
+ */
 
 class SMFParser
 {
@@ -25,19 +26,21 @@ class SMFParser
 	
 	// Example in https://github.com/triplefox/triad/blob/master/examples/Source/SynthTest.hx
 	
-	public static function load(sequencer : Sequencer, bytes:ByteArray, ?filter = null) : Array<SequencerEvent>
+	public static function load(sequencer : Sequencer, bytes:ByteArray, ?filter = null, 
+		?init_filter = null) : Array<SequencerEvent>
 	{
 		
 		if (filter == null) filter = defaultFilter;
+		if (init_filter == null) init_filter = defaultInit;
 		
-		var parser = new SMFParser(sequencer, bytes, filter);
+		var parser = new SMFParser(sequencer, bytes, filter, init_filter);
 		
 		return parser.run();
 		
 	}
 	
-	public function new(sequencer, ?bytes, ?filter) 
-		{ this.sequencer = sequencer;  this.bytes = bytes; this.filter = filter; }
+	public function new(sequencer, ?bytes, ?filter, ?init_filter) 
+		{ this.sequencer = sequencer;  this.bytes = bytes; this.filter = filter; this.init_filter = init_filter; }
 	
 	public var delta_time : Int;
 	public var time : Int;
@@ -49,7 +52,8 @@ class SMFParser
 	public var tempos : Array<{tick:Int,tempo:Int,bpm:Float,frames:Float}>;
 	public var tracks:Array<Array<SMFEvent>>;	
 	public var events:Array<SequencerEvent>;
-	public var filter : SMFEvent->Int->Float->Sequencer->SequencerEvent;
+	public var filter : SMFEvent->Int->Float->Sequencer->Dynamic->SequencerEvent;
+	public var init_filter : Void->Dynamic;
 	public var bytes : ByteArray;
 	public var sequencer : Sequencer;
 
@@ -97,6 +101,7 @@ class SMFParser
 		// do the final filtering.
 		
 		tempos.sort(function(a, b) { return a.tick - b.tick;  } );
+		var filter_persistent : Dynamic = init_filter();
 		
 		for (track in tracks)
 		{
@@ -156,7 +161,7 @@ class SMFParser
 					frames += n.tick * tempos_past[tempos_past.length-1].frames;
 				}
 				
-				var result = filter(n, ticks, frames, sequencer);
+				var result = filter(n, ticks, frames, sequencer, filter_persistent);
 				if (result != null) events.push(result);
 				
 			}
@@ -228,7 +233,8 @@ class SMFParser
 	public static inline var RPN_FINE_TUNE = 1;
 	public static inline var RPN_COARSE_TUNE = 2;
 	
-	public static function defaultFilter(smf:SMFEvent, ticks : Int, frames : Float, sequencer : Sequencer)
+	public static function defaultFilter(smf:SMFEvent, ticks : Int, frames : Float, 
+		sequencer : Sequencer, persistent : Dynamic)
 	{
 		if (smf.type == NOTE_ON && smf.data.velocity == 0) // optimize - part of specced behavior
 			smf.type = NOTE_OFF;
@@ -236,22 +242,64 @@ class SMFParser
 		switch(smf.type)
 		{
 			case NOTE_ON:
+				var unique_calc = smf.data.note + (smf.channel << 16);
+				var note_id = persistent.note_uniques.get(unique_calc);
 				return (new SequencerEvent(SequencerEvent.NOTE_ON,
-					sequencer.waveLengthOfMidiNote(smf.data.note),
+					{note:sequencer.tuning.midiNoteToFrequency(smf.data.note),velocity:smf.data.velocity},
 												smf.channel,
-												smf.data.note,
-												Std.int(frames),
-												smf.channel));
+												note_id,
+												Math.round(frames),
+												unique_calc));
 			case NOTE_OFF:
+				var unique_calc = smf.data.note + (smf.channel << 16);
+				var note_id = persistent.note_uniques.get(unique_calc);
+				persistent.id_ct++;
+				persistent.note_uniques.set(unique_calc, persistent.id_ct);
 				return (new SequencerEvent(SequencerEvent.NOTE_OFF,
-					sequencer.waveLengthOfMidiNote(smf.data.note),
+					{note:sequencer.tuning.midiNoteToFrequency(smf.data.note),velocity:smf.data.velocity},
 												smf.channel,
-												smf.data.note,
-												Std.int(frames),
-												smf.channel));
+												note_id,
+												Math.round(frames),
+												unique_calc));
+			case PITCH_BEND:
+				return (new SequencerEvent(SequencerEvent.PITCH_BEND,
+												smf.data - 8192,
+												smf.channel,
+												SequencerEvent.UNISON_ID,
+												Math.round(frames),
+												-1));
+			case CONTROL_CHANGE:
+				switch(smf.data.controller)
+				{
+					case CC_VOLUME:
+						return (new SequencerEvent(SequencerEvent.VOLUME,
+														smf.data.value/128,
+														smf.channel,
+														SequencerEvent.UNISON_ID,
+														Math.round(frames),
+														-1));			
+					default:
+						//trace(["unimplemented cc", smf.data]);
+						return null;
+				}
 			default:
 				return null;
 		}
+	}
+	
+	public static function defaultInit() : Dynamic
+	{
+		// we assign a unique id for each on-off pattern in each note and channel.
+		var t = { note_uniques:new IntHash<Int>(), id_ct : 0 };
+		for ( n in 0...128 )
+		{
+			for (c in 0...16)
+			{
+				t.note_uniques.set(n + (c << 16 ), t.id_ct);
+				t.id_ct++;
+			}
+		}
+		return t;
 	}
 	
 	private function trackEvent(track : Array<SMFEvent>, tick : Int, type : Int, channel : Int, data : Dynamic)
@@ -357,10 +405,12 @@ class SMFParser
 							{note:bytes.readUnsignedByte(),pressure:bytes.readUnsignedByte()});
 					case CONTROL_CHANGE:
 						trackEvent(track, delta_time, status_base, channel, 
-							(bytes.readUnsignedByte()<<16) | bytes.readUnsignedByte());
+							{ controller:bytes.readUnsignedByte(), value:bytes.readUnsignedByte() } );
 					case PITCH_BEND:
+						var lsb = bytes.readUnsignedByte();
+						var msb = bytes.readUnsignedByte();
 						trackEvent(track, delta_time, status_base, channel, 
-							bytes.readUnsignedByte() | (bytes.readUnsignedByte() << 8));
+							lsb | (msb << 7));
 					default:
 						throw "error: bad status("+Std.string(status)+") " + Std.string(status_base) +
 							" on channel "+Std.string(channel)+" at "+Std.string(bytes.position);

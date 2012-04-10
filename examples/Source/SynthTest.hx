@@ -7,6 +7,7 @@ import nme.Lib;
 import nme.media.Sound;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.audio.Audio;
+import com.ludamix.triad.audio.SoftSynth;
 import com.ludamix.triad.ui.SettingsUI;
 
 // Not for use outside Flash.
@@ -21,10 +22,17 @@ class SynthTest
 	{
 		Audio.init({Volume:{vol:1.0,on:true}},true);
 		seq = new Sequencer();
-		for (n in 0...64)
-			seq.addSynth(new TableSynth());
-		for (n in 0...16)
-			seq.addChannel(seq.synths);
+		for (n in 0...11)
+		{
+			var set = new Array<SoftSynth>();
+			for (n in 0...8)
+			{
+				var synth = new TableSynth();
+				seq.addSynth(synth);
+				set.push(synth);
+			}
+			seq.addChannel(set);
+		}
 		
 		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, seq.waveLength(55.0), chan.id, 0, 0, 1));
 		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, seq.waveLength(110.0), chan.id, 0, Std.int(seq.BPMToFrames(1,480.0)), 1));
@@ -35,7 +43,7 @@ class SynthTest
 		
 		seq.play("synth", "Volume");
 		
-		events = SMFParser.load(seq, Assets.getBytes("assets/test_04.mid"));
+		events = SMFParser.load(seq, Assets.getBytes("assets/test_07.mid"));
 		for (n in events)
 		{
 			if (n.channel == 9 || n.channel == 11) // mute some instruments that translate poorly
