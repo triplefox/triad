@@ -21,6 +21,8 @@ class CommonStyle
 	public static var styleDown : LabelRect9Style;	
 	public static var basicButton : LabelButtonStyle;
 	public static var settings : SettingsUI;
+	public static var slider : ScrollableStyle;
+	public static var scrollbar : ScrollableStyle;
 	
 	public static function init(?buttonmanager : ButtonManager = null, ?sound : String = null)	
 	{
@@ -33,12 +35,16 @@ class CommonStyle
 		styleUp = {cascade:cascade, rect9 : rr };
 		styleDown = {cascade:cascade, rect9 : rrDown };		
 		basicButton = { up:styleUp, down:styleDown, over:styleUp, sizing:BSSPad(8, 8) };
+		slider = { bitmapdata : Assets.getBitmapData("assets/slider.png"), tile_w : 16, tile_h : 16, 
+						drawmode : SliderRepeat };
+		scrollbar = { bitmapdata : Assets.getBitmapData("assets/scrollbar.png"), tile_w : 16, tile_h : 16, 
+						drawmode : SliderRepeat };
 		
 		settings = new SettingsUI(new Rectangle(0, 0, Lib.current.stage.stageWidth, Lib.current.stage.stageHeight),
 			rr, { up:styleUp, down:styleDown, over:styleUp, sizing:BSSPad(10, 10) }, cascade, 
 				{bitmapdata:Assets.getBitmapData("assets/checkbox.png"), tile_w:16, tile_h:16 },
-				{bitmapdata:Assets.getBitmapData("assets/slider.png"), tile_w:16, tile_h:16, drawmode:SliderRepeat},
-				{bitmapdata:Assets.getBitmapData("assets/scrollbar.png"), tile_w:16, tile_h:16, drawmode:SliderRepeat},
+				slider,
+				scrollbar,
 				sound,buttonmanager);
 	}	
 	

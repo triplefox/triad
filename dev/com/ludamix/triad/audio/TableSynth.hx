@@ -15,6 +15,13 @@ class EventFollower
 	}
 }
 
+typedef TableSynthPatch = {
+	attack_envelope : Array<Float>,
+	sustain_envelope : Array<Float>,
+	release_envelope : Array<Float>,
+	oscillator : Int
+};
+
 class TableSynth implements SoftSynth
 {
 	
@@ -33,12 +40,6 @@ class TableSynth implements SoftSynth
 	public static inline var VELOCITY_LINEAR = 0;
 	public static inline var VELOCITY_SQR = 1;
 	public static inline var VELOCITY_POW = 2;
-	
-	public var attack_envelope : Array<Float>;
-	public var sustain_envelope : Array<Float>;
-	public var release_envelope : Array<Float>;
-	
-	public var oscillator : Int;
 	
 	public var pulsewidth : Float;
 	
@@ -63,44 +64,22 @@ class TableSynth implements SoftSynth
 		velocity = 1.0;
 		velocity_mapping = VELOCITY_SQR;
 		
-		attack_envelope = [1.0];
-		sustain_envelope = [1.0];
-		release_envelope = [1.0];
-		
-		oscillator = PULSE;
 		pulsewidth = 0.5;
 	}
 	
-	public function interpretADSR(a : Float, d : Float, s : Float, r : Float)
+	public static function defaultPatch() : TableSynthPatch
 	{
-		var af = Math.ceil(sequencer.secondsToFrames(a));
-		var df = Math.ceil(sequencer.secondsToFrames(d));
-		var rf = Math.ceil(sequencer.secondsToFrames(r));
-		
-		if (af == 0) af = 1;
-		if (df == 0) df = 1;
-		if (rf == 0) rf = 1;
-		
-		attack_envelope = new Array<Float>();
-		for (n in 0...af)
-			attack_envelope.push(com.ludamix.triad.tools.MathTools.rescale(0,af,0.,1.0,n));
-		for (n in 0...df)
-			attack_envelope.push(com.ludamix.triad.tools.MathTools.rescale(0,df,s,1.0,df-n));
-		sustain_envelope = [s];
-		release_envelope = new Array<Float>();
-		for (n in 0...rf)
-			release_envelope.push(com.ludamix.triad.tools.MathTools.rescale(0,rf,0.,s,rf-n));
-		
+		return {attack_envelope:[1.0],
+					  sustain_envelope:[1.0],
+					  release_envelope:[1.0],
+					  oscillator:PULSE };
 	}
 	
 	public function init(sequencer : Sequencer, buffersize : Int)
 	{
 		this.sequencer = sequencer;
 		this.buffer = new Vector(buffersize, true);
-		this.events = new Array();
-		
-		interpretADSR(0.01,0.4,0.3,0.2);
-		
+		this.events = new Array();		
 	}
 	
 	public inline function velocityCurve()
@@ -126,7 +105,8 @@ class TableSynth implements SoftSynth
 		var cur_event : EventFollower = events[events.length - 1];
 		var cur_channel = sequencer.channels[cur_event.event.channel];
 		var pitch_bend = cur_channel.pitch_bend;
-		var channel_volume = cur_channel.channel_volume;
+		var channel_volume = cur_channel.channel_volume;		
+		var patch : TableSynthPatch = cur_channel.patch;
 		
 		freq = Std.int(cur_event.event.data.note);
 		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, pitch_bend));
@@ -134,6 +114,9 @@ class TableSynth implements SoftSynth
 		velocity = cur_event.event.data.velocity / 128;
 		
 		// update envelopes and vol+envelope state
+		var attack_envelope = patch.attack_envelope;
+		var sustain_envelope = patch.sustain_envelope;
+		var release_envelope = patch.release_envelope;
 		var envelopes = [attack_envelope, sustain_envelope, release_envelope];		
 		var curval = master_volume * channel_volume * velocityCurve() * envelopes[cur_event.env_state][cur_event.env_ptr];
 		
@@ -145,7 +128,7 @@ class TableSynth implements SoftSynth
 		else
 			hw = Std.int(wl * pulsewidth);
 		
-		switch(oscillator)
+		switch(patch.oscillator)
 		{
 			case PULSE:
 				for (i in 0 ... buffer.length>>1) {
@@ -225,7 +208,7 @@ class TableSynth implements SoftSynth
 				{ 
 					if (n.event.id == ev.id) 
 					{
-						if (release_envelope.length>0)
+						if (channel.patch.release_envelope.length>0)
 							{ if (n.env_state!=RELEASE) {n.env_state = RELEASE; n.env_ptr = 0;} }
 						else
 							n.env_state = OFF;

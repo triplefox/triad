@@ -42,9 +42,11 @@ class SequencerChannel
 	public var pitch_bend : Int;
 	public var channel_volume : Float;
 	
-	public function new(id, outputs) 
+	public var patch : Dynamic;
+	
+	public function new(id, outputs, patch) 
 	{ 
-		this.id = id; this.outputs = outputs; 
+		this.id = id; this.outputs = outputs; this.patch = patch;
 		var ct = 0;
 		pitch_bend = 0;
 		channel_volume = 1.0;
@@ -169,8 +171,8 @@ class Sequencer
 	public inline function addSynth(synth : SoftSynth) : SoftSynth 
 		{ synths.push(synth); synth.init(this, stereoSize());  return synth; }
 	
-	public inline function addChannel(synths : Array<SoftSynth>) : SequencerChannel
-		{ var channel = new SequencerChannel(channels.length, synths); channels.push(channel); return channel; }
+	public inline function addChannel(synths : Array<SoftSynth>, patch : Dynamic) : SequencerChannel
+		{ var channel = new SequencerChannel(channels.length, synths, patch); channels.push(channel); return channel; }
 		
 	public function onSamples(event : SampleDataEvent) 
 	{
