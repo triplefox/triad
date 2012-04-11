@@ -22,16 +22,14 @@ class SynthTest
 	{
 		Audio.init({Volume:{vol:1.0,on:true}},true);
 		seq = new Sequencer();
-		for (n in 0...11)
+		for (n in 0...32)
 		{
-			var set = new Array<SoftSynth>();
-			for (n in 0...8)
-			{
-				var synth = new TableSynth();
-				seq.addSynth(synth);
-				set.push(synth);
-			}
-			seq.addChannel(set);
+			var synth = new TableSynth();
+			seq.addSynth(synth);
+		}
+		for (n in 0...16)
+		{
+			seq.addChannel(seq.synths);
 		}
 		
 		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, seq.waveLength(55.0), chan.id, 0, 0, 1));

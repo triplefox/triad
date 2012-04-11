@@ -13,7 +13,7 @@ class SequencerEvent
 {
 	
 	public var channel : Int; // channel we will pipe to
-	public var id : Int; // id of related sequence (e.g. on-off, pitch bend) - use UNISON_ID to go to all
+	public var id : Int; // id of related sequence (e.g. on-off, pitch bend) - use CHANNEL_EVENT to go to all
 	public var type : Int; // data type
 	public var data : Dynamic; // payload
 	public var frame : Int; // frame that this event occurs on
@@ -25,7 +25,7 @@ class SequencerEvent
 	
 	public function toString() { return ["ch",channel,"id",id,"t",type,"d",data,"@",frame,"p",priority].join(" ");  }
 	
-	public static inline var UNISON_ID = -102;
+	public static inline var CHANNEL_EVENT = -102;
 	
 	public static inline var NOTE_ON = 1;
 	public static inline var NOTE_OFF = 2;
@@ -36,27 +36,18 @@ class SequencerEvent
 
 class SequencerChannel
 {	
-	public var id : Int; public var outputs : Array<SoftSynth>;
+	public var id : Int; 
+	public var outputs : Array<SoftSynth>;
 	
-	// TODO: Allow channels to take ownership of a common pool of outputs, so that polyphony per channel is possible
-	// without using an excessive # of synth instances. (simple sharing scheme does not work with pitch bends)
-	
-	// Here are all the situations I can think of:
-	//
-	// The channel reuses an existing synth.
-	// The channel broadcasts a unison event to the synths in use.
-	// The channel wants a new synth and it's available.
-	// The channel releases a synth.
-	//
-	// The issue that is causing trouble for me is that unison events should only apply to synths in use,
-	// but right now they apply to the pool of all used synths.
-	// One way to resolve this is to bulk up the channel state so that it contains all of the most recent unison events.
-	// Subsequently the synths use the channel state, not the synth state.
+	public var pitch_bend : Int;
+	public var channel_volume : Float;
 	
 	public function new(id, outputs) 
 	{ 
 		this.id = id; this.outputs = outputs; 
 		var ct = 0;
+		pitch_bend = 0;
+		channel_volume = 1.0;
 	}
 	
 	public function priority(synth : SoftSynth) : Int
@@ -74,12 +65,14 @@ class SequencerChannel
 	public function pipe(ev : SequencerEvent)
 	{
 		
-		if (ev.id == SequencerEvent.UNISON_ID)
+		if (ev.id == SequencerEvent.CHANNEL_EVENT)
 		{
-			// unison behavior
-			for (synth in outputs)
+			switch(ev.type)
 			{
-				synth.event(ev, this);
+				case SequencerEvent.PITCH_BEND:
+					pitch_bend = ev.data;
+				case SequencerEvent.VOLUME:
+					channel_volume = ev.data;
 			}
 			return;
 		}

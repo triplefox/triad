@@ -265,7 +265,7 @@ class SMFParser
 				return (new SequencerEvent(SequencerEvent.PITCH_BEND,
 												smf.data - 8192,
 												smf.channel,
-												SequencerEvent.UNISON_ID,
+												SequencerEvent.CHANNEL_EVENT,
 												Math.round(frames),
 												-1));
 			case CONTROL_CHANGE:
@@ -275,7 +275,7 @@ class SMFParser
 						return (new SequencerEvent(SequencerEvent.VOLUME,
 														smf.data.value/128,
 														smf.channel,
-														SequencerEvent.UNISON_ID,
+														SequencerEvent.CHANNEL_EVENT,
 														Math.round(frames),
 														-1));			
 					default:
