@@ -5,6 +5,7 @@ interface MIDITuning
 	
 	public var frequency : Array<Float>;
 	public var notename : Array<String>;
+	public var bend_semitones : Int;
 	
 	public function frequencyToMidiNote(frequency : Float) : Float; 
 	public function midiNoteToFrequency(midiNote : Float) : Float;

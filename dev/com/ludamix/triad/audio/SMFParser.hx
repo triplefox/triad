@@ -440,8 +440,15 @@ class SMFParser
 														SequencerEvent.CHANNEL_EVENT,
 														Math.round(frames),
 														-1));			
+					case SMFData.CC_MODULATION:
+						return (new SequencerEvent(SequencerEvent.MODULATION,
+														smf.data.value/128,
+														smf.channel,
+														SequencerEvent.CHANNEL_EVENT,
+														Math.round(frames),
+														-1));			
 					default:
-						//trace(["unimplemented cc", smf.data]);
+						trace(["unimplemented cc", smf.data]);
 						return null;
 				}
 			default:

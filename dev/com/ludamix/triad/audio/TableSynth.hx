@@ -19,7 +19,12 @@ typedef TableSynthPatch = {
 	attack_envelope : Array<Float>,
 	sustain_envelope : Array<Float>,
 	release_envelope : Array<Float>,
-	oscillator : Int
+	oscillator : Int,
+	vibrato_frequency : Float, // hz
+	vibrato_depth : Float, // midi notes
+	vibrato_delay : Float, // seconds
+	vibrato_attack : Float, // seconds
+	modulation_vibrato : Float // multiplier if greater than 0
 };
 
 class TableSynth implements SoftSynth
@@ -35,13 +40,9 @@ class TableSynth implements SoftSynth
 	
 	public var master_volume : Float;
 	public var velocity : Float;
-	public var velocity_mapping : Int;
-	
-	public static inline var VELOCITY_LINEAR = 0;
-	public static inline var VELOCITY_SQR = 1;
-	public static inline var VELOCITY_POW = 2;
 	
 	public var pulsewidth : Float;
+	public var vibrato : Float;
 	
 	public static inline var ATTACK = 0;
 	public static inline var SUSTAIN = 1;
@@ -62,7 +63,7 @@ class TableSynth implements SoftSynth
 		bufptr = 0;
 		master_volume = 0.1;
 		velocity = 1.0;
-		velocity_mapping = VELOCITY_SQR;
+		vibrato = 0.;
 		
 		pulsewidth = 0.5;
 	}
@@ -70,9 +71,16 @@ class TableSynth implements SoftSynth
 	public static function defaultPatch() : TableSynthPatch
 	{
 		return {attack_envelope:[1.0],
-					  sustain_envelope:[1.0],
-					  release_envelope:[1.0],
-					  oscillator:PULSE };
+				sustain_envelope:[1.0],
+				release_envelope:[1.0],
+				oscillator:PULSE ,
+				vibrato_frequency:6.,
+				vibrato_depth:0.5,
+				vibrato_delay:0.05,
+				vibrato_attack:0.05,
+				modulation_vibrato:1.0
+				}
+				;
 	}
 	
 	public function init(sequencer : Sequencer, buffersize : Int)
@@ -82,19 +90,27 @@ class TableSynth implements SoftSynth
 		this.events = new Array();		
 	}
 	
-	public inline function velocityCurve()
+	public inline function updateVibrato(patch : TableSynthPatch, channel : SequencerChannel) : Float
 	{
-		switch(velocity_mapping)
+		var cycle_length = sequencer.secondsToFrames(1. / patch.vibrato_frequency);
+		var delay_length = sequencer.secondsToFrames(patch.vibrato_delay);
+		var attack_length = sequencer.secondsToFrames(patch.vibrato_attack);
+		var modulation_amount = patch.modulation_vibrato>0 ? patch.modulation_vibrato * channel.modulation : 1.0;
+ 		var mvibrato = vibrato - delay_length;
+		vibrato += 1;
+		if (mvibrato > 0)
 		{
-			case VELOCITY_LINEAR:
-				return velocity;
-			case VELOCITY_SQR:
-				return velocity * velocity;
-			case VELOCITY_POW:
-				return Math.pow(velocity, 1.0 - velocity);
-			default:
-				return velocity;
+			if (mvibrato > attack_length)
+			{
+				return Math.sin(2 * Math.PI * mvibrato / cycle_length) * patch.vibrato_depth * modulation_amount;
+			}
+			else // ramp up vibrato
+			{
+				return Math.sin(2 * Math.PI * mvibrato / cycle_length) * modulation_amount * 
+					(patch.vibrato_depth * (mvibrato/attack_length));
+			}
 		}
+		else return 0.;
 	}
 	
 	public function write()
@@ -109,7 +125,8 @@ class TableSynth implements SoftSynth
 		var patch : TableSynthPatch = cur_channel.patch;
 		
 		freq = Std.int(cur_event.event.data.note);
-		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, pitch_bend));
+		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, 
+					pitch_bend + Std.int((updateVibrato(patch, cur_channel) * 8192 / sequencer.tuning.bend_semitones))));
 		
 		velocity = cur_event.event.data.velocity / 128;
 		
@@ -118,7 +135,8 @@ class TableSynth implements SoftSynth
 		var sustain_envelope = patch.sustain_envelope;
 		var release_envelope = patch.release_envelope;
 		var envelopes = [attack_envelope, sustain_envelope, release_envelope];		
-		var curval = master_volume * channel_volume * velocityCurve() * envelopes[cur_event.env_state][cur_event.env_ptr];
+		var curval = master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
+					envelopes[cur_event.env_state][cur_event.env_ptr];
 		
 		// update pulsewidth and "halfway" point
 		//pulsewidth += 0.01; if (pulsewidth > 2.0) pulsewidth = 0.;
@@ -202,7 +220,9 @@ class TableSynth implements SoftSynth
 		switch(ev.type)
 		{
 			case SequencerEvent.NOTE_ON: 
-				events.push(new EventFollower(ev)); 
+				events.push(new EventFollower(ev));
+				vibrato = 0.;
+				pos = 0;
 			case SequencerEvent.NOTE_OFF: 
 				for (n in events) 
 				{ 

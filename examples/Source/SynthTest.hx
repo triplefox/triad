@@ -86,17 +86,16 @@ class SynthTest
 		
 		seq.play("synth", "Volume");
 		
+		CommonStyle.init(null, "assets/sfx_test.mp3");
+		Lib.current.stage.addChild(ADSRUI.make(seq).sprite);
+		Lib.current.stage.addChild(CommonStyle.settings);
+		
 		events = SMFParser.load(seq, Assets.getBytes("assets/test_03.mid"));
 		for (n in events)
 		{
 			if (n.channel == 9 || n.channel == 11) // mute some instruments that translate poorly
 				n.type = SequencerEvent.NOTE_OFF;
 		}
-		
-		CommonStyle.init(null, "assets/sfx_test.mp3");
-		
-		Lib.current.stage.addChild(ADSRUI.make(seq).sprite);
-		Lib.current.stage.addChild(CommonStyle.settings);
 		
 		Lib.current.stage.addEventListener(Event.ENTER_FRAME, doLoop);
 		

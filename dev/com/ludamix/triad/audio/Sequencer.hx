@@ -31,6 +31,7 @@ class SequencerEvent
 	public static inline var NOTE_OFF = 2;
 	public static inline var PITCH_BEND = 3; // normalized around 0
 	public static inline var VOLUME = 4;
+	public static inline var MODULATION = 5;
 	
 }
 
@@ -41,15 +42,19 @@ class SequencerChannel
 	
 	public var pitch_bend : Int;
 	public var channel_volume : Float;
+	public var modulation : Float;
 	
 	public var patch : Dynamic;
 	
-	public function new(id, outputs, patch) 
+	public var velocity_mapping : Int;
+	
+	public function new(id, outputs, patch, velocity_mapping) 
 	{ 
-		this.id = id; this.outputs = outputs; this.patch = patch;
+		this.id = id; this.outputs = outputs; this.patch = patch; this.velocity_mapping = velocity_mapping;
 		var ct = 0;
 		pitch_bend = 0;
 		channel_volume = 1.0;
+		modulation = 0.;
 	}
 	
 	public function priority(synth : SoftSynth) : Int
@@ -75,6 +80,8 @@ class SequencerChannel
 					pitch_bend = ev.data;
 				case SequencerEvent.VOLUME:
 					channel_volume = ev.data;
+				case SequencerEvent.MODULATION:
+					modulation = ev.data;
 			}
 			return;
 		}
@@ -97,6 +104,28 @@ class SequencerChannel
 				best.synth.event(ev, this);
 		}
 		
+	}
+	
+	public static inline var VELOCITY_LINEAR = 0;
+	public static inline var VELOCITY_SQR = 1;
+	public static inline var VELOCITY_POW = 2;
+	
+	public inline function velocityCurve(velocity : Float) : Float
+	{
+		
+		// remaps note velocity to exaggerate or compress dynamics as needed by the source input.
+		
+		switch(velocity_mapping)
+		{
+			case VELOCITY_LINEAR:
+				return velocity;
+			case VELOCITY_SQR:
+				return velocity * velocity;
+			case VELOCITY_POW:
+				return Math.pow(velocity, 1.0 - velocity);
+			default:
+				return velocity;
+		}
 	}
 	
 }
@@ -171,8 +200,13 @@ class Sequencer
 	public inline function addSynth(synth : SoftSynth) : SoftSynth 
 		{ synths.push(synth); synth.init(this, stereoSize());  return synth; }
 	
-	public inline function addChannel(synths : Array<SoftSynth>, patch : Dynamic) : SequencerChannel
-		{ var channel = new SequencerChannel(channels.length, synths, patch); channels.push(channel); return channel; }
+	public inline function addChannel(synths : Array<SoftSynth>, 
+			patch : Dynamic, ?velocity_mapping = SequencerChannel.VELOCITY_SQR) : SequencerChannel
+		{ 
+			var channel = new SequencerChannel(channels.length, synths, patch, velocity_mapping); 
+			channels.push(channel); 
+			return channel; 
+		}
 		
 	public function onSamples(event : SampleDataEvent) 
 	{
