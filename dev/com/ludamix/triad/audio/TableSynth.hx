@@ -24,7 +24,9 @@ typedef TableSynthPatch = {
 	vibrato_depth : Float, // midi notes
 	vibrato_delay : Float, // seconds
 	vibrato_attack : Float, // seconds
-	modulation_vibrato : Float // multiplier if greater than 0
+	modulation_vibrato : Float, // multiplier if greater than 0
+	envelope_quantization : Int, // 0 = off, lower values produce "chippier" envelope character
+	arpeggiation_rate : Float // 0 = off, hz value
 };
 
 class TableSynth implements SoftSynth
@@ -42,7 +44,8 @@ class TableSynth implements SoftSynth
 	public var velocity : Float;
 	
 	public var pulsewidth : Float;
-	public var vibrato : Float;
+	public var vibrato : Float;	
+	public var arpeggio : Float;
 	
 	public static inline var ATTACK = 0;
 	public static inline var SUSTAIN = 1;
@@ -64,8 +67,10 @@ class TableSynth implements SoftSynth
 		master_volume = 0.1;
 		velocity = 1.0;
 		vibrato = 0.;
+		arpeggio = 0.;
 		
 		pulsewidth = 0.5;
+		
 	}
 	
 	public static function defaultPatch() : TableSynthPatch
@@ -73,12 +78,14 @@ class TableSynth implements SoftSynth
 		return {attack_envelope:[1.0],
 				sustain_envelope:[1.0],
 				release_envelope:[1.0],
-				oscillator:PULSE ,
+				oscillator:SAW,
 				vibrato_frequency:6.,
 				vibrato_depth:0.5,
 				vibrato_delay:0.05,
 				vibrato_attack:0.05,
-				modulation_vibrato:1.0
+				modulation_vibrato:1.0,
+				envelope_quantization:0,
+				arpeggiation_rate:0.0
 				}
 				;
 	}
@@ -118,11 +125,19 @@ class TableSynth implements SoftSynth
 		while (events.length > 0 && events[events.length - 1].env_state == OFF) events.pop();
 		if (events.length < 1) { pos = 0; return false; }
 		
-		var cur_event : EventFollower = events[events.length - 1];
+		var cur_event : EventFollower = events[events.length - 1];		
 		var cur_channel = sequencer.channels[cur_event.event.channel];
+		var patch : TableSynthPatch = cur_channel.patch;
+		if (patch.arpeggiation_rate>0.0)
+		{
+			var available = Lambda.array(Lambda.filter(events, function(a) { return a.env_state != OFF; } ));
+			cur_event = available[Std.int(((arpeggio) % 1) * available.length)];
+			cur_channel = sequencer.channels[cur_event.event.channel];
+			patch = cur_channel.patch;
+			arpeggio += sequencer.secondsToFrames(1.0) / (patch.arpeggiation_rate);
+		}
 		var pitch_bend = cur_channel.pitch_bend;
 		var channel_volume = cur_channel.channel_volume;		
-		var patch : TableSynthPatch = cur_channel.patch;
 		
 		freq = Std.int(cur_event.event.data.note);
 		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, 
@@ -134,12 +149,15 @@ class TableSynth implements SoftSynth
 		var attack_envelope = patch.attack_envelope;
 		var sustain_envelope = patch.sustain_envelope;
 		var release_envelope = patch.release_envelope;
-		var envelopes = [attack_envelope, sustain_envelope, release_envelope];		
+		var envelopes = [attack_envelope, sustain_envelope, release_envelope];
+		var env_val = envelopes[cur_event.env_state][cur_event.env_ptr];
+		if (patch.envelope_quantization != 0)
+			env_val = (Math.round(env_val * patch.envelope_quantization) / patch.envelope_quantization);	
 		var curval = master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
-					envelopes[cur_event.env_state][cur_event.env_ptr];
+					env_val;
 		
 		// update pulsewidth and "halfway" point
-		//pulsewidth += 0.01; if (pulsewidth > 2.0) pulsewidth = 0.;
+		pulsewidth += 0.01; if (pulsewidth > 2.0) pulsewidth = 0.;
 		var hw : Int;
 		if (pulsewidth > 1.0) 
 			hw = Std.int(wl * (1.0 - (pulsewidth%1.0)));
@@ -148,33 +166,39 @@ class TableSynth implements SoftSynth
 		
 		switch(patch.oscillator)
 		{
-			case PULSE:
-				for (i in 0 ... buffer.length>>1) {
+			case PULSE: // naive, run at half rate
+				for (i in 0 ... buffer.length >> 2) {
 					if (pos % wl < hw)
 					{
 						buffer[bufptr] = curval; // left
 						buffer[bufptr+1] = curval; // right
+						buffer[bufptr+2] = curval; // left
+						buffer[bufptr+3] = curval; // right
 					}
 					else
 					{
 						buffer[bufptr] = -curval; // left
 						buffer[bufptr+1] = -curval; // right
+						buffer[bufptr+2] = -curval; // left
+						buffer[bufptr+3] = -curval; // right
 					}
-					pos = (pos+2) % wl;
-					bufptr = (bufptr+2) % buffer.length;
+					pos = (pos+4) % wl;
+					bufptr = (bufptr+4) % buffer.length;
 				}
-			case SAW:
+			case SAW: // naive, run at half rate
 				var peak = 2 * curval;
 				var one_over_wl = peak / wl;
-				for (i in 0 ... buffer.length >> 1) 
+				for (i in 0 ... buffer.length >> 2) 
 				{
 					var sum = ((wl-(pos<<1)) % wl) * one_over_wl;
 					buffer[bufptr] = sum; // left
 					buffer[bufptr+1] = sum; // right
-					pos = (pos+2) % wl;
-					bufptr = (bufptr+2) % buffer.length;
+					buffer[bufptr+2] = sum; // left
+					buffer[bufptr+3] = sum; // right
+					pos = (pos+4) % wl;
+					bufptr = (bufptr+4) % buffer.length;
 				}
-			case TRI:
+			case TRI: // naive, run at full rate
 				var peak = curval;
 				var one_over_wl = peak / wl;
 				for (i in 0 ... buffer.length >> 1) 
@@ -189,7 +213,7 @@ class TableSynth implements SoftSynth
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
-			case SIN:
+			case SIN: // using Math.sin()
 				var peak = curval * 0.3;
 				var adjust = 2 * Math.PI / wl;
 				for (i in 0 ... buffer.length >> 1) 

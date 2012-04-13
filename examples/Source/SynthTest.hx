@@ -31,7 +31,7 @@ class ADSRUI
 		
 		var update = function() { 
 			var envelopes = SynthTools.interpretADSR(seq, attack.highlighted, decay.highlighted,
-				sustain.highlighted, release.highlighted);
+				sustain.highlighted, release.highlighted, SynthTools.CURVE_SQR, SynthTools.CURVE_POW, SynthTools.CURVE_POW);
 			for (n in seq.channels) { 
 				n.patch.attack_envelope = envelopes.attack_envelope; 
 				n.patch.sustain_envelope = envelopes.sustain_envelope; 

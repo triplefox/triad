@@ -106,26 +106,10 @@ class SequencerChannel
 		
 	}
 	
-	public static inline var VELOCITY_LINEAR = 0;
-	public static inline var VELOCITY_SQR = 1;
-	public static inline var VELOCITY_POW = 2;
-	
 	public inline function velocityCurve(velocity : Float) : Float
-	{
-		
-		// remaps note velocity to exaggerate or compress dynamics as needed by the source input.
-		
-		switch(velocity_mapping)
-		{
-			case VELOCITY_LINEAR:
-				return velocity;
-			case VELOCITY_SQR:
-				return velocity * velocity;
-			case VELOCITY_POW:
-				return Math.pow(velocity, 1.0 - velocity);
-			default:
-				return velocity;
-		}
+	{		
+		// remaps note velocity to exaggerate or compress dynamics as needed by the source input.	
+		return SynthTools.curve(velocity, velocity_mapping);		
 	}
 	
 }
@@ -201,7 +185,7 @@ class Sequencer
 		{ synths.push(synth); synth.init(this, stereoSize());  return synth; }
 	
 	public inline function addChannel(synths : Array<SoftSynth>, 
-			patch : Dynamic, ?velocity_mapping = SequencerChannel.VELOCITY_SQR) : SequencerChannel
+			patch : Dynamic, ?velocity_mapping = SynthTools.CURVE_SQR) : SequencerChannel
 		{ 
 			var channel = new SequencerChannel(channels.length, synths, patch, velocity_mapping); 
 			channels.push(channel); 
@@ -240,10 +224,11 @@ class Sequencer
 			{
 				sumL = 0.;
 				sumR = 0.;
+				var i2 = i << 1;
 				for (n in bufferQueue)
 				{
-					sumL += n[(i<<1)];
-					sumR += n[(i<<1)+1];
+					sumL += n[i2];
+					sumR += n[i2+1];
 				}
 				event.data.writeFloat(sumL);
 				event.data.writeFloat(sumR);
