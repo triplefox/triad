@@ -90,7 +90,7 @@ class SynthTest
 		Lib.current.stage.addChild(ADSRUI.make(seq).sprite);
 		Lib.current.stage.addChild(CommonStyle.settings);
 		
-		events = SMFParser.load(seq, Assets.getBytes("assets/test_03.mid"));
+		events = SMFParser.load(seq, Assets.getBytes("assets/test_07.mid"));
 		for (n in events)
 		{
 			if (n.channel == 9 || n.channel == 11) // mute some instruments that translate poorly

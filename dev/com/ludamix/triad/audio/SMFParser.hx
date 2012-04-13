@@ -71,7 +71,7 @@ class SMFData
 	public static inline var CC_DATA_ENTRY_LSB = 38;
 	public static inline var CC_VOLUME = 7;
 	public static inline var CC_BALANCE = 8;
-	public static inline var CC_PANPOD = 10;
+	public static inline var CC_PAN = 10;
 	public static inline var CC_EXPRESSION = 11;
 	public static inline var CC_SUSTAIN_PEDAL = 64;
 	public static inline var CC_PORTAMENTO = 65;
@@ -442,6 +442,13 @@ class SMFParser
 														-1));			
 					case SMFData.CC_MODULATION:
 						return (new SequencerEvent(SequencerEvent.MODULATION,
+														smf.data.value/128,
+														smf.channel,
+														SequencerEvent.CHANNEL_EVENT,
+														Math.round(frames),
+														-1));			
+					case SMFData.CC_PAN:
+						return (new SequencerEvent(SequencerEvent.PAN,
 														smf.data.value/128,
 														smf.channel,
 														SequencerEvent.CHANNEL_EVENT,

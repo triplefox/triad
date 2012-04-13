@@ -32,6 +32,7 @@ class SequencerEvent
 	public static inline var PITCH_BEND = 3; // normalized around 0
 	public static inline var VOLUME = 4;
 	public static inline var MODULATION = 5;
+	public static inline var PAN = 6;
 	
 }
 
@@ -43,6 +44,7 @@ class SequencerChannel
 	public var pitch_bend : Int;
 	public var channel_volume : Float;
 	public var modulation : Float;
+	public var pan : Float;	
 	
 	public var patch : Dynamic;
 	
@@ -55,6 +57,7 @@ class SequencerChannel
 		pitch_bend = 0;
 		channel_volume = 1.0;
 		modulation = 0.;
+		pan = 0.5;
 	}
 	
 	public function priority(synth : SoftSynth) : Int
@@ -82,6 +85,8 @@ class SequencerChannel
 					channel_volume = ev.data;
 				case SequencerEvent.MODULATION:
 					modulation = ev.data;
+				case SequencerEvent.PAN:
+					pan = ev.data;
 			}
 			return;
 		}
