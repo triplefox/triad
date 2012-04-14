@@ -31,7 +31,7 @@ class ADSRUI
 		
 		var update = function() { 
 			var envelopes = SynthTools.interpretADSR(seq, attack.highlighted, decay.highlighted,
-				sustain.highlighted, release.highlighted, SynthTools.CURVE_SQR, SynthTools.CURVE_POW, SynthTools.CURVE_POW);
+				sustain.highlighted, release.highlighted, SynthTools.CURVE_POW, SynthTools.CURVE_SQR, SynthTools.CURVE_POW);
 			for (n in seq.channels) { 
 				n.patch.attack_envelope = envelopes.attack_envelope; 
 				n.patch.sustain_envelope = envelopes.sustain_envelope; 
@@ -90,7 +90,7 @@ class SynthTest
 		Lib.current.stage.addChild(ADSRUI.make(seq).sprite);
 		Lib.current.stage.addChild(CommonStyle.settings);
 		
-		events = SMFParser.load(seq, Assets.getBytes("assets/test_07.mid"));
+		events = SMFParser.load(seq, Assets.getBytes("assets/test_08.mid"));
 		for (n in events)
 		{
 			if (n.channel == 9 || n.channel == 11) // mute some instruments that translate poorly

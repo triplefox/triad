@@ -57,7 +57,11 @@ class TableSynth implements SoftSynth
 	public static inline var SAW = 1;
 	public static inline var TRI = 2;
 	public static inline var SIN = 3;
-	// later... band-limited versions?
+	// phase distortion-based ( cosine * cosine with optional windowing envelope on both)
+	public static inline var PD_WINDOW_WINDOW = 4;
+	public static inline var PD_WINDOW_FREE = 5;
+	public static inline var PD_FREE_WINDOW = 6;
+	public static inline var PD_FREE_FREE = 7;
 	
 	public function new()
 	{
@@ -78,7 +82,7 @@ class TableSynth implements SoftSynth
 		return {attack_envelope:[1.0],
 				sustain_envelope:[1.0],
 				release_envelope:[1.0],
-				oscillator:TRI,
+				oscillator:PD_WINDOW_WINDOW,
 				vibrato_frequency:6.,
 				vibrato_depth:0.5,
 				vibrato_delay:0.05,
@@ -120,6 +124,18 @@ class TableSynth implements SoftSynth
 		else return 0.;
 	}
 	
+	public static inline function alg_window(i : Float, wl : Float)
+	{
+		// phase distortion windowing function.
+		return (wl-(i%wl))/wl;
+	}
+	
+	public static inline function alg_free(i : Float, wl : Float)
+	{
+		// free-running frequency. (compare to alg_window)
+		return i/wl;
+	}
+	
 	public function write()
 	{	
 		while (events.length > 0 && events[events.length - 1].env_state == OFF) events.pop();
@@ -158,7 +174,7 @@ class TableSynth implements SoftSynth
 					env_val;
 		
 		// update pulsewidth and "halfway" point
-		//pulsewidth += 0.01; if (pulsewidth > 2.0) pulsewidth = 0.;
+		pulsewidth += 0.01; if (pulsewidth > 2.0) pulsewidth = 0.;
 		var hw : Int;
 		if (pulsewidth > 1.0) 
 			hw = Std.int(wl * (1.0 - (pulsewidth%1.0)));
@@ -228,6 +244,118 @@ class TableSynth implements SoftSynth
 				for (i in 0 ... buffer.length >> 1) 
 				{
 					var sum = peak * Math.sin(pos * adjust);
+					buffer[bufptr] = sum * left;
+					buffer[bufptr+1] = sum * right;
+					pos = (pos+2) % wl;
+					bufptr = (bufptr+2) % buffer.length;
+				}
+			case PD_WINDOW_WINDOW:
+				/*
+				 * 	
+				var outer_a = 1.0;
+				var outer_b = 0.5;
+				var inner_a = 1.0;
+				var inner_b = 1.0;
+				var inner_c = 0.125;
+				*/
+				var outer_a = 0.5;
+				var outer_b = 0.5;
+				var inner_a = 1.0;
+				var inner_b = 3.0;
+				var inner_c = 0.1;
+				
+				var peak = curval * 2;
+				var left = pan * peak;
+				var right = (1. -pan) * peak;
+				
+				for (i in 0 ... buffer.length >> 1) 
+				{
+					var sum = Math.cos(alg_window(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
+								Math.cos(alg_window(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
+					buffer[bufptr] = sum * left;
+					buffer[bufptr+1] = sum * right;
+					pos = (pos+2) % wl;
+					bufptr = (bufptr+2) % buffer.length;
+				}
+			case PD_WINDOW_FREE:
+				/*
+				 * 	
+				var outer_a = 1.0;
+				var outer_b = 0.5;
+				var inner_a = 1.0;
+				var inner_b = 1.0;
+				var inner_c = 0.125;
+				*/
+				var outer_a = 0.5;
+				var outer_b = 0.5;
+				var inner_a = 1.0;
+				var inner_b = 3.0;
+				var inner_c = 0.1;
+				
+				var peak = curval * 2;
+				var left = pan * peak;
+				var right = (1. -pan) * peak;
+				
+				for (i in 0 ... buffer.length >> 1) 
+				{
+					var sum = Math.cos(alg_window(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
+								Math.cos(alg_free(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
+					buffer[bufptr] = sum * left;
+					buffer[bufptr+1] = sum * right;
+					pos = (pos+2) % wl;
+					bufptr = (bufptr+2) % buffer.length;
+				}
+			case PD_FREE_WINDOW:
+				/*
+				 * 	
+				var outer_a = 1.0;
+				var outer_b = 0.5;
+				var inner_a = 1.0;
+				var inner_b = 1.0;
+				var inner_c = 0.125;
+				*/
+				var outer_a = 0.5;
+				var outer_b = 0.5;
+				var inner_a = 1.0;
+				var inner_b = 3.0;
+				var inner_c = 0.1;
+				
+				var peak = curval * 2;
+				var left = pan * peak;
+				var right = (1. -pan) * peak;
+				
+				for (i in 0 ... buffer.length >> 1) 
+				{
+					var sum = Math.cos(alg_free(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
+								Math.cos(alg_window(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
+					buffer[bufptr] = sum * left;
+					buffer[bufptr+1] = sum * right;
+					pos = (pos+2) % wl;
+					bufptr = (bufptr+2) % buffer.length;
+				}
+			case PD_FREE_FREE:
+				/*
+				 * 	
+				var outer_a = 1.0;
+				var outer_b = 0.5;
+				var inner_a = 1.0;
+				var inner_b = 1.0;
+				var inner_c = 0.125;
+				*/
+				var outer_a = 2.5;
+				var outer_b = 7.5;
+				var inner_a = 1.2;
+				var inner_b = 3.7;
+				var inner_c = 0.5;
+				
+				var peak = curval * 2;
+				var left = pan * peak;
+				var right = (1. -pan) * peak;
+				
+				for (i in 0 ... buffer.length >> 1) 
+				{
+					var sum = Math.cos(alg_free(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
+								Math.cos(alg_free(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
 					buffer[bufptr] = sum * left;
 					buffer[bufptr+1] = sum * right;
 					pos = (pos+2) % wl;
