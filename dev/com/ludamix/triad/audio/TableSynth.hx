@@ -3,18 +3,6 @@ package com.ludamix.triad.audio;
 import nme.Vector;
 import com.ludamix.triad.audio.Sequencer;
 
-class EventFollower
-{
-	public var event : SequencerEvent;
-	public var env_state : Int;
-	public var env_ptr : Int;
-	
-	public function new(event : SequencerEvent)
-	{
-		this.event = event; env_state = 0; env_ptr = 0;
-	}
-}
-
 typedef TableSynthPatch = {
 	attack_envelope : Array<Float>,
 	sustain_envelope : Array<Float>,
@@ -77,12 +65,17 @@ class TableSynth implements SoftSynth
 		
 	}
 	
+	public static function generatorOf(settings : TableSynthPatch)
+	{
+		return new PatchGenerator(settings, function(settings, ev) { ev.patch = settings; return [ev]; });
+	}
+	
 	public static function defaultPatch() : TableSynthPatch
 	{
 		return {attack_envelope:[1.0],
 				sustain_envelope:[1.0],
 				release_envelope:[1.0],
-				oscillator:PD_WINDOW_WINDOW,
+				oscillator:PD_WINDOW_FREE,
 				vibrato_frequency:6.,
 				vibrato_depth:0.5,
 				vibrato_delay:0.05,
@@ -143,13 +136,13 @@ class TableSynth implements SoftSynth
 		
 		var cur_event : EventFollower = events[events.length - 1];		
 		var cur_channel = sequencer.channels[cur_event.event.channel];
-		var patch : TableSynthPatch = cur_channel.patch;
+		var patch : TableSynthPatch = cur_event.event.patch;
 		if (patch.arpeggiation_rate>0.0)
 		{
 			var available = Lambda.array(Lambda.filter(events, function(a) { return a.env_state != OFF; } ));
 			cur_event = available[Std.int(((arpeggio) % 1) * available.length)];
 			cur_channel = sequencer.channels[cur_event.event.channel];
-			patch = cur_channel.patch;
+			patch = cur_event.event.patch;
 			arpeggio += sequencer.secondsToFrames(1.0) / (patch.arpeggiation_rate);
 		}
 		var pitch_bend = cur_channel.pitch_bend;
@@ -174,7 +167,7 @@ class TableSynth implements SoftSynth
 					env_val;
 		
 		// update pulsewidth and "halfway" point
-		pulsewidth += 0.01; if (pulsewidth > 2.0) pulsewidth = 0.;
+		pulsewidth += 0.001; if (pulsewidth > 2.0) pulsewidth = 0.;
 		var hw : Int;
 		if (pulsewidth > 1.0) 
 			hw = Std.int(wl * (1.0 - (pulsewidth%1.0)));
@@ -258,11 +251,11 @@ class TableSynth implements SoftSynth
 				var inner_b = 1.0;
 				var inner_c = 0.125;
 				*/
-				var outer_a = 0.5;
+				var outer_a = 0.5 + pulsewidth;
 				var outer_b = 0.5;
-				var inner_a = 1.0;
+				var inner_a = 1.0 + pulsewidth;
 				var inner_b = 3.0;
-				var inner_c = 0.1;
+				var inner_c = 0.1 + pulsewidth;
 				
 				var peak = curval * 2;
 				var left = pan * peak;
@@ -287,10 +280,10 @@ class TableSynth implements SoftSynth
 				var inner_c = 0.125;
 				*/
 				var outer_a = 0.5;
-				var outer_b = 0.5;
-				var inner_a = 1.0;
-				var inner_b = 3.0;
-				var inner_c = 0.1;
+				var outer_b = 0.5 + pulsewidth;
+				var inner_a = 1.01;
+				var inner_b = 3.1;
+				var inner_c = 0.11;
 				
 				var peak = curval * 2;
 				var left = pan * peak;
@@ -389,7 +382,7 @@ class TableSynth implements SoftSynth
 				{ 
 					if (n.event.id == ev.id) 
 					{
-						if (channel.patch.release_envelope.length>0)
+						if (ev.patch.release_envelope.length>0)
 							{ if (n.env_state!=RELEASE) {n.env_state = RELEASE; n.env_ptr = 0;} }
 						else
 							n.env_state = OFF;

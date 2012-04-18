@@ -1,6 +1,10 @@
+import com.ludamix.triad.audio.Codec;
+import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.SMFParser;
 import com.ludamix.triad.audio.TableSynth;
 import com.ludamix.triad.ui.HSlider6;
+import haxe.io.Bytes;
+import haxe.io.BytesInput;
 import nme.Assets;
 import nme.events.Event;
 import flash.events.SampleDataEvent;
@@ -14,6 +18,7 @@ import com.ludamix.triad.ui.SettingsUI;
 import com.ludamix.triad.ui.layout.LayoutBuilder;
 import com.ludamix.triad.ui.Rect9;
 import com.ludamix.triad.ui.Helpers;
+import nme.Vector;
 
 // Not for use outside Flash.
 
@@ -33,9 +38,9 @@ class ADSRUI
 			var envelopes = SynthTools.interpretADSR(seq, attack.highlighted, decay.highlighted,
 				sustain.highlighted, release.highlighted, SynthTools.CURVE_POW, SynthTools.CURVE_SQR, SynthTools.CURVE_POW);
 			for (n in seq.channels) { 
-				n.patch.attack_envelope = envelopes.attack_envelope; 
-				n.patch.sustain_envelope = envelopes.sustain_envelope; 
-				n.patch.release_envelope = envelopes.release_envelope; 
+				n.patch_generator.settings.attack_envelope = envelopes.attack_envelope; 
+				n.patch_generator.settings.sustain_envelope = envelopes.sustain_envelope; 
+				n.patch_generator.settings.release_envelope = envelopes.release_envelope; 
 				} 
 			};
 		attack = new HSlider6(CommonStyle.slider, 100, 0.5, function(v : Float)
@@ -65,16 +70,29 @@ class SynthTest
 	
 	public function new()
 	{
+		
+		
+		//var snd = Assets.getSound("assets/sfz/ArcoStringC3.wav");
+		//snd.play();
+		//WAV.load(Assets.getBytes("assets/sfz/ArcoStringC3.wav"));
+		var r = new com.ludamix.triad.format.wav.Reader(
+			new BytesInput(Bytes.ofData(Assets.getBytes("sfz/ArcoStringC3.wav"))));
+		var wav = r.read();
+		trace(wav.header);
+		var wav_data = Codec.WAV(wav);
+		
 		Audio.init({Volume:{vol:1.0,on:true}},true);
 		seq = new Sequencer();
 		for (n in 0...32)
 		{
-			var synth = new TableSynth();
+			//var synth = new TableSynth();
+			var synth = new SamplerSynth();
 			seq.addSynth(synth);
 		}
 		for (n in 0...16)
 		{
-			seq.addChannel(seq.synths, TableSynth.defaultPatch());
+			seq.addChannel(seq.synths, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));
+			//seq.addChannel(seq.synths, TableSynth.generatorOf(TableSynth.defaultPatch()));
 		}
 		
 		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, seq.waveLength(55.0), chan.id, 0, 0, 1));

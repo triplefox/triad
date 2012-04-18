@@ -20,7 +20,8 @@
 	<haxelib name="triad" />
 	<haxelib name="hscript" />
 	
-	<assets path="Assets" rename="assets" include="*" exclude="nme.svg" />
+	<assets path="Assets" rename="assets" include="*" exclude="nme.svg|sfz" />
+	<assets path="Assets/sfz" rename="sfz" include="*" type="binary" />
 	
 	<icon name="Assets/nme.svg" />
 	

@@ -430,6 +430,13 @@ class SMFParser
 												SequencerEvent.CHANNEL_EVENT,
 												Math.round(frames),
 												-1));
+			case SMFData.PROGRAM_CHANGE:
+				return (new SequencerEvent(SequencerEvent.SET_PATCH,
+												smf.data,
+												smf.channel,
+												SequencerEvent.CHANNEL_EVENT,
+												Math.round(frames),
+												-1));
 			case SMFData.CONTROL_CHANGE:
 				switch(smf.data.controller)
 				{
@@ -453,12 +460,20 @@ class SMFParser
 														smf.channel,
 														SequencerEvent.CHANNEL_EVENT,
 														Math.round(frames),
-														-1));			
+														-1));
+					case SMFData.CC_BANK_SELECT_LSB: // we assume this is the same as program change...
+						return (new SequencerEvent(SequencerEvent.SET_PATCH,
+												smf.data,
+												smf.channel,
+												SequencerEvent.CHANNEL_EVENT,
+												Math.round(frames),
+												-1));
 					default:
 						trace(["unimplemented cc", smf.data]);
 						return null;
 				}
 			default:
+				trace(["unimplemented", smf.type]);
 				return null;
 		}
 	}

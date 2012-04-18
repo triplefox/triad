@@ -18,10 +18,11 @@ class SequencerEvent
 	public var data : Dynamic; // payload
 	public var frame : Int; // frame that this event occurs on
 	public var priority : Int; // priority of event (for note-stealing purposes)
+	public var patch : Dynamic; // patch data for this event, applied by the SequencerChannel
 	
 	public function new(type : Int, data : Dynamic, channel : Int, id : Int, frame : Int, priority : Int) 
 	{ this.channel = channel; this.id = id; this.type = type;  this.data = data; 
-	  this.frame = frame; this.priority = priority; }
+	  this.frame = frame; this.priority = priority; this.patch = null; }
 	
 	public function toString() { return ["ch",channel,"id",id,"t",type,"d",data,"@",frame,"p",priority].join(" ");  }
 	
@@ -33,7 +34,21 @@ class SequencerEvent
 	public static inline var VOLUME = 4;
 	public static inline var MODULATION = 5;
 	public static inline var PAN = 6;
+	public static inline var SET_PATCH = 7;
 	
+}
+
+class PatchGenerator
+{
+	
+	public var settings : Dynamic;	
+	public var generator : Dynamic->SequencerEvent->Array<Dynamic>;
+	
+	public function new(settings : Dynamic, generator : Dynamic->SequencerEvent->Array<Dynamic>)
+	{
+		this.settings = settings;
+		this.generator = generator;
+	}
 }
 
 class SequencerChannel
@@ -45,14 +60,17 @@ class SequencerChannel
 	public var channel_volume : Float;
 	public var modulation : Float;
 	public var pan : Float;	
+	public var patch_id : Int;	
 	
-	public var patch : Dynamic;
+	public var patch_generator : PatchGenerator;
 	
 	public var velocity_mapping : Int;
 	
-	public function new(id, outputs, patch, velocity_mapping) 
+	public function new(id, outputs, patch_generator : PatchGenerator, velocity_mapping) 
 	{ 
-		this.id = id; this.outputs = outputs; this.patch = patch; this.velocity_mapping = velocity_mapping;
+		this.id = id; this.outputs = outputs; this.velocity_mapping = velocity_mapping;
+		this.patch_generator = patch_generator;
+		patch_id = 0;
 		var ct = 0;
 		pitch_bend = 0;
 		channel_volume = 1.0;
@@ -87,26 +105,31 @@ class SequencerChannel
 					modulation = ev.data;
 				case SequencerEvent.PAN:
 					pan = ev.data;
+				case SequencerEvent.SET_PATCH:
+					patch_id = ev.data;
 			}
 			return;
 		}
 		else
 		{
-			// overlapping behavior
-			for (synth in outputs)
+			for (patched_ev in patch_generator.generator(patch_generator.settings, ev))
 			{
-				if (hasEvent(synth, ev.id))
+				// overlapping behavior
+				for (synth in outputs)
 				{
-					synth.event(ev, this);
-					return;
+					if (hasEvent(synth, patched_ev.id))
+					{
+						synth.event(patched_ev, this);
+						return;
+					}
 				}
+				// stealing behavior
+				var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(outputs, 
+					function(synth : SoftSynth) { return {synth:synth, priority:priority(synth) }; } ,
+					function(a, b) { return a.priority < b.priority; }, outputs[0] );
+				if (best.priority <= ev.priority)			
+					best.synth.event(patched_ev, this);
 			}
-			// stealing behavior
-			var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(outputs, 
-				function(synth : SoftSynth) { return {synth:synth, priority:priority(synth) }; } ,
-				function(a, b) { return a.priority < b.priority; }, outputs[0] );
-			if (best.priority <= ev.priority)			
-				best.synth.event(ev, this);
 		}
 		
 	}
@@ -190,7 +213,7 @@ class Sequencer
 		{ synths.push(synth); synth.init(this, stereoSize());  return synth; }
 	
 	public inline function addChannel(synths : Array<SoftSynth>, 
-			patch : Dynamic, ?velocity_mapping = SynthTools.CURVE_SQR) : SequencerChannel
+			patch : PatchGenerator, ?velocity_mapping = SynthTools.CURVE_SQR) : SequencerChannel
 		{ 
 			var channel = new SequencerChannel(channels.length, synths, patch, velocity_mapping); 
 			channels.push(channel); 
