@@ -77,16 +77,21 @@ class SFZGroup
 				sampler_patch = Reflect.copy(samples.get(region.get('sample')));
 			else if (group_opcodes.exists('sample'))
 				sampler_patch = Reflect.copy(samples.get(group_opcodes.get('sample')));
+			if (sampler_patch == null) continue; // no sample found...
 			sampler_patch.unpitched = true;
 			
 			// ampeg directives are all in % and seconds.
 			var dsahdsr = [0.,1.,0.,0.,0.,1.,0.];
 			
+			var midi_freq = -1.;
+			
 			for (directives in [group_opcodes, region])
 			{
 				if (directives.exists("pitch_keycenter"))
 				{
-					sampler_patch.sample.base_frequency = seq.tuning.midiNoteToFrequency(directives.get("pitch_keycenter"));
+					var midinote : Float = directives.get("pitch_keycenter");
+					if (directives.exists("tune")) { midinote -= (directives.get("tune")/100); }
+					sampler_patch.sample.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
 					sampler_patch.unpitched = false;
 				}
 				
@@ -95,7 +100,7 @@ class SFZGroup
 				if (directives.exists("ampeg_attack")) { dsahdsr[2] = directives.get("ampeg_attack"); }
 				if (directives.exists("ampeg_hold")) { dsahdsr[3] = directives.get("ampeg_hold"); }
 				if (directives.exists("ampeg_decay")) { dsahdsr[4] = directives.get("ampeg_decay"); }
-				if (directives.exists("ampeg_sustain")) { dsahdsr[5] = directives.get("ampeg_sustain"); }
+				if (directives.exists("ampeg_sustain")) { dsahdsr[5] = directives.get("ampeg_sustain")/100; }
 				if (directives.exists("ampeg_release")) { dsahdsr[6] = directives.get("ampeg_release"); }
 				
 				if (directives.exists("loop_mode")) {
@@ -112,6 +117,11 @@ class SFZGroup
 				if (directives.exists("loop_end")) { sampler_patch.loop_end = directives.get("loop_end"); }
 				
 				if (directives.exists("pan")) { sampler_patch.pan = ((directives.get("pan")/100)+1)/2; }
+				if (directives.exists("volume")) { sampler_patch.volume = 1.0 *
+					//1.0; }
+					// in the sfz spec: "+6db = power*2, -6db = power/2"
+					// but I am using "real" dbs here because it seems a little better.
+					Math.pow(2, directives.get("volume") / 10);  }
 				
 			}
 			
@@ -164,7 +174,7 @@ class SFZ
 		var upper = value.toUpperCase();
 		for (n in tuning.notename)
 		{
-			if (upper == n) return ct;
+			if (upper == n) { return ct; }
 			ct++;
 		}
 		

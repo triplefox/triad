@@ -1,0 +1,26 @@
+//  ***** Creative 3.5mb GM - Telephone *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+sample=Telephone.wav
+hikey=c8
+loop_mode=loop_continuous
+transpose=-2
+tune=17
+pitch_keycenter=d6
+pitch_keytrack=50
+fillfo_freq=4.960
+fillfo_depth=112
+volume=-5
+ampeg_release=0.254
+amplfo_freq=4.960
+amplfo_depth=0.100
+effect1=7
+
+<region>

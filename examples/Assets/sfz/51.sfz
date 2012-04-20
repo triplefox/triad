@@ -1,0 +1,63 @@
+//  ***** Creative 3.5mb GM - Synth Strings 1 *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+loop_mode=loop_continuous
+fileg_attack=0.138
+fileg_decay=6.360
+fileg_release=8.710
+ampeg_attack=0.216
+ampeg_decay=28.240
+ampeg_release=1.728
+effect1=7
+
+<region>
+sample=SynthStringsG2.wav
+hikey=c#4
+tune=-1
+pitch_keycenter=g4
+cutoff=766
+fileg_hold=0.138
+fileg_sustain=2.100
+fileg_depth=2137
+volume=-2
+
+<region>
+sample=SynthStringsG3.wav
+lokey=d4
+hikey=c#5
+tune=-25
+pitch_keycenter=f#5
+cutoff=814
+fileg_sustain=7.400
+fileg_depth=2137
+volume=-1.600
+
+<region>
+sample=SynthStringsG4.wav
+lokey=d5
+hikey=g#6
+tune=35
+pitch_keycenter=a6
+cutoff=814
+fileg_sustain=11.600
+fileg_depth=2362
+volume=-0.500
+
+<region>
+sample=SynthStringsD6.wav
+lokey=a6
+hikey=c8
+tune=35
+pitch_keycenter=e8
+cutoff=814
+fileg_hold=0.230
+fileg_sustain=15.800
+fileg_depth=2700
+volume=-0.500

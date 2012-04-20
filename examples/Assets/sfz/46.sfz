@@ -1,0 +1,65 @@
+//  ***** Creative 3.5mb GM - Pizzicato *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+loop_mode=loop_continuous
+volume=-5.500
+ampeg_sustain=0
+effect1=7
+
+<region>
+sample=PizzViolinE3.wav
+hikey=g#4
+tune=7
+pitch_keycenter=d#5
+cutoff=3684
+fileg_release=1.056
+fileg_depth=1575
+ampeg_decay=4.105
+ampeg_release=2.941
+
+<region>
+sample=PizzViolinC4.wav
+lokey=a4
+hikey=b5
+tune=-3
+pitch_keycenter=c6
+cutoff=3684
+fileg_release=1.056
+fileg_depth=1575
+ampeg_decay=3.930
+ampeg_release=2.848
+
+<region>
+sample=PizzViolinE5.wav
+lokey=c6
+hikey=a6
+tune=27
+pitch_keycenter=f7
+cutoff=3280
+fileg_decay=0.243
+fileg_sustain=0
+fileg_release=0.243
+fileg_depth=1575
+ampeg_decay=2.570
+ampeg_release=1.454
+
+<region>
+sample=PizzViolinE5.wav
+lokey=a#6
+hikey=c8
+tune=27
+pitch_keycenter=f7
+cutoff=3096
+fileg_decay=0.224
+fileg_sustain=0
+fileg_release=0.233
+fileg_depth=1462
+ampeg_decay=2.326
+ampeg_release=1.310

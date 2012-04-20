@@ -1,0 +1,26 @@
+//  ***** Creative 3.5mb GM - Agogo *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+sample=AgogoBell.wav
+hikey=f6
+loop_mode=loop_continuous
+transpose=-10
+tune=-5
+pitch_keycenter=d5
+cutoff=842
+fileg_release=32.760
+fileg_depth=3600
+volume=-0.500
+ampeg_decay=1.863
+ampeg_sustain=0
+ampeg_release=1.359
+effect1=7
+
+<region>

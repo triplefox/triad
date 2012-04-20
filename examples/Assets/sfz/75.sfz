@@ -1,0 +1,49 @@
+//  ***** Creative 3.5mb GM - Recorder *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+loop_mode=loop_continuous
+cutoff=579
+fileg_release=1.056
+fileg_depth=4275
+volume=-9
+ampeg_decay=2.438
+ampeg_sustain=97.700
+ampeg_release=0.138
+amplfo_delay=0.374
+amplfo_freq=5.210
+amplfo_depth=0.500
+effect1=7
+
+<region>
+sample=PiccoloD6.wav
+lokey=c8
+hikey=c8
+tune=29
+pitch_keycenter=a#7
+fileg_decay=0.580
+ampeg_attack=0.020
+
+<region>
+sample=RecorderC4.wav
+hikey=c7
+pitch_keycenter=g#5
+fileg_decay=0.610
+fileg_sustain=79.800
+ampeg_attack=0.010
+
+<region>
+sample=RecorderC6.wav
+lokey=c#7
+hikey=b7
+tune=-22
+pitch_keycenter=b7
+fileg_decay=0.610
+fileg_sustain=90.300
+ampeg_attack=0.010

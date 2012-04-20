@@ -1,0 +1,59 @@
+//  ***** Creative 3.5mb GM - Organ 1 *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+loop_mode=loop_continuous
+cutoff=599
+fileg_sustain=78
+fileg_release=1.056
+fileg_depth=4950
+ampeg_decay=1.088
+amplfo_freq=7.060
+amplfo_depth=0.800
+effect1=7
+
+<region>
+sample=DrawBarOrganC3.wav
+hikey=c5
+pitch_keycenter=g#4
+volume=-9.900
+ampeg_hold=0.138
+ampeg_sustain=98.300
+ampeg_release=0.243
+
+<region>
+sample=DrawBarOrganC3.wav
+lokey=c#5
+hikey=g6
+pitch_keycenter=g#4
+volume=-11
+ampeg_hold=0.138
+ampeg_sustain=99.400
+ampeg_release=0.243
+
+<region>
+sample=DrawBarOrganC5.wav
+lokey=g#6
+hikey=g#7
+tune=44
+pitch_keycenter=f#6
+volume=-14.300
+ampeg_hold=0.138
+ampeg_sustain=99.400
+ampeg_release=0.243
+
+<region>
+sample=OctaveWaveE4.wav
+lokey=a7
+hikey=c8
+tune=13
+pitch_keycenter=c#7
+volume=-16.400
+ampeg_sustain=99.400
+ampeg_release=0.253

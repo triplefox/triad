@@ -282,7 +282,7 @@ class Sequencer
 		
 	}
 	
-	public function new(?framesize : Int = 4096, ?divisions : Int = 8, ?tuning : MIDITuning = null)
+	public function new(?framesize : Int = 4096, ?divisions : Int = 4, ?tuning : MIDITuning = null)
 	{
 		this.FRAMESIZE = framesize;
 		this.DIVISIONS = divisions;

@@ -1,0 +1,48 @@
+//  ***** Creative 3.5mb GM - Synth Drum *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+sample=SynDrumWave.wav
+loop_mode=loop_continuous
+transpose=-11
+tune=21
+pitch_keycenter=d#6
+pitch_keytrack=50
+pitcheg_sustain=0
+pitcheg_depth=1191
+ampeg_hold=0.138
+ampeg_sustain=0
+effect1=7
+
+<region>
+hikey=g3
+pitcheg_decay=0.290
+pitcheg_release=0.305
+volume=-3.500
+ampeg_decay=0.932
+ampeg_release=0.932
+
+<region>
+lokey=g#3
+hikey=f6
+pitcheg_attack=0.006
+pitcheg_decay=0.253
+pitcheg_release=0.277
+volume=-3.500
+ampeg_decay=0.721
+ampeg_release=0.721
+
+<region>
+lokey=f#6
+hikey=c8
+pitcheg_decay=0.233
+pitcheg_release=0.233
+volume=-4.200
+ampeg_decay=0.466
+ampeg_release=0.466

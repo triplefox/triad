@@ -1,0 +1,82 @@
+//  ***** Creative 3.5mb GM - Glockenspiel *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+loop_mode=loop_continuous
+cutoff=2776
+fileg_sustain=0
+ampeg_hold=0.001
+ampeg_sustain=0
+effect1=7
+
+<region>
+sample=GlockenspielD5.wav
+hikey=d3
+tune=18
+pitch_keycenter=a#6
+fileg_decay=10.970
+fileg_release=33.300
+fileg_depth=1462
+volume=-3
+pan=0.80
+ampeg_decay=25.400
+ampeg_release=24.930
+
+<region>
+sample=GlockenspielD5.wav
+lokey=d#3
+hikey=b4
+tune=18
+pitch_keycenter=a#6
+fileg_decay=8.010
+fileg_release=23.300
+fileg_depth=1462
+volume=-2.500
+pan=0.80
+ampeg_decay=15.120
+ampeg_release=19.020
+
+<region>
+sample=GlockenspielD5.wav
+lokey=c5
+hikey=c6
+tune=18
+pitch_keycenter=a#6
+fileg_decay=6.320
+fileg_release=14.640
+fileg_depth=1462
+volume=-2
+pan=0.80
+ampeg_decay=11.920
+ampeg_release=8.010
+
+<region>
+sample=GlockenspielD5.wav
+lokey=c#6
+hikey=b6
+tune=18
+pitch_keycenter=a#6
+fileg_decay=5.214
+fileg_release=12.360
+fileg_depth=2137
+ampeg_decay=9.050
+ampeg_release=5.710
+
+<region>
+sample=GlockenspielD6.wav
+lokey=c7
+hikey=c8
+tune=-36
+pitch_keycenter=c#8
+fileg_decay=0.263
+fileg_release=0.392
+fileg_depth=2025
+volume=-6.500
+ampeg_decay=6.464
+ampeg_release=4.440

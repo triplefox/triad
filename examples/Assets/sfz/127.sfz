@@ -1,0 +1,46 @@
+//  ***** Creative 3.5mb GM - Applause *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+sample=Applause.wav
+hikey=c8
+loop_mode=loop_continuous
+pitch_keycenter=g#7
+pitch_keytrack=10
+fileg_depth=7087
+amplfo_depth=0.100
+effect1=7.800
+
+<region>
+transpose=-7
+tune=-30
+pitchlfo_freq=2.940
+pitchlfo_depth=-8
+resonance=1.200
+fileg_release=32.760
+volume=-5.200
+pan=-32.20
+ampeg_attack=0.610
+ampeg_release=1.863
+amplfo_freq=2.940
+
+<region>
+transpose=-8
+tune=-35
+pitchlfo_freq=2.352
+pitchlfo_depth=19
+resonance=1.500
+fileg_release=28.240
+fillfo_freq=2.352
+fillfo_depth=56
+volume=-10.500
+pan=18.20
+ampeg_attack=1.133
+ampeg_release=1.940
+amplfo_freq=2.352

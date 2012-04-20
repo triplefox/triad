@@ -1,0 +1,52 @@
+//  ***** Creative 3.5mb GM - Celesta *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+loop_mode=loop_continuous
+cutoff=2972
+fileg_sustain=0
+fileg_depth=1575
+ampeg_sustain=0
+effect1=7
+
+<region>
+sample=CelestaC5.wav
+hikey=b4
+tune=-4
+pitch_keycenter=g6
+fileg_decay=2.882
+fileg_release=2.320
+volume=-14.200
+ampeg_decay=8.710
+ampeg_release=3.524
+
+<region>
+sample=CelestaC5.wav
+lokey=c5
+hikey=c7
+tune=-4
+pitch_keycenter=g6
+fileg_attack=0.006
+fileg_decay=2.438
+fileg_release=2.022
+volume=-15
+ampeg_decay=6.360
+ampeg_release=2.717
+
+<region>
+sample=CelestaC7.wav
+lokey=c#7
+hikey=c8
+tune=-25
+pitch_keycenter=b8
+fileg_decay=2.022
+fileg_release=1.940
+volume=-16.500
+ampeg_decay=5.013
+ampeg_release=2.211

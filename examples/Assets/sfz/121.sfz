@@ -1,0 +1,24 @@
+//  ***** Creative 3.5mb GM - Fret Noise *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+sample=FretNoise.wav
+hikey=c8
+transpose=-3
+tune=24
+pitch_keycenter=d#5
+pitch_keytrack=50
+cutoff=842
+fileg_release=0.932
+fileg_depth=5625
+volume=-12
+ampeg_release=0.680
+effect1=7
+
+<region>

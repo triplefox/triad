@@ -1,0 +1,38 @@
+//  ***** Creative 3.5mb GM - Helicopter *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+sample=Helicopter.wav
+hikey=c8
+loop_mode=loop_continuous
+transpose=-25
+tune=-24
+pitch_keycenter=d#6
+pitch_keytrack=10
+pitcheg_attack=12.340
+pitcheg_release=32.760
+pitcheg_depth=69
+pitchlfo_freq=0.084
+pitchlfo_depth=-8
+cutoff=2745
+fileg_attack=12.340
+fileg_release=32.760
+fileg_depth=3037
+fillfo_delay=0.654
+fillfo_freq=0.084
+fillfo_depth=1200
+volume=-2.500
+ampeg_attack=3.500
+ampeg_release=1.558
+amplfo_delay=0.654
+amplfo_freq=0.084
+amplfo_depth=0.100
+effect1=8.600
+
+<region>

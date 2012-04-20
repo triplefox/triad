@@ -1,0 +1,63 @@
+//  ***** Creative 3.5mb GM - Whistle *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+loop_mode=loop_continuous
+pitcheg_sustain=0
+pitcheg_depth=-177
+fillfo_delay=0.396
+fillfo_freq=5.380
+fillfo_depth=56
+ampeg_attack=0.161
+ampeg_hold=0.138
+ampeg_decay=28.240
+ampeg_sustain=97.700
+ampeg_release=0.485
+amplfo_delay=0.396
+amplfo_freq=5.380
+amplfo_depth=0.900
+effect1=7
+
+<region>
+sample=OcarinaF#4.wav
+hikey=f#5
+tune=39
+pitch_keycenter=e6
+pitcheg_decay=0.052
+pitcheg_release=0.049
+pitchlfo_delay=0.396
+pitchlfo_freq=5.380
+pitchlfo_depth=9
+cutoff=2972
+volume=-3.700
+
+<region>
+sample=OcarinaF#4.wav
+lokey=g5
+hikey=f7
+tune=40
+pitch_keycenter=e6
+pitcheg_decay=0.052
+pitcheg_release=0.049
+pitchlfo_delay=0.396
+pitchlfo_freq=5.380
+pitchlfo_depth=9
+cutoff=2797
+volume=-3
+
+<region>
+sample=OcarinaF#6.wav
+lokey=f#7
+hikey=c8
+tune=12
+pitch_keycenter=c#8
+pitcheg_decay=0.050
+pitcheg_release=0.050
+cutoff=2667
+volume=-3.700

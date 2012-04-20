@@ -27,6 +27,7 @@ typedef SamplerPatch = {
 	loop_start : Int,
 	loop_end : Int,
 	loop_mode : Int,
+	volume : Float,
 	attack_envelope : Array<Float>,
 	sustain_envelope : Array<Float>,
 	release_envelope : Array<Float>,
@@ -125,6 +126,7 @@ class SamplerSynth implements SoftSynth
 			attack_envelope:[1.0],
 			sustain_envelope:[1.0],
 			release_envelope:[1.0],
+			volume:1.0,
 			vibrato_frequency:6.,
 			vibrato_depth:0.5,
 			vibrato_delay:0.05,
@@ -155,6 +157,7 @@ class SamplerSynth implements SoftSynth
 					},
 				stereo:false,
 				pan:0.5,
+				volume:1.0,
 				loop_start:0,
 				loop_end:samples.length-1,
 				loop_mode:LOOP_FORWARD,
@@ -267,7 +270,7 @@ class SamplerSynth implements SoftSynth
 				env_val *= cur_follower.release_level;
 			if (patch.envelope_quantization != 0)
 				env_val = (Math.round(env_val * patch.envelope_quantization) / patch.envelope_quantization);	
-			var curval = master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
+			var curval = patch.volume * master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
 						env_val;
 			
 			// get sample and volume data
@@ -388,7 +391,9 @@ class SamplerSynth implements SoftSynth
 			}
 			// set release level
 			if (cur_follower.env_state < RELEASE)
+			{
 				cur_follower.release_level = envelopes[cur_follower.env_state][cur_follower.env_ptr];
+			}
 			
 		}
 			

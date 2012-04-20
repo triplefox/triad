@@ -1,0 +1,55 @@
+//  ***** Creative 3.5mb GM - Ocarina *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+loop_mode=loop_continuous
+cutoff=842
+fileg_release=1.056
+ampeg_decay=1.728
+ampeg_sustain=96.500
+ampeg_release=0.322
+amplfo_delay=0.015
+amplfo_freq=4.286
+amplfo_depth=0.300
+effect1=7
+
+<region>
+sample=OcarinaF#4.wav
+hikey=f#5
+tune=39
+pitch_keycenter=e6
+fileg_decay=0.610
+fileg_sustain=70.400
+fileg_depth=3937
+volume=-1.700
+ampeg_attack=0.008
+
+<region>
+sample=OcarinaF#4.wav
+lokey=g5
+hikey=f7
+tune=40
+pitch_keycenter=e6
+fileg_decay=0.580
+fileg_sustain=72.500
+fileg_depth=3937
+volume=-1
+ampeg_attack=0.008
+
+<region>
+sample=OcarinaF#6.wav
+lokey=f#7
+hikey=c8
+tune=12
+pitch_keycenter=c#8
+fileg_decay=0.553
+fileg_sustain=94.500
+fileg_depth=3487
+volume=-1.700
+ampeg_attack=0.011

@@ -325,6 +325,8 @@ class SMFParser
 		for (track in smf.tracks)
 		{
 			var tempos_future = smf.tempos.copy();
+			if (tempos_future.length == 0) // uh oh...fill in a default
+				{tempos_future = [ { tick:0, tempo:120 * 60000000, bpm:120.0 } ]; trace("no tempo found");}
 			var tempos_past = new Array<{tick:Int,tempo:Int,bpm:Float}>();
 			var ticks = 0;
 			var frames = 0.;

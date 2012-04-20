@@ -1,0 +1,41 @@
+//  ***** Creative 3.5mb GM - Bird *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+sample=Bird-Sparrow.wav
+hikey=c8
+loop_mode=loop_continuous
+tune=-24
+pitch_keycenter=d#7
+pitch_keytrack=50
+volume=-10.200
+ampeg_hold=0.966
+ampeg_decay=6.360
+ampeg_sustain=0
+effect1=7
+
+<region>
+transpose=-13
+pitcheg_hold=0.874
+pitcheg_decay=0.049
+pitcheg_sustain=0
+pitcheg_release=28.240
+pitcheg_depth=1191
+pan=-16.40
+ampeg_release=1.610
+
+<region>
+transpose=-3
+pitchlfo_freq=12.930
+pitchlfo_depth=103
+pan=18.20
+ampeg_attack=0.040
+ampeg_release=1.056
+amplfo_freq=12.930
+amplfo_depth=1.300

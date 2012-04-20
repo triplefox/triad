@@ -1,0 +1,68 @@
+//  ***** Creative 3.5mb GM - Pan Flute *****
+//  Soundfont converted using sfZed
+//  SoundFont version 2.0
+//  EMU8000
+//  By E-mu Systems Sound Team
+//  Using :SFEDT v1.00
+//  Copyright Creative/E-mu Systems, Inc. 1996
+
+
+<group>
+loop_mode=loop_continuous
+cutoff=814
+resonance=1.300
+fileg_hold=0.138
+fileg_release=1.056
+ampeg_hold=0.138
+ampeg_decay=1.440
+ampeg_release=0.224
+amplfo_delay=0.030
+amplfo_freq=5.380
+amplfo_depth=0.100
+effect1=7
+
+<region>
+sample=PanFluteG3.wav
+hikey=a#3
+tune=17
+pitch_keycenter=f5
+fileg_decay=0.216
+fileg_sustain=78.800
+fileg_depth=4387
+volume=-12
+ampeg_attack=0.014
+
+<region>
+sample=PanFluteG3.wav
+lokey=b3
+hikey=e5
+tune=17
+pitch_keycenter=f5
+fileg_decay=0.233
+fileg_sustain=88.200
+fileg_depth=4387
+volume=-12
+ampeg_attack=0.012
+
+<region>
+sample=PanFluteF4.wav
+lokey=f5
+hikey=c#7
+tune=50
+pitch_keycenter=e6
+fileg_decay=0.209
+fileg_sustain=99.800
+fileg_depth=4500
+volume=-12
+ampeg_attack=0.010
+
+<region>
+sample=PanFluteF6.wav
+lokey=d7
+hikey=c8
+tune=13
+pitch_keycenter=c#8
+fileg_decay=0.209
+fileg_depth=4500
+volume=-16.500
+ampeg_attack=0.010
