@@ -21,7 +21,7 @@ class TableSynth implements SoftSynth
 {
 	
 	public var buffer : Vector<Float>;
-	public var events : Array<EventFollower>;
+	public var followers : Array<EventFollower>;
 	public var sequencer : Sequencer;
 	
 	public var freq : Float;
@@ -67,7 +67,7 @@ class TableSynth implements SoftSynth
 	
 	public static function generatorOf(settings : TableSynthPatch)
 	{
-		return new PatchGenerator(settings, function(settings, ev) { ev.patch = settings; return [ev]; });
+		return new PatchGenerator(settings, function(settings,seq, ev) { return [new PatchEvent(ev, settings) ]; } );
 	}
 	
 	public static function defaultPatch() : TableSynthPatch
@@ -91,7 +91,7 @@ class TableSynth implements SoftSynth
 	{
 		this.sequencer = sequencer;
 		this.buffer = new Vector(buffersize, true);
-		this.events = new Array();		
+		this.followers = new Array();		
 	}
 	
 	public inline function updateVibrato(patch : TableSynthPatch, channel : SequencerChannel) : Float
@@ -131,36 +131,38 @@ class TableSynth implements SoftSynth
 	
 	public function write()
 	{	
-		while (events.length > 0 && events[events.length - 1].env_state == OFF) events.pop();
-		if (events.length < 1) { pos = 0; return false; }
+		while (followers.length > 0 && followers[followers.length - 1].env_state == OFF) followers.pop();
+		if (followers.length < 1) { pos = 0; return false; }
 		
-		var cur_event : EventFollower = events[events.length - 1];		
-		var cur_channel = sequencer.channels[cur_event.event.channel];
-		var patch : TableSynthPatch = cur_event.event.patch;
+		var cur_follower : EventFollower = followers[followers.length - 1];		
+		var cur_channel = sequencer.channels[cur_follower.patch_event.sequencer_event.channel];
+		var patch : TableSynthPatch = cur_follower.patch_event.patch;
 		if (patch.arpeggiation_rate>0.0)
 		{
-			var available = Lambda.array(Lambda.filter(events, function(a) { return a.env_state != OFF; } ));
-			cur_event = available[Std.int(((arpeggio) % 1) * available.length)];
-			cur_channel = sequencer.channels[cur_event.event.channel];
-			patch = cur_event.event.patch;
+			var available = Lambda.array(Lambda.filter(followers, function(a) { return a.env_state != OFF; } ));
+			cur_follower = available[Std.int(((arpeggio) % 1) * available.length)];
+			cur_channel = sequencer.channels[cur_follower.patch_event.sequencer_event.channel];
+			patch = cur_follower.patch_event.patch;
 			arpeggio += sequencer.secondsToFrames(1.0) / (patch.arpeggiation_rate);
 		}
 		var pitch_bend = cur_channel.pitch_bend;
 		var channel_volume = cur_channel.channel_volume;
 		var pan = cur_channel.pan;
 		
-		freq = Std.int(cur_event.event.data.note);
+		var seq_event = cur_follower.patch_event.sequencer_event;
+		
+		freq = Std.int(seq_event.data.note);
 		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, 
 					pitch_bend + Std.int((updateVibrato(patch, cur_channel) * 8192 / sequencer.tuning.bend_semitones))));
 		
-		velocity = cur_event.event.data.velocity / 128;
+		velocity = seq_event.data.velocity / 128;
 		
 		// update envelopes and vol+envelope state
 		var attack_envelope = patch.attack_envelope;
 		var sustain_envelope = patch.sustain_envelope;
 		var release_envelope = patch.release_envelope;
 		var envelopes = [attack_envelope, sustain_envelope, release_envelope];
-		var env_val = envelopes[cur_event.env_state][cur_event.env_ptr];
+		var env_val = envelopes[cur_follower.env_state][cur_follower.env_ptr];
 		if (patch.envelope_quantization != 0)
 			env_val = (Math.round(env_val * patch.envelope_quantization) / patch.envelope_quantization);	
 		var curval = master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
@@ -356,7 +358,7 @@ class TableSynth implements SoftSynth
 				}
 		}
 		
-		for (ev in events)
+		for (ev in followers)
 		{
 			ev.env_ptr++;
 			if (ev.env_state!=OFF && ev.env_ptr >= envelopes[ev.env_state].length)
@@ -369,20 +371,21 @@ class TableSynth implements SoftSynth
 		return true;
 	}
 	
-	public function event(ev : SequencerEvent, channel : SequencerChannel)
+	public function event(patch_ev : PatchEvent, channel : SequencerChannel)
 	{
+		var ev = patch_ev.sequencer_event;
 		switch(ev.type)
 		{
 			case SequencerEvent.NOTE_ON: 
-				events.push(new EventFollower(ev));
+				followers.push(new EventFollower(patch_ev));
 				vibrato = 0.;
 				pos = 0;
 			case SequencerEvent.NOTE_OFF: 
-				for (n in events) 
+				for (n in followers) 
 				{ 
-					if (n.event.id == ev.id) 
+					if (n.patch_event.sequencer_event.id == ev.id)
 					{
-						if (ev.patch.release_envelope.length>0)
+						if (n.patch_event.patch.release_envelope.length>0)
 							{ if (n.env_state!=RELEASE) {n.env_state = RELEASE; n.env_ptr = 0;} }
 						else
 							n.env_state = OFF;
@@ -394,9 +397,9 @@ class TableSynth implements SoftSynth
 	public function getEvents()
 	{
 		var result = new Array<SequencerEvent>();
-		for ( n in events )
+		for ( n in followers )
 		{
-			result.push(n.event);
+			result.push(n.patch_event.sequencer_event);
 		}
 		return result;
 	}

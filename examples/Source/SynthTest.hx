@@ -1,6 +1,7 @@
 import com.ludamix.triad.audio.Codec;
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.SMFParser;
+import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.TableSynth;
 import com.ludamix.triad.ui.HSlider6;
 import haxe.io.Bytes;
@@ -38,9 +39,9 @@ class ADSRUI
 			var envelopes = SynthTools.interpretADSR(seq, attack.highlighted, decay.highlighted,
 				sustain.highlighted, release.highlighted, SynthTools.CURVE_POW, SynthTools.CURVE_SQR, SynthTools.CURVE_POW);
 			for (n in seq.channels) { 
-				n.patch_generator.settings.attack_envelope = envelopes.attack_envelope; 
-				n.patch_generator.settings.sustain_envelope = envelopes.sustain_envelope; 
-				n.patch_generator.settings.release_envelope = envelopes.release_envelope; 
+				//n.patch_generator.settings.attack_envelope = envelopes.attack_envelope; 
+				//n.patch_generator.settings.sustain_envelope = envelopes.sustain_envelope; 
+				//n.patch_generator.settings.release_envelope = envelopes.release_envelope; 
 				} 
 			};
 		attack = new HSlider6(CommonStyle.slider, 100, 0.5, function(v : Float)
@@ -83,6 +84,28 @@ class SynthTest
 		
 		Audio.init({Volume:{vol:1.0,on:true}},true);
 		seq = new Sequencer();
+		
+		var melodic = new SFZBank(seq, "sfz/");
+		var sfz_str = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/Yvan Janet Dry Strings.sfz")));
+		var sfz_piano = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/Yvan Janet Grand Piano.sfz")));
+		var sfz_bass = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/ESS Acoustic Bass.sfz")));
+		for (n in 0...24)
+		{
+			melodic.assignSFZ(sfz_piano[0], n);
+		}
+		for (n in 24...40)
+		{
+			melodic.assignSFZ(sfz_bass[0], n);
+		}
+		for (n in 40...128)
+		{
+			melodic.assignSFZ(sfz_str[0], n);
+		}
+		var percussion = new SFZBank(seq, "sfz/");
+		var sfz_data = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/Yvan GM Standard Kit.sfz")));
+		for (n in 0...127)
+			percussion.assignSFZ(sfz_data[0],n);
+		
 		for (n in 0...32)
 		{
 			//var synth = new TableSynth();
@@ -91,7 +114,11 @@ class SynthTest
 		}
 		for (n in 0...16)
 		{
-			seq.addChannel(seq.synths, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));
+			if (n == 9)
+				seq.addChannel(seq.synths, percussion.getGenerator());
+			else
+				seq.addChannel(seq.synths, melodic.getGenerator());
+			//seq.addChannel(seq.synths, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));
 			//seq.addChannel(seq.synths, TableSynth.generatorOf(TableSynth.defaultPatch()));
 		}
 		
@@ -108,11 +135,11 @@ class SynthTest
 		Lib.current.stage.addChild(ADSRUI.make(seq).sprite);
 		Lib.current.stage.addChild(CommonStyle.settings);
 		
-		events = SMFParser.load(seq, Assets.getBytes("assets/test_08.mid"));
+		events = SMFParser.load(seq, Assets.getBytes("assets/test_02.mid"));
 		for (n in events)
 		{
-			if (n.channel == 9 || n.channel == 11) // mute some instruments that translate poorly
-				n.type = SequencerEvent.NOTE_OFF;
+			//if (n.channel == 9 || n.channel == 11) // mute some instruments that translate poorly
+			//	n.type = SequencerEvent.NOTE_OFF;
 		}
 		
 		Lib.current.stage.addEventListener(Event.ENTER_FRAME, doLoop);

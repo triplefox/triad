@@ -18,7 +18,7 @@ interface SoftSynth
 	
 	public function init(sequencer : Sequencer, buffersize : Int):Void;
 	public function write():Bool;
-	public function event(data : SequencerEvent, channel : SequencerChannel):Void;
+	public function event(data : PatchEvent, channel : SequencerChannel):Void;
 	public function getEvents():Array<SequencerEvent>;
 	
 }

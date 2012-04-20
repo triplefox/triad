@@ -18,11 +18,10 @@ class SequencerEvent
 	public var data : Dynamic; // payload
 	public var frame : Int; // frame that this event occurs on
 	public var priority : Int; // priority of event (for note-stealing purposes)
-	public var patch : Dynamic; // patch data for this event, applied by the SequencerChannel
 	
 	public function new(type : Int, data : Dynamic, channel : Int, id : Int, frame : Int, priority : Int) 
 	{ this.channel = channel; this.id = id; this.type = type;  this.data = data; 
-	  this.frame = frame; this.priority = priority; this.patch = null; }
+	  this.frame = frame; this.priority = priority; }
 	
 	public function toString() { return ["ch",channel,"id",id,"t",type,"d",data,"@",frame,"p",priority].join(" ");  }
 	
@@ -38,13 +37,27 @@ class SequencerEvent
 	
 }
 
+class PatchEvent
+{
+	
+	public var sequencer_event : SequencerEvent;
+	public var patch : Dynamic;
+	
+	public function new(ev : SequencerEvent, patch : Dynamic)
+	{
+		this.sequencer_event = ev;
+		this.patch = patch;
+	}
+	
+}
+
 class PatchGenerator
 {
 	
 	public var settings : Dynamic;	
-	public var generator : Dynamic->SequencerEvent->Array<Dynamic>;
+	public var generator : Dynamic->Sequencer->SequencerEvent->Array<PatchEvent>;
 	
-	public function new(settings : Dynamic, generator : Dynamic->SequencerEvent->Array<Dynamic>)
+	public function new(settings : Dynamic, generator : Dynamic->Sequencer->SequencerEvent->Array<PatchEvent>)
 	{
 		this.settings = settings;
 		this.generator = generator;
@@ -90,7 +103,7 @@ class SequencerChannel
 		return Lambda.exists(synth.getEvents(), function(ev) { return ev.id == id; } );
 	}
 	
-	public function pipe(ev : SequencerEvent)
+	public function pipe(ev : SequencerEvent, seq : Sequencer)
 	{
 		
 		if (ev.id == SequencerEvent.CHANNEL_EVENT)
@@ -112,12 +125,14 @@ class SequencerChannel
 		}
 		else
 		{
-			for (patched_ev in patch_generator.generator(patch_generator.settings, ev))
+			var patched_events = patch_generator.generator(patch_generator.settings, seq, ev);
+			if (patched_events == null) return;
+			for (patched_ev in patched_events)
 			{
 				// overlapping behavior
 				for (synth in outputs)
 				{
-					if (hasEvent(synth, patched_ev.id))
+					if (hasEvent(synth, patched_ev.sequencer_event.id))
 					{
 						synth.event(patched_ev, this);
 						return;
@@ -127,7 +142,7 @@ class SequencerChannel
 				var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(outputs, 
 					function(synth : SoftSynth) { return {synth:synth, priority:priority(synth) }; } ,
 					function(a, b) { return a.priority < b.priority; }, outputs[0] );
-				if (best.priority <= ev.priority)			
+				if (best.priority <= ev.priority)
 					best.synth.event(patched_ev, this);
 			}
 		}
@@ -230,7 +245,7 @@ class Sequencer
 			while (events.length > 0 && events[0].frame <= this.frame)
 			{
 				var e = events.shift();
-				channels[e.channel].pipe(e);
+				channels[e.channel].pipe(e, this);
 			}
 			if (events.length < 1)
 				{}
@@ -267,7 +282,7 @@ class Sequencer
 		
 	}
 	
-	public function new(?framesize : Int = 2048, ?divisions : Int = 8, ?tuning : MIDITuning = null)
+	public function new(?framesize : Int = 4096, ?divisions : Int = 8, ?tuning : MIDITuning = null)
 	{
 		this.FRAMESIZE = framesize;
 		this.DIVISIONS = divisions;
