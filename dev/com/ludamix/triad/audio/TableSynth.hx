@@ -87,10 +87,10 @@ class TableSynth implements SoftSynth
 				;
 	}
 	
-	public function init(sequencer : Sequencer, buffersize : Int)
+	public function init(sequencer)
 	{
 		this.sequencer = sequencer;
-		this.buffer = new Vector(buffersize, true);
+		this.buffer = sequencer.buffer;
 		this.followers = new Array();		
 	}
 	
@@ -184,17 +184,17 @@ class TableSynth implements SoftSynth
 				for (i in 0 ... buffer.length >> 2) {
 					if (pos % wl < hw)
 					{
-						buffer[bufptr] = left;
-						buffer[bufptr+1] = right;
-						buffer[bufptr+2] = left;
-						buffer[bufptr+3] = right;
+						buffer[bufptr] += left;
+						buffer[bufptr+1] += right;
+						buffer[bufptr+2] += left;
+						buffer[bufptr+3] += right;
 					}
 					else
 					{
-						buffer[bufptr] = -left;
-						buffer[bufptr+1] = -right;
-						buffer[bufptr+2] = -left;
-						buffer[bufptr+3] = -right;
+						buffer[bufptr] += -left;
+						buffer[bufptr+1] += -right;
+						buffer[bufptr+2] += -left;
+						buffer[bufptr+3] += -right;
 					}
 					pos = (pos+4) % wl;
 					bufptr = (bufptr+4) % buffer.length;
@@ -207,10 +207,10 @@ class TableSynth implements SoftSynth
 				for (i in 0 ... buffer.length >> 2) 
 				{
 					var sum = ((wl-(pos<<1)) % wl) * one_over_wl;
-					buffer[bufptr] = sum * left;
-					buffer[bufptr+1] = sum * right;
-					buffer[bufptr+2] = sum * left;
-					buffer[bufptr+3] = sum * right;
+					buffer[bufptr] += sum * left;
+					buffer[bufptr+1] += sum * right;
+					buffer[bufptr+2] += sum * left;
+					buffer[bufptr+3] += sum * right;
 					pos = (pos+4) % wl;
 					bufptr = (bufptr+4) % buffer.length;
 				}
@@ -226,8 +226,8 @@ class TableSynth implements SoftSynth
 					{
 						sum = peak - sum;
 					}
-					buffer[bufptr] = sum * left;
-					buffer[bufptr+1] = sum * right;
+					buffer[bufptr] += sum * left;
+					buffer[bufptr+1] += sum * right;
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
@@ -239,8 +239,8 @@ class TableSynth implements SoftSynth
 				for (i in 0 ... buffer.length >> 1) 
 				{
 					var sum = peak * Math.sin(pos * adjust);
-					buffer[bufptr] = sum * left;
-					buffer[bufptr+1] = sum * right;
+					buffer[bufptr] += sum * left;
+					buffer[bufptr+1] += sum * right;
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
@@ -267,8 +267,8 @@ class TableSynth implements SoftSynth
 				{
 					var sum = Math.cos(alg_window(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
 								Math.cos(alg_window(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
-					buffer[bufptr] = sum * left;
-					buffer[bufptr+1] = sum * right;
+					buffer[bufptr] += sum * left;
+					buffer[bufptr+1] += sum * right;
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
@@ -295,8 +295,8 @@ class TableSynth implements SoftSynth
 				{
 					var sum = Math.cos(alg_window(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
 								Math.cos(alg_free(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
-					buffer[bufptr] = sum * left;
-					buffer[bufptr+1] = sum * right;
+					buffer[bufptr] += sum * left;
+					buffer[bufptr+1] += sum * right;
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
@@ -323,8 +323,8 @@ class TableSynth implements SoftSynth
 				{
 					var sum = Math.cos(alg_free(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
 								Math.cos(alg_window(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
-					buffer[bufptr] = sum * left;
-					buffer[bufptr+1] = sum * right;
+					buffer[bufptr] += sum * left;
+					buffer[bufptr+1] += sum * right;
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
@@ -351,8 +351,8 @@ class TableSynth implements SoftSynth
 				{
 					var sum = Math.cos(alg_free(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
 								Math.cos(alg_free(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
-					buffer[bufptr] = sum * left;
-					buffer[bufptr+1] = sum * right;
+					buffer[bufptr] += sum * left;
+					buffer[bufptr+1] += sum * right;
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}

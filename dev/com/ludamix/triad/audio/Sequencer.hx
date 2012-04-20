@@ -167,6 +167,7 @@ class Sequencer
 	public var sound : Sound;
 	public var channel : SoundChannel;
 	public var tuning : MIDITuning;
+	public var buffer : Vector<Float>;
 	
 	private static inline var RATE = 44100;
 	private var FRAMESIZE : Int; // buffer size of mono frame
@@ -225,7 +226,7 @@ class Sequencer
 	}
 	
 	public inline function addSynth(synth : SoftSynth) : SoftSynth 
-		{ synths.push(synth); synth.init(this, stereoSize());  return synth; }
+		{ synths.push(synth); synth.init(this);  return synth; }
 	
 	public inline function addChannel(synths : Array<SoftSynth>, 
 			patch : PatchGenerator, ?velocity_mapping = SynthTools.CURVE_SQR) : SequencerChannel
@@ -252,29 +253,25 @@ class Sequencer
 			else
 				{} //trace([events[0].frame, this.frame]);
 			
-			// figure out who's writing
-			var bufferQueue = new Array<Vector<Float>>();
-			for (n in synths)
+			// clear buffer
+			for (i in 0 ... monoSize()) 
 			{
-				if (n.write())
-					bufferQueue.push(n.buffer);
+				var i2 = i << 1;
+				buffer[i2] = 0.;
+				buffer[i2+1] = 0.;
 			}
 			
-			// actually write to the buffer
+			// sum buffer
+			for (n in synths) { n.write(); }
+			
+			// vector -> bytearray
 			var sumL = 0.;
 			var sumR = 0.;
 			for (i in 0 ... monoSize()) 
 			{
-				sumL = 0.;
-				sumR = 0.;
 				var i2 = i << 1;
-				for (n in bufferQueue)
-				{
-					sumL += n[i2];
-					sumR += n[i2+1];
-				}
-				event.data.writeFloat(sumL);
-				event.data.writeFloat(sumR);
+				event.data.writeFloat(buffer[i2]);
+				event.data.writeFloat(buffer[i2+1]);
 			}
 			
 			frame++;
@@ -292,6 +289,7 @@ class Sequencer
 		events = new Array();
 		channels = new Array();
 		synths = new Array();
+		buffer = new Vector(stereoSize(), true);
 	}
 	
 	public function play(soundname : String, mixgroup : String) 

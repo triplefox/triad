@@ -176,10 +176,10 @@ class SamplerSynth implements SoftSynth
 				;
 	}
 	
-	public function init(sequencer : Sequencer, buffersize : Int)
+	public function init(sequencer : Sequencer)
 	{
 		this.sequencer = sequencer;
-		this.buffer = new Vector(buffersize, true);
+		this.buffer = sequencer.buffer;
 		this.followers = new Array();		
 	}
 	
@@ -303,8 +303,8 @@ class SamplerSynth implements SoftSynth
 						for (n in 0...total_length)
 						{
 							var round : Int = Math.round(cur_follower.pos);
-							buffer[bufptr] = left * sample_left[round];
-							buffer[bufptr+1] = right * sample_right[round];
+							buffer[bufptr] += left * sample_left[round];
+							buffer[bufptr+1] += right * sample_right[round];
 							cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 							bufptr = (bufptr + 2) % buffer.length;
 						}
@@ -316,8 +316,8 @@ class SamplerSynth implements SoftSynth
 							for (n in 0...total_length)
 							{
 								var round : Int = Math.round(cur_follower.pos);
-								buffer[bufptr] = left * sample_left[round];
-								buffer[bufptr+1] = right * sample_right[round];
+								buffer[bufptr] += left * sample_left[round];
+								buffer[bufptr+1] += right * sample_right[round];
 								cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 								bufptr = (bufptr + 2) % buffer.length;
 							}
@@ -329,13 +329,8 @@ class SamplerSynth implements SoftSynth
 								var round : Int = Math.round(cur_follower.pos);
 								if (round < sample_length)
 								{
-									buffer[bufptr] = left * sample_left[round];
-									buffer[bufptr+1] = right * sample_right[round];
-								}
-								else
-								{
-									buffer[bufptr] = 0.;
-									buffer[bufptr + 1] = 0.;
+									buffer[bufptr] += left * sample_left[round];
+									buffer[bufptr+1] += right * sample_right[round];
 								}
 								cur_follower.pos += inc;
 								bufptr = (bufptr + 2) % buffer.length;
@@ -349,13 +344,8 @@ class SamplerSynth implements SoftSynth
 							var round : Int = Math.round(cur_follower.pos);
 							if (round < sample_length)
 							{
-								buffer[bufptr] = left * sample_left[round];
-								buffer[bufptr+1] = right * sample_right[round];
-							}
-							else
-							{
-								buffer[bufptr] = 0.;
-								buffer[bufptr+1] = 0.;
+								buffer[bufptr] += left * sample_left[round];
+								buffer[bufptr+1] += right * sample_right[round];
 							}
 							cur_follower.pos += inc;
 							bufptr = (bufptr + 2) % buffer.length;

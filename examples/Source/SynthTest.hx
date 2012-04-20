@@ -83,7 +83,7 @@ class SynthTest
 		seq.synths = new Array();
 		seq.channels = new Array();
 		seq.events = new Array();
-		for (n in 0...24)
+		for (n in 0...32)
 		{
 			//var synth = new TableSynth();
 			var synth = new SamplerSynth();

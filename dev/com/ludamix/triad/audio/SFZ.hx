@@ -17,11 +17,13 @@ class SFZGroup
 	
 	public var group_opcodes : Hash<Dynamic>;
 	public var regions : Array<Hash<Dynamic>>;
+	public var region_cache : Array<{region:Hash<Dynamic>,patch:SamplerPatch}>;
 	
 	public function new():Void 
 	{
 		group_opcodes = new Hash();
 		regions = new Array();
+		regions.push(new Hash<Dynamic>()); // the empty region, representing group-global
 	}
 	
 	public function getSamples()
@@ -41,36 +43,10 @@ class SFZGroup
 		return set;
 	}
 	
-	public function query(ev : SequencerEvent, seq : Sequencer, samples : Hash<SamplerPatch>) : Array<PatchEvent>
+	public function cacheRegions(seq : Sequencer, samples : Hash<SamplerPatch>)
 	{
-		
-		// currently only some region thingies are supported...
-		
-		var note = 0.;
-		var velocity = 0;
-		
-		switch(ev.type)
-		{
-			case SequencerEvent.NOTE_ON, SequencerEvent.NOTE_OFF:
-				note = seq.tuning.frequencyToMidiNote(ev.data.note);
-				velocity = ev.data.velocity;
-			default:
-				return null;
-		}
-		
-		var available = Lambda.filter(regions, function(r) { 
-			return (
-				(!r.exists("lokey") || r.get("lokey") <= note) &&				
-				(!r.exists("hikey") || r.get("hikey") >= note) &&
-				(!r.exists("lovel") || r.get("lovel") <= velocity) &&
-				(!r.exists("hivel") || r.get("hivel") >= velocity)
-			); } );
-			
-		var result = new Array<PatchEvent>();
-		
-		if (available.length < 1) available.push(new Hash<Dynamic>()); // allow group to assert itself when no regions defined
-		
-		for (region in available)
+		region_cache = new Array();
+		for (region in regions)
 		{
 			var sampler_patch : SamplerPatch =null;
 			if (region.exists('sample'))
@@ -132,11 +108,44 @@ class SFZGroup
 			sampler_patch.sustain_envelope = envs.sustain_envelope;
 			sampler_patch.release_envelope = envs.release_envelope;
 			
-			var patch_event = new PatchEvent(
-				new SequencerEvent(ev.type, ev.data, ev.channel, ev.id, ev.frame, ev.priority),
-				sampler_patch);
-			result.push(patch_event);
+			region_cache.push({region:region,patch:sampler_patch});
+		}		
+	}
+	
+	public function query(ev : SequencerEvent, seq : Sequencer) : Array<PatchEvent>
+	{
+		
+		// currently only some region thingies are supported...
+		
+		var note = 0.;
+		var velocity = 0;
+		
+		switch(ev.type)
+		{
+			case SequencerEvent.NOTE_ON, SequencerEvent.NOTE_OFF:
+				note = seq.tuning.frequencyToMidiNote(ev.data.note);
+				velocity = ev.data.velocity;
+			default:
+				return null;
 		}
+		
+		var result = new Array<PatchEvent>();
+		for (r_c in region_cache)
+		{
+			var r = r_c.region;
+			if (
+				(!r.exists("lokey") || r.get("lokey") <= note) &&				
+				(!r.exists("hikey") || r.get("hikey") >= note) &&
+				(!r.exists("lovel") || r.get("lovel") <= velocity) &&
+				(!r.exists("hivel") || r.get("hivel") >= velocity)
+			)
+			{
+				result.push(new PatchEvent(
+					new SequencerEvent(ev.type, ev.data, ev.channel, ev.id, ev.frame, ev.priority),
+					r_c.patch));
+			}
+		}
+		
 		return result;
 		
 	}
@@ -279,12 +288,13 @@ class SFZBank
 			}
 		}
 		sfz_programs.set(program, sfz);
+		sfz.cacheRegions(seq, samples);
 	}
 	
 	public function getProgramOfEvent(ev : SequencerEvent, number : Int) : Array<PatchEvent>
 	{
 		if (sfz_programs.exists(number))
-			return sfz_programs.get(number).query(ev, seq, samples);
+			return sfz_programs.get(number).query(ev, seq);
 		else return null;
 	}
 	
