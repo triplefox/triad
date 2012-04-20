@@ -67,6 +67,7 @@ class SFZGroup
 				{
 					var midinote : Float = directives.get("pitch_keycenter");
 					if (directives.exists("tune")) { midinote -= (directives.get("tune")/100); }
+					if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
 					sampler_patch.sample.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
 					sampler_patch.unpitched = false;
 				}
@@ -274,7 +275,7 @@ class SFZBank
 		sfz_programs = new IntHash();
 	}
 	
-	public function assignSFZ(sfz : SFZGroup, program : Int)
+	public function assignSFZ(sfz : SFZGroup, program : Int, ?recache : Bool=true)
 	{
 		var req_samples = sfz.getSamples();
 		for (n in req_samples)
@@ -288,7 +289,8 @@ class SFZBank
 			}
 		}
 		sfz_programs.set(program, sfz);
-		sfz.cacheRegions(seq, samples);
+		if (recache)
+			sfz.cacheRegions(seq, samples);
 	}
 	
 	public function getProgramOfEvent(ev : SequencerEvent, number : Int) : Array<PatchEvent>
