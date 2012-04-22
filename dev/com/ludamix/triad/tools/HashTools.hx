@@ -42,7 +42,7 @@ class HashTools
 		for (k in hs.keys())
 		{
 			var data = hs.get(k);
-			Reflect.setField(data, namefield, k);
+			Reflect.setProperty(data, namefield, k);
 			ar.push(data);
 		}
 		return ar;

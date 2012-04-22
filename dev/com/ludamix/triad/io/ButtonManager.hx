@@ -117,7 +117,7 @@ class ButtonManager
 		#if flash
 			so.setProperty("serialized", serialize());
 		#else
-			Reflect.setField(so.data, "serialized", serialize());
+			Reflect.setProperty(so.data, "serialized", serialize());
 			so.flush();
 		#end
 	}

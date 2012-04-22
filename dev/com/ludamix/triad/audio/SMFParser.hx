@@ -110,7 +110,11 @@ class SMFReader
 	{
 		var smf = new SMFData();
 		
+      #if flash
 		var bytes = i.readAll().getData();
+      #else
+		var bytes = ByteArray.fromBytes(i.readAll());
+      #end
 		
 		var len:Int = 0;
 		while (bytes.bytesAvailable > 4) { // don't know if it's correct, but some files seem to be padding their ending
@@ -312,7 +316,11 @@ class SMFParser
 		// Read SMF headers and track chunks.
 		
 		bytes.position = 0;
+      #if flash
 		var reader = new SMFReader(new BytesInput(Bytes.ofData(bytes)));
+      #else
+		var reader = new SMFReader(new BytesInput(bytes));
+      #end
 		smf = reader.readContent();
 		
 		events = new Array();
