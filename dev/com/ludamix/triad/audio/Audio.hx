@@ -202,7 +202,7 @@ class Audio
 				defaults = default_mix;
 			for (n in Reflect.fields(defaults)) 
 			{
-				Reflect.setField(mix.data, n, Reflect.field(defaults, n));
+				Reflect.setProperty(mix.data, n, Reflect.field(defaults, n));
 			}
 			mix.flush();
 		}
@@ -213,7 +213,7 @@ class Audio
 		#if flash
 			obj.setProperty(propname, value);
 		#else
-			Reflect.setField(obj.data, propname, value);
+			Reflect.setProperty(obj.data, propname, value);
 			obj.flush();
 		#end
 	}

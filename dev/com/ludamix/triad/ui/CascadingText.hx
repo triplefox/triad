@@ -22,7 +22,7 @@ class CascadingText extends TextField
 		for (n in field)
 		{
 			for (f in Reflect.fields(n))
-				Reflect.setField(this, f, Reflect.field(n, f));
+				Reflect.setProperty(this, f, Reflect.field(n, f));
 		}
 		
 		var tformat = new TextFormat();
@@ -30,7 +30,7 @@ class CascadingText extends TextField
 		for (n in format)
 		{
 			for (f in Reflect.fields(n))
-				Reflect.setField(tformat, f, Reflect.field(n, f));
+				Reflect.setProperty(tformat, f, Reflect.field(n, f));
 		}
 		
 		this.setTextFormat(tformat);

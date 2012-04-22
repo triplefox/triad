@@ -119,12 +119,21 @@ class SynthTest
 		
 		for (n in 0...128)
 		{
-			var sfz_loadable = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz")));
+         #if flash
+		   var sfz_loadable = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz")) );
+         #else
+			var sfz_loadable = SFZ.load(seq, Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz"));
+         #end
+
 			melodic.assignSFZ(sfz_loadable[0], n);
 		}
 		
 		percussion = new SFZBank(seq, "sfz/");
+      #if flash
 		var sfz_data = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/kit-standard.sfz")));
+      #else
+		var sfz_data = SFZ.load(seq, Assets.getBytes("sfz/kit-standard.sfz"));
+      #end
 		// hack:
 		for (r in sfz_data[0].regions)
 		{

@@ -65,7 +65,7 @@ class EDatabase
 				var existing = Reflect.field(obj, f);
 				if (existing == null)
 				{
-					Reflect.setField(obj, f, content);
+					Reflect.setProperty(obj, f, content);
 				}
 				else
 				{

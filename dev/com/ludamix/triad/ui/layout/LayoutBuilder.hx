@@ -132,7 +132,7 @@ class LayoutBuilder
 		ix : Float, iy : Float, wx : Float, wy : Float, iest : { w:Float, h:Float } )
 	{
 		if (name!=null)
-			Reflect.setField(widgetDict, name, widget);
+			Reflect.setProperty(widgetDict, name, widget);
 		var rd = rectangleData(ix, iy, iest.w, iest.h, inner, widgetDict);
 		if (rd != null)
 		{
@@ -147,7 +147,7 @@ class LayoutBuilder
 				wx : Float, wy : Float)
 	{
 		if (name!=null)
-			Reflect.setField(widgetDict, name, widget);
+			Reflect.setProperty(widgetDict, name, widget);
 		widget.x = Std.int(wx);
 		widget.y = Std.int(wy);		
 		return widget;
@@ -157,7 +157,7 @@ class LayoutBuilder
 		inner : Array<{def:LayoutDef,x:Float,y:Float,est:{w:Float,h:Float}}>, wx : Float, wy : Float)
 	{
 		if (name!=null)
-			Reflect.setField(widgetDict, name, widget);
+			Reflect.setProperty(widgetDict, name, widget);
 		for (i in inner)
 		{
 			var rd = rectangleData(i.x, i.y, i.est.w, i.est.h, i.def, widgetDict);

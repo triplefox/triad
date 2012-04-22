@@ -282,7 +282,11 @@ class SFZBank
 		{
 			if (!samples.exists(n))
 			{
+            #if flash
 				var reader = new Reader(new BytesInput(Bytes.ofData(Assets.getBytes(path + n))));
+            #else
+				var reader = new Reader(new BytesInput(Assets.getBytes(path + n)));
+            #end
 				var header = reader.read();
 				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header);
 				samples.set(n, content.settings);
