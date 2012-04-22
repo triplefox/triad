@@ -285,6 +285,7 @@ class SamplerSynth implements SoftSynth
 			// we are assuming the sample rate is the mono rate.
 			
 			var base_wl = sample.sample_rate / sample.base_frequency;
+			if (wl < 1) wl = 1;
 			var inc : Float = base_wl / wl;
 			var sample_length : Int = sample.sample_left.length;
 			var loop_idx = patch.loop_end;

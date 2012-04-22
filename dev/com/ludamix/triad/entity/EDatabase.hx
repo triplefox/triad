@@ -97,8 +97,7 @@ class EDatabase
 	
 	public function createTags(names_input : Array<String>)
 	{
-		var names = new Array<String>();
-		
+		var names = names_input;
 		var do_spawn : Dynamic = null;
 		var do_get : Dynamic = null;
 		var do_tag : Dynamic = null;
@@ -128,10 +127,29 @@ class EDatabase
 			}
 		}
 		do_spawn = function(db : EDatabase, stack : EStack, payload : Dynamic) 
-			{ for (name in names_input) {db.call(stack.last(), "tag", name);} }
+		{
+			for (p in names)
+			{
+				var tagset : Array<ERow> = tags.get(p);
+				if (tagset==null)
+				{
+					tagset = new Array(); tags.set(p, tagset);
+				}
+				tagset.push(stack.last());
+			}
+		}
 		on_despawn = function(db : EDatabase, stack : EStack, payload : Dynamic) 
-			{ for (name in names) { db.call(stack.last(), "untag", name); } }
-			return { tags:[do_get], tag:[do_tag], untag:[do_untag], spawn:[do_spawn], on_despawn:[on_despawn] };
+		{ 
+			for (n in names)
+			{
+				var tagset : Array<ERow> = tags.get(n);
+				if (tagset!=null)
+				{
+					tagset.remove(stack.last());
+				}
+			}
+		}
+		return { tags:[do_get], tag:[do_tag], untag:[do_untag], spawn:[do_spawn], on_despawn:[on_despawn] };
 	}
 	
 	public function createBag(name : String, data : Dynamic)

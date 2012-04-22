@@ -136,6 +136,18 @@ class RogueBoard
 			dirty[tiles[0].c21(act.x,act.y)] = true;
 	}
 	
+	public function wraparoundX(x) {
+		while (x >= layer(0).worldW) x -= layer(0).worldW;
+		while (x < 0) x += layer(0).worldW;
+		return x;
+	}
+	
+	public function wraparoundY(y) {
+		while (y >= layer(0).worldH) y -= layer(0).worldH;
+		while (y < 0) y += layer(0).worldH;
+		return y;
+	}
+	
 	private inline function spatialActorRemove(act : RogueActor)
 	{
 		var pos = spatialPos(act.x, act.y);
@@ -158,8 +170,8 @@ class RogueBoard
 				{ spatialActorRemove(act);  act.x += payload.x; act.y += payload.y; spatialActorSet(act);  } ],
 			move_wraparound:[function(db : EDatabase, stack : EStack, payload : Dynamic)
 				{ spatialActorRemove(act); 
-				  act.x = (act.x + payload.x) % layer(0).worldW;
-				  act.y = (act.y + payload.y) % layer(0).worldH;
+				  act.x = wraparoundX(act.x + payload.x);
+				  act.y = wraparoundY(act.y + payload.y);
 				  spatialActorSet(act); } ],
 			teleport:[function(db : EDatabase, stack : EStack, payload : Dynamic)
 				{ spatialActorRemove(act);  act.x = payload.x; act.y = payload.y; spatialActorSet(act);  } ],
@@ -174,7 +186,7 @@ class RogueBoard
 			position:[function(db : EDatabase, stack : EStack, payload : Dynamic)
 				{ return { x:act.x, y:act.y }; } ],
 			position_wraparound:[function(db : EDatabase, stack : EStack, payload : Dynamic)
-				{ return { x:act.x%layer(0).worldW, y:act.y%layer(0).worldH }; } ],
+				{ return { x:wraparoundX(act.x), y:wraparoundY(act.y) }; } ],
 			board:[function(db : EDatabase, stack : EStack, payload : Dynamic)
 				{ return self; } ],
 			actor:[function(db : EDatabase, stack : EStack, payload : Dynamic)
