@@ -151,7 +151,7 @@ class TableSynth implements SoftSynth
 		
 		var seq_event = cur_follower.patch_event.sequencer_event;
 		
-		freq = Std.int(seq_event.data.note);
+		freq = Std.int(seq_event.data.freq);
 		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, 
 					pitch_bend + Std.int((updateVibrato(patch, cur_channel) * 8192 / sequencer.tuning.bend_semitones))));
 		

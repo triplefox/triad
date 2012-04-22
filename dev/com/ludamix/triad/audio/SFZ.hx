@@ -59,8 +59,6 @@ class SFZGroup
 			// ampeg directives are all in % and seconds.
 			var dsahdsr = [0.,1.,0.,0.,0.,1.,0.];
 			
-			var midi_freq = -1.;
-			
 			for (directives in [group_opcodes, region])
 			{
 				if (directives.exists("pitch_keycenter"))
@@ -109,8 +107,8 @@ class SFZGroup
 			sampler_patch.sustain_envelope = envs.sustain_envelope;
 			sampler_patch.release_envelope = envs.release_envelope;
 			
-			region_cache.push({region:region,patch:sampler_patch});
-		}		
+			region_cache.push( { region:region, patch:sampler_patch } );
+		}
 	}
 	
 	public function query(ev : SequencerEvent, seq : Sequencer) : Array<PatchEvent>
@@ -124,7 +122,7 @@ class SFZGroup
 		switch(ev.type)
 		{
 			case SequencerEvent.NOTE_ON, SequencerEvent.NOTE_OFF:
-				note = seq.tuning.frequencyToMidiNote(ev.data.note);
+				note = seq.tuning.frequencyToMidiNote(ev.data.freq);
 				velocity = ev.data.velocity;
 			default:
 				return null;

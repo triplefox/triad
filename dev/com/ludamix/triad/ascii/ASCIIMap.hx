@@ -13,6 +13,7 @@ class ASCIIMap extends Bitmap
 {
 	
 	// Custom renderer for "ASCII-like" character graphics
+	// Important note: Sheet index 0(char 0, bg 0, fg 0) is _transparent_. 
 	
 	public var sheet : ASCIISheet;
 	public var char : IntGrid;
@@ -67,6 +68,17 @@ class ASCIIMap extends Bitmap
 	public function text(string : String, x : Int, y : Int, ?fg_color = -1, ?bg_color = -1)
 	{
 		spriteMono(string, string.length, x, y, fg_color, bg_color);
+	}
+	
+	public function squareMono(char : String, width : Int, height : Int, x : Int, y : Int, ?fg_color = -1, ?bg_color = -1)
+	{
+		var string = "";
+		for (n in 0...width * height)
+			string += char;
+		var fg_colors = new Array<Int>();
+		var bg_colors = new Array<Int>();
+		for (n in 0...string.length) { fg_colors.push(fg_color); bg_colors.push(bg_color); }
+		spriteMulti(string, width, x, y, fg_colors, bg_colors);
 	}
 	
 	public function spriteMono(string : String, width : Int, x : Int, y : Int, ?fg_color = -1, ?bg_color = -1)

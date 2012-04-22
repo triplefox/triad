@@ -409,7 +409,7 @@ class SMFParser
 				var unique_calc = smf.data.note + (smf.channel << 16);
 				var note_id = persistent.note_uniques.get(unique_calc);
 				return (new SequencerEvent(SequencerEvent.NOTE_ON,
-					{note:sequencer.tuning.midiNoteToFrequency(smf.data.note),velocity:smf.data.velocity},
+					{freq:sequencer.tuning.midiNoteToFrequency(smf.data.note),velocity:smf.data.velocity},
 												smf.channel,
 												note_id,
 												Math.round(frames),
@@ -420,7 +420,7 @@ class SMFParser
 				persistent.id_ct++;
 				persistent.note_uniques.set(unique_calc, persistent.id_ct);
 				return (new SequencerEvent(SequencerEvent.NOTE_OFF,
-					{note:sequencer.tuning.midiNoteToFrequency(smf.data.note),velocity:smf.data.velocity},
+					{freq:sequencer.tuning.midiNoteToFrequency(smf.data.note),velocity:smf.data.velocity},
 												smf.channel,
 												note_id,
 												Math.round(frames),

@@ -168,10 +168,15 @@ class Sequencer
 	public var channel : SoundChannel;
 	public var tuning : MIDITuning;
 	public var buffer : Vector<Float>;
+	public var onFrame : Sequencer->Void;
+	public var onBeat : Sequencer->Void;
 	
 	private static inline var RATE = 44100;
 	private var FRAMESIZE : Int; // buffer size of mono frame
 	private var DIVISIONS : Int; // to increase the framerate we slice the buffer by this number of divisions
+	
+	public var bpm : Float;
+	public var cur_beat : Float;
 	
 	public inline function sampleRate() { return RATE; }
 	public inline function monoSize() { return Std.int(FRAMESIZE/DIVISIONS); }
@@ -181,7 +186,9 @@ class Sequencer
 	public inline function secondsToFrames(secs : Float) : Float { return secs * frameRate(); }
 	public inline function BPMToFrames(beat : Float, bpm : Float) : Float
 		{ return (beat / (bpm / 60) * frameRate()); }
-		
+	public inline function framesToBeats(frames : Int, bpm : Float) : Float
+		{ return frames / BPMToFrames(1., bpm); }
+	
 	public inline function waveLength(frequency : Float) { return sampleRate() / frequency; }
 	public inline function waveLengthOfBentNote(note : Float, pitch_bend : Int) 
 	{ 
@@ -235,13 +242,28 @@ class Sequencer
 			channels.push(channel); 
 			return channel; 
 		}
-		
+	
+	public function setBPM(bpm : Float, ?preserve_beats = false)
+	{
+		this.bpm = bpm;
+		if (!preserve_beats)
+			this.cur_beat = 0.;
+	}
+	
 	public function onSamples(event : SampleDataEvent) 
 	{
 		
 		for (count in 0...DIVISIONS)
 		{
-				
+			
+			if (onFrame != null) onFrame(this);
+			
+			cur_beat = cur_beat + framesToBeats(1, this.bpm);
+			while (cur_beat > 1)
+			{
+				cur_beat -= 1; if (onBeat != null) onBeat(this);
+			}
+			
 			// process the current frame
 			while (events.length > 0 && events[0].frame <= this.frame)
 			{
@@ -281,6 +303,7 @@ class Sequencer
 	
 	public function new(?framesize : Int = 4096, ?divisions : Int = 4, ?tuning : MIDITuning = null)
 	{
+		setBPM(120.0);
 		this.FRAMESIZE = framesize;
 		this.DIVISIONS = divisions;
 		if (tuning == null) tuning = new EvenTemperament(); this.tuning = tuning;

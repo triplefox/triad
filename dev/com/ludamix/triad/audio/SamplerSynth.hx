@@ -245,7 +245,7 @@ class SamplerSynth implements SoftSynth
 		
 		var seq_event = cur_follower.patch_event.sequencer_event;
 		
-		freq = Std.int(seq_event.data.note);
+		freq = seq_event.data.freq;
 		
 		if (patch.unpitched)
 			freq = patch.sample.base_frequency;

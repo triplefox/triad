@@ -78,7 +78,7 @@ class RogueBoard
 	{
 		var pos = 0;
 		var final = new RogueRepr(
-			reprOutsideWorld.char, reprOutsideWorld.bg,reprOutsideWorld.fg,reprOutsideWorld.priority);
+			reprOutsideWorld.char, reprOutsideWorld.bg, reprOutsideWorld.fg, reprOutsideWorld.priority);
 		for (yy in 0...h)
 		{
 			for (xx in 0...w)
@@ -92,8 +92,10 @@ class RogueBoard
 					{
 						candidates.push(a.repr(a));
 					}
-					if (info.tiles.length<1)
+					if (info.tiles.length < 1)
+					{
 						candidates.push(reprOutsideWorld);
+					}
 					else
 						{for (n in 0...info.tiles.length) candidates.push(info.tiles[n].repr); };
 					if (candidates.length>1)
@@ -104,7 +106,7 @@ class RogueBoard
 						if (n.bg >= 0) final.bg = n.bg;
 						if (n.fg >= 0) final.fg = n.fg;
 					}
-					amap.char.world[pos] = ASCIIMap.encode(final.bg, final.fg, final.char);
+					amap.char.world[amap.char.c21(xx, yy)] = ASCIIMap.encode(final.bg, final.fg, final.char);
 				}
 				pos++;
 			}
@@ -154,6 +156,11 @@ class RogueBoard
 				{ actors.remove( act ); spatialActorRemove(act); } ],
 			move:[function(db : EDatabase, stack : EStack, payload : Dynamic)
 				{ spatialActorRemove(act);  act.x += payload.x; act.y += payload.y; spatialActorSet(act);  } ],
+			move_wraparound:[function(db : EDatabase, stack : EStack, payload : Dynamic)
+				{ spatialActorRemove(act); 
+				  act.x = (act.x + payload.x) % layer(0).worldW;
+				  act.y = (act.y + payload.y) % layer(0).worldH;
+				  spatialActorSet(act); } ],
 			teleport:[function(db : EDatabase, stack : EStack, payload : Dynamic)
 				{ spatialActorRemove(act);  act.x = payload.x; act.y = payload.y; spatialActorSet(act);  } ],
 			up:[function(db : EDatabase, stack : EStack, payload : Dynamic)
@@ -166,6 +173,8 @@ class RogueBoard
 				{ stack.last().call(db, stack, "move", {x:1,y:0} ); } ],
 			position:[function(db : EDatabase, stack : EStack, payload : Dynamic)
 				{ return { x:act.x, y:act.y }; } ],
+			position_wraparound:[function(db : EDatabase, stack : EStack, payload : Dynamic)
+				{ return { x:act.x%layer(0).worldW, y:act.y%layer(0).worldH }; } ],
 			board:[function(db : EDatabase, stack : EStack, payload : Dynamic)
 				{ return self; } ],
 			actor:[function(db : EDatabase, stack : EStack, payload : Dynamic)
