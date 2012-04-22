@@ -312,7 +312,11 @@ class Sequencer
 		events = new Array();
 		channels = new Array();
 		synths = new Array();
+      #if flash
 		buffer = new Vector(stereoSize(), true);
+      #else
+		buffer = new Vector();
+      #end
 	}
 	
 	public function play(soundname : String, mixgroup : String) 

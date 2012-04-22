@@ -74,7 +74,7 @@ class Button extends Sprite
 		for (element in [this.upDO, this.downDO, this.overDO])
 		{
 			for (f in Reflect.fields(data))
-				Reflect.setField(element, f, Reflect.field(data, f));
+				Reflect.setProperty(element, f, Reflect.field(data, f));
 		}
 	}
 	
