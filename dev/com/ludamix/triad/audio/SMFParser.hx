@@ -420,8 +420,8 @@ class SMFParser
 					{freq:sequencer.tuning.midiNoteToFrequency(smf.data.note),velocity:smf.data.velocity},
 												smf.channel,
 												note_id,
-												Math.round(frames),
-												unique_calc));
+												frames,
+												Std.int(frames)));
 			case SMFData.NOTE_OFF:
 				var unique_calc = smf.data.note + (smf.channel << 16);
 				var note_id = persistent.note_uniques.get(unique_calc);
@@ -431,21 +431,21 @@ class SMFParser
 					{freq:sequencer.tuning.midiNoteToFrequency(smf.data.note),velocity:smf.data.velocity},
 												smf.channel,
 												note_id,
-												Math.round(frames),
-												unique_calc));
+												frames,
+												Std.int(frames)));
 			case SMFData.PITCH_BEND:
 				return (new SequencerEvent(SequencerEvent.PITCH_BEND,
 												smf.data - 8192,
 												smf.channel,
 												SequencerEvent.CHANNEL_EVENT,
-												Math.round(frames),
+												frames,
 												-1));
 			case SMFData.PROGRAM_CHANGE:
 				return (new SequencerEvent(SequencerEvent.SET_PATCH,
 												smf.data,
 												smf.channel,
 												SequencerEvent.CHANNEL_EVENT,
-												Math.round(frames),
+												frames,
 												-1));
 			case SMFData.CONTROL_CHANGE:
 				switch(smf.data.controller)
@@ -455,28 +455,28 @@ class SMFParser
 														smf.data.value/128,
 														smf.channel,
 														SequencerEvent.CHANNEL_EVENT,
-														Math.round(frames),
+														frames,
 														-1));			
 					case SMFData.CC_MODULATION:
 						return (new SequencerEvent(SequencerEvent.MODULATION,
 														smf.data.value/128,
 														smf.channel,
 														SequencerEvent.CHANNEL_EVENT,
-														Math.round(frames),
+														frames,
 														-1));			
 					case SMFData.CC_PAN:
 						return (new SequencerEvent(SequencerEvent.PAN,
 														smf.data.value/128,
 														smf.channel,
 														SequencerEvent.CHANNEL_EVENT,
-														Math.round(frames),
+														frames,
 														-1));
 					case SMFData.CC_BANK_SELECT_LSB: // we assume this is the same as program change...
 						return (new SequencerEvent(SequencerEvent.SET_PATCH,
 												smf.data,
 												smf.channel,
 												SequencerEvent.CHANNEL_EVENT,
-												Math.round(frames),
+												frames,
 												-1));
 					default:
 						trace(["unimplemented cc", smf.data]);

@@ -9,6 +9,7 @@ import nme.utils.CompressionAlgorithm;
 import nme.Vector;
 import com.ludamix.triad.audio.Sequencer;
 import nme.Vector;
+import nme.Vector;
 
 // I think I need a polymorphic sample format;
 // as it is, there's a lot of overlap
@@ -303,9 +304,7 @@ class SamplerSynth implements SoftSynth
 						while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 						for (n in 0...total_length)
 						{
-							var round : Int = Math.round(cur_follower.pos);
-							buffer[bufptr] += left * sample_left[round];
-							buffer[bufptr+1] += right * sample_right[round];
+							copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right);
 							cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 							bufptr = (bufptr + 2) % buffer.length;
 						}
@@ -316,9 +315,7 @@ class SamplerSynth implements SoftSynth
 							while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 							for (n in 0...total_length)
 							{
-								var round : Int = Math.round(cur_follower.pos);
-								buffer[bufptr] += left * sample_left[round];
-								buffer[bufptr+1] += right * sample_right[round];
+								copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right);
 								cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 								bufptr = (bufptr + 2) % buffer.length;
 							}
@@ -327,12 +324,7 @@ class SamplerSynth implements SoftSynth
 						{
 							for (n in 0...total_length)
 							{
-								var round : Int = Math.round(cur_follower.pos);
-								if (round < sample_length)
-								{
-									buffer[bufptr] += left * sample_left[round];
-									buffer[bufptr+1] += right * sample_right[round];
-								}
+								copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right);
 								cur_follower.pos += inc;
 								bufptr = (bufptr + 2) % buffer.length;
 							}
@@ -342,12 +334,7 @@ class SamplerSynth implements SoftSynth
 					case ONE_SHOT, NO_LOOP:
 						for (n in 0...total_length)
 						{
-							var round : Int = Math.round(cur_follower.pos);
-							if (round < sample_length)
-							{
-								buffer[bufptr] += left * sample_left[round];
-								buffer[bufptr+1] += right * sample_right[round];
-							}
+							copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right);
 							cur_follower.pos += inc;
 							bufptr = (bufptr + 2) % buffer.length;
 						}
@@ -388,6 +375,18 @@ class SamplerSynth implements SoftSynth
 			
 		}
 			
+	}
+	
+	public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : Vector<Float>, sample_right : Vector<Float>)
+	{
+		// Interpolator. This could be played with more, or replaced. There are probably better algorithms...
+		var a : Int = Std.int(Math.min(pos, sample_left.length - 1));
+		var b : Int = Std.int(Math.min(pos + inc, sample_left.length - 1));
+		buffer[bufptr] += left * ((sample_left[a]+sample_left[b])*0.5);
+		buffer[bufptr + 1] += right * ((sample_right[a] + sample_right[b]) * 0.5);
 	}
 	
 	public function event(patch_ev : PatchEvent, channel : SequencerChannel)

@@ -84,7 +84,11 @@ class SynthTest
 		seq.channels = new Array();
 		seq.events = new Array();
 		var melodic_voices = new Array<SoftSynth>();
-		for (n in 0...32)
+		#if debug
+		  for (n in 0...4) // trying not to kill cpu!
+		#else
+		  for (n in 0...32)
+		#end
 		{
 			//var synth = new TableSynth();
 			var synth = new SamplerSynth();
@@ -211,7 +215,7 @@ class SynthTest
 	public function decSong()
 	{
 		song_count = (song_count - 1);
-		if (song_count == 0) song_count = songs.length - 1;
+		if (song_count < 0) song_count = songs.length - 1;
 	}
 	
 	public function incSong()

@@ -16,10 +16,10 @@ class SequencerEvent
 	public var id : Int; // id of related sequence (e.g. on-off, pitch bend) - use CHANNEL_EVENT to go to all
 	public var type : Int; // data type
 	public var data : Dynamic; // payload
-	public var frame : Int; // frame that this event occurs on
+	public var frame : Float; // frame that this event occurs on
 	public var priority : Int; // priority of event (for note-stealing purposes)
 	
-	public function new(type : Int, data : Dynamic, channel : Int, id : Int, frame : Int, priority : Int) 
+	public function new(type : Int, data : Dynamic, channel : Int, id : Int, frame : Float, priority : Int) 
 	{ this.channel = channel; this.id = id; this.type = type;  this.data = data; 
 	  this.frame = frame; this.priority = priority; }
 	
@@ -229,7 +229,7 @@ class Sequencer
 	{
 		events.sort(function(a, b) { 
 			if (a.frame == b.frame) { return (a.type - b.type); } // this favors note ends, lowering stuck likelihood
-			else return a.frame - b.frame; } );		
+			else { return (a.frame - b.frame)>0. ? 1 : -1; }});	// comparing float frame values
 	}
 	
 	public inline function addSynth(synth : SoftSynth) : SoftSynth 

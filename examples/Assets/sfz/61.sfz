@@ -263,6 +263,7 @@ sample=TubaA#1.wav
 lokey=a2
 hikey=f3
 tune=42
+pitch_keycenter=c4
 cutoff=2872
 fileg_decay=2.570
 fileg_sustain=0
