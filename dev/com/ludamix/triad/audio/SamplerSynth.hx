@@ -39,7 +39,6 @@ typedef SamplerPatch = {
 	modulation_vibrato : Float, // multiplier if greater than 0
 	envelope_quantization : Int, // 0 = off, lower values produce "chippier" envelope character
 	arpeggiation_rate : Float, // 0 = off, hz value
-	unpitched : Bool // pitch can be changed?
 };
 
 class SamplerSynth implements SoftSynth
@@ -128,14 +127,13 @@ class SamplerSynth implements SoftSynth
 			sustain_envelope:[1.0],
 			release_envelope:[1.0],
 			volume:1.0,
-			vibrato_frequency:6.,
+			vibrato_frequency:3.,
 			vibrato_depth:0.5,
 			vibrato_delay:0.05,
 			vibrato_attack:0.05,
 			modulation_vibrato:1.0,
 			envelope_quantization:0,
 			arpeggiation_rate:0.0,
-			unpitched:false
 			},
 			function(settings, seq, ev) : Array<PatchEvent> { return [new PatchEvent(ev,settings)]; }
 		);				
@@ -165,14 +163,13 @@ class SamplerSynth implements SoftSynth
 				attack_envelope:[1.0],
 				sustain_envelope:[1.0],
 				release_envelope:[1.0],
-				vibrato_frequency:6.,
+				vibrato_frequency:3.,
 				vibrato_depth:0.5,
 				vibrato_delay:0.05,
 				vibrato_attack:0.05,
 				modulation_vibrato:1.0,
 				envelope_quantization:0,
 				arpeggiation_rate:0.0,
-				unpitched:false
 				}
 				;
 	}
@@ -247,9 +244,6 @@ class SamplerSynth implements SoftSynth
 		var seq_event = cur_follower.patch_event.sequencer_event;
 		
 		freq = seq_event.data.freq;
-		
-		if (patch.unpitched)
-			freq = patch.sample.base_frequency;
 		
 		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, 
 					pitch_bend + Std.int((updateVibrato(patch, cur_channel) * 8192 / sequencer.tuning.bend_semitones))));

@@ -54,21 +54,18 @@ class SFZGroup
 			else if (group_opcodes.exists('sample'))
 				sampler_patch = Reflect.copy(samples.get(group_opcodes.get('sample')));
 			if (sampler_patch == null) continue; // no sample found...
-			sampler_patch.unpitched = true;
 			
 			// ampeg directives are all in % and seconds.
 			var dsahdsr = [0.,1.,0.,0.,0.,1.,0.];
 			
+			var midinote : Float = 60.0;
 			for (directives in [group_opcodes, region])
 			{
 				if (directives.exists("pitch_keycenter"))
-				{
-					var midinote : Float = directives.get("pitch_keycenter");
-					if (directives.exists("tune")) { midinote -= (directives.get("tune")/100); }
-					if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
-					sampler_patch.sample.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
-					sampler_patch.unpitched = false;
-				}
+					midinote = directives.get("pitch_keycenter");
+				if (directives.exists("tune")) { midinote -= (directives.get("tune")/100); }
+				if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
+				sampler_patch.sample.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
 				
 				if (directives.exists("ampeg_delay")) { dsahdsr[0] = directives.get("ampeg_delay"); }
 				if (directives.exists("ampeg_start")) { dsahdsr[1] = directives.get("ampeg_start"); }

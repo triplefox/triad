@@ -76,7 +76,7 @@ class TableSynth implements SoftSynth
 				sustain_envelope:[1.0],
 				release_envelope:[1.0],
 				oscillator:PD_WINDOW_FREE,
-				vibrato_frequency:6.,
+				vibrato_frequency:3.,
 				vibrato_depth:0.5,
 				vibrato_delay:0.05,
 				vibrato_attack:0.05,
