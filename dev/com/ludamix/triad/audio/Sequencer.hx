@@ -170,6 +170,7 @@ class Sequencer
 	public var buffer : Vector<Float>;
 	public var onFrame : Sequencer->Void;
 	public var onBeat : Sequencer->Void;
+	public var postFrame : Sequencer->Vector<Float>->Void;
 	
 	private static inline var RATE = 44100;
 	private var FRAMESIZE : Int; // buffer size of mono frame
@@ -250,41 +251,49 @@ class Sequencer
 			this.cur_beat = 0.;
 	}
 	
+	public inline function executeFrame()
+	{
+		if (onFrame != null) onFrame(this);
+		
+		cur_beat = cur_beat + framesToBeats(1, this.bpm);
+		while (cur_beat > 1)
+		{
+			cur_beat -= 1; if (onBeat != null) onBeat(this);
+		}
+		
+		// process the current frame
+		while (events.length > 0 && events[0].frame <= this.frame)
+		{
+			var e = events.shift();
+			channels[e.channel].pipe(e, this);
+		}
+		if (events.length < 1)
+			{}
+		else
+			{} //trace([events[0].frame, this.frame]);
+		
+		// clear buffer
+		for (i in 0 ... monoSize()) 
+		{
+			var i2 = i << 1;
+			buffer[i2] = 0.;
+			buffer[i2+1] = 0.;
+		}
+		
+		// sum buffer
+		for (n in synths) { n.write(); }		
+	}
+	
 	public function onSamples(event : SampleDataEvent) 
 	{
 		
 		for (count in 0...DIVISIONS)
 		{
 			
-			if (onFrame != null) onFrame(this);
+			executeFrame();
 			
-			cur_beat = cur_beat + framesToBeats(1, this.bpm);
-			while (cur_beat > 1)
-			{
-				cur_beat -= 1; if (onBeat != null) onBeat(this);
-			}
-			
-			// process the current frame
-			while (events.length > 0 && events[0].frame <= this.frame)
-			{
-				var e = events.shift();
-				channels[e.channel].pipe(e, this);
-			}
-			if (events.length < 1)
-				{}
-			else
-				{} //trace([events[0].frame, this.frame]);
-			
-			// clear buffer
-			for (i in 0 ... monoSize()) 
-			{
-				var i2 = i << 1;
-				buffer[i2] = 0.;
-				buffer[i2+1] = 0.;
-			}
-			
-			// sum buffer
-			for (n in synths) { n.write(); }
+			if (postFrame != null)
+				postFrame(this, buffer);
 			
 			// vector -> bytearray
 			var sumL = 0.;
