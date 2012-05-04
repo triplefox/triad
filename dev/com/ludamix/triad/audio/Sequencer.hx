@@ -68,12 +68,14 @@ class SequencerChannel
 {	
 	public var id : Int; 
 	public var outputs : Array<SoftSynth>;
+	public var allocated : Array<SoftSynth>;
 	
 	public var pitch_bend : Int;
 	public var channel_volume : Float;
 	public var modulation : Float;
 	public var pan : Float;	
 	public var patch_id : Int;	
+	public var polyphony : Int;
 	
 	public var patch_generator : PatchGenerator;
 	
@@ -89,6 +91,8 @@ class SequencerChannel
 		channel_volume = 1.0;
 		modulation = 0.;
 		pan = 0.5;
+		polyphony = 12;
+		allocated = new Array();
 	}
 	
 	public function priority(synth : SoftSynth) : Int
@@ -129,21 +133,30 @@ class SequencerChannel
 			if (patched_events == null) return;
 			for (patched_ev in patched_events)
 			{
+				var usable = outputs;
+				if (allocated.length >= polyphony)
+					usable = allocated;
 				// overlapping behavior
-				for (synth in outputs)
+				for (synth in usable)
 				{
 					if (hasEvent(synth, patched_ev.sequencer_event.id))
 					{
-						synth.event(patched_ev, this);
+						allocated.remove(synth);
+						if (synth.event(patched_ev, this))
+							allocated.push(synth);
 						return;
 					}
 				}
 				// stealing behavior
-				var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(outputs, 
+				var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(usable, 
 					function(synth : SoftSynth) { return {synth:synth, priority:priority(synth) }; } ,
-					function(a, b) { return a.priority < b.priority; }, outputs[0] );
+					function(a, b) { return a.priority < b.priority; }, usable[0] );
 				if (best.priority <= ev.priority)
-					best.synth.event(patched_ev, this);
+				{
+					allocated.remove(best.synth);
+					if (best.synth.event(patched_ev, this))
+						allocated.push(best.synth);
+				}
 			}
 		}
 		
@@ -191,6 +204,7 @@ class Sequencer
 		{ return frames / BPMToFrames(1., bpm); }
 	
 	public inline function waveLength(frequency : Float) { return sampleRate() / frequency; }
+	public inline function frequency(wavelength : Float) { return wavelength / sampleRate(); }
 	public inline function waveLengthOfBentNote(note : Float, pitch_bend : Int) 
 	{ 
 		return waveLength(tuning.midiNoteBentToFrequency(note, pitch_bend));

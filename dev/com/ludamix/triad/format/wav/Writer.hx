@@ -29,7 +29,7 @@
  */
 
 package com.ludamix.triad.format.wav;
-import format.wav.Data;
+import com.ludamix.triad.format.wav.Data;
 import haxe.Int32;
 
 class Writer {

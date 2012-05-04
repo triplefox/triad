@@ -10,6 +10,7 @@ import nme.Vector;
 import com.ludamix.triad.audio.Sequencer;
 import nme.Vector;
 import nme.Vector;
+import nme.Vector;
 
 // I think I need a polymorphic sample format;
 // as it is, there's a lot of overlap
@@ -176,6 +177,7 @@ class SamplerSynth implements SoftSynth
 	
 	public function init(sequencer : Sequencer)
 	{
+		
 		this.sequencer = sequencer;
 		this.buffer = sequencer.buffer;
 		this.followers = new Array();		
@@ -247,6 +249,8 @@ class SamplerSynth implements SoftSynth
 		
 		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, 
 					pitch_bend + Std.int((updateVibrato(patch, cur_channel) * 8192 / sequencer.tuning.bend_semitones))));
+					
+		freq = sequencer.frequency(wl);
 		
 		velocity = seq_event.data.velocity / 128;
 		
@@ -298,7 +302,7 @@ class SamplerSynth implements SoftSynth
 						while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 						for (n in 0...total_length)
 						{
-							copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right);
+							copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
 							cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 							bufptr = (bufptr + 2) % buffer.length;
 						}
@@ -309,7 +313,7 @@ class SamplerSynth implements SoftSynth
 							while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 							for (n in 0...total_length)
 							{
-								copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right);
+								copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
 								cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 								bufptr = (bufptr + 2) % buffer.length;
 							}
@@ -318,7 +322,7 @@ class SamplerSynth implements SoftSynth
 						{
 							for (n in 0...total_length)
 							{
-								copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right);
+								copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
 								cur_follower.pos += inc;
 								bufptr = (bufptr + 2) % buffer.length;
 							}
@@ -328,7 +332,7 @@ class SamplerSynth implements SoftSynth
 					case ONE_SHOT, NO_LOOP:
 						for (n in 0...total_length)
 						{
-							copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right);
+							copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
 							cur_follower.pos += inc;
 							bufptr = (bufptr + 2) % buffer.length;
 						}
@@ -371,16 +375,27 @@ class SamplerSynth implements SoftSynth
 			
 	}
 	
+	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+	{
+		// Nearest
+		var a : Int = Math.round(Math.min(pos + inc*0.5, sample_left.length - 1));
+		buffer[bufptr] += left * (sample_left[a]);
+		buffer[bufptr + 1] += right * (sample_right[a]);
+	}*/
+	
 	public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
-								sample_left : Vector<Float>, sample_right : Vector<Float>)
+								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
 	{
-		// Interpolator. This could be played with more, or replaced. There are probably better algorithms...
+		// Linear interpolator(unfiltered)
 		var a : Int = Std.int(Math.min(pos, sample_left.length - 1));
 		var b : Int = Std.int(Math.min(pos + inc, sample_left.length - 1));
 		buffer[bufptr] += left * ((sample_left[a]+sample_left[b])*0.5);
-		buffer[bufptr + 1] += right * ((sample_right[a] + sample_right[b]) * 0.5);
+		buffer[bufptr + 1] += right * ((sample_right[a] + sample_right[b])*0.5);
 	}
 	
 	public function event(patch_ev : PatchEvent, channel : SequencerChannel)
@@ -406,6 +421,13 @@ class SamplerSynth implements SoftSynth
 					}
 				}
 		}
+		
+		for (n in followers) 
+		{	
+			if (n.patch_event.sequencer_event.channel == channel.id)
+				return true; 
+		}
+		return false;
 	}
 	
 	public function getEvents()

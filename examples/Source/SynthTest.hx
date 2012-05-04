@@ -83,7 +83,7 @@ class SynthTest
 		seq.synths = new Array();
 		seq.channels = new Array();
 		seq.events = new Array();
-		var melodic_voices = new Array<SoftSynth>();
+		var voices = new Array<SoftSynth>();
 		#if debug
 		  for (n in 0...4) // trying not to kill cpu!
 		#else
@@ -93,21 +93,14 @@ class SynthTest
 			//var synth = new TableSynth();
 			var synth = new SamplerSynth();
 			seq.addSynth(synth);
-			melodic_voices.push(synth);
-		}
-		var percussion_voices = new Array<SoftSynth>();
-		for (n in 0...8)
-		{
-			var synth = new SamplerSynth();
-			seq.addSynth(synth);
-			percussion_voices.push(synth);
+			voices.push(synth);
 		}
 		for (n in 0...16)
 		{
 			if (n == 9)
-				seq.addChannel(percussion_voices, percussion.getGenerator());
+				seq.addChannel(voices, percussion.getGenerator());
 			else
-				seq.addChannel(melodic_voices, melodic.getGenerator());
+				seq.addChannel(voices, melodic.getGenerator());
 			//seq.addChannel(seq.synths, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));
 			//seq.addChannel(seq.synths, TableSynth.generatorOf(TableSynth.defaultPatch()));
 		}		

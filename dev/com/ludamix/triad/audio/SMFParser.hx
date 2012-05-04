@@ -338,57 +338,26 @@ class SMFParser
 			var tempos_past = new Array<{tick:Int,tempo:Int,bpm:Float}>();
 			var ticks = 0;
 			var frames = 0.;
-			var tempos_traversed = 0;
 			tempos_past.push(tempos_future.shift());
 			for (n in track)
 			{
-				tempos_traversed = 0;
 				
-				// The most difficult part of this conversion is the possibility of any number of tempo changes
-				// within an event delta.
 				
-				// To deal with these we check to see how many tempo boundaries we have crossed.
-				// Then we iterate through the previous tempos, until we've advanced enough ticks to
-				// resume "normal" operation.
+				var tick_delta = n.tick;
 				
-				while (tempos_future.length>0 && (ticks + n.tick) > tempos_future[0].tick)
+				while (tempos_future.length > 0 && (ticks+tick_delta) > tempos_future[0].tick)
 				{
+					// rewrite the tick delta as we traverse over any number of tempos
+					var lt = tempos_past[tempos_past.length - 1];
 					tempos_past.push(tempos_future.shift());
-					tempos_traversed += 1;
+					var ct = tempos_past[tempos_past.length - 1];
+					tick_delta = ticks + tick_delta - ct.tick;
+					frames += (ct.tick - ticks) * framesOfTempo(lt.bpm, smf, sequencer);
+					ticks = ct.tick;
 				}
-				if (tempos_traversed > 0)
-				{
-					var tick_traversed = 0;
-					for (ct in 0...tempos_traversed)
-					{
-						
-						var ptr = tempos_past.length - 1 - (tempos_traversed - ct);
-						var ticks_advance = 0;
-						var frames_advance = 0.;
-						
-						if (ticks < tempos_past[ptr].tick)
-						{
-							ticks_advance = tempos_past[ptr].tick - ticks;
-						}
-						else
-						{
-							ticks_advance = tempos_past[ptr].tick - tempos_past[ptr + 1].tick;
-						}
-						
-						frames_advance = ticks_advance * framesOfTempo(tempos_past[ptr].bpm, smf, sequencer);
-						tick_traversed += ticks_advance;
-						ticks += ticks_advance;
-						frames += frames_advance;
-						
-					}
-					ticks += n.tick - tick_traversed;
-					frames += (n.tick - tick_traversed) * framesOfTempo(tempos_past[tempos_past.length-1].bpm, smf, sequencer);
-				}
-				else
-				{
-					ticks += n.tick;
-					frames += n.tick * framesOfTempo(tempos_past[tempos_past.length-1].bpm, smf, sequencer);
-				}
+				
+				ticks += tick_delta;
+				frames += tick_delta * framesOfTempo(tempos_past[tempos_past.length-1].bpm, smf, sequencer);
 				
 				var result = filter(n, ticks, frames, sequencer, filter_persistent);
 				if (result != null) events.push(result);

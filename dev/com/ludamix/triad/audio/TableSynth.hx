@@ -393,6 +393,13 @@ class TableSynth implements SoftSynth
 					}
 				}
 		}
+		
+		for (n in followers) 
+		{	
+			if (n.patch_event.sequencer_event.channel == channel.id)
+				return true; 
+		}
+		return false;
 	}
 	
 	public function getEvents()

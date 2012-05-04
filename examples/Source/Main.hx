@@ -4,6 +4,7 @@
 typedef MyExample = SynthTest;
 //typedef MyExample = AssetReloading;
 //typedef MyExample = Assistant;
+//typedef MyExample = Raycast;
 
 class Main
 {

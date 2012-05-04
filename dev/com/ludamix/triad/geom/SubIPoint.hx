@@ -10,6 +10,8 @@ class SubIPoint
 	public var y : SubPixel;
 	
 	public static inline var BITS = 8;
+	public static inline var MUL = 256;
+	public static inline var INV = 0.00390625;
 	
 	public function new(x=0,y=0)
 	{
@@ -175,9 +177,9 @@ class SubIPoint
 	public inline function genIPoint() { return new IPoint(unshift(x),unshift(y)); }
 	public inline function genFPoint() { return new Point(unshiftF(x),unshiftF(y)); }
 	
-	public static inline function shiftF(val : Float) { return Std.int(val * (1 << BITS)); }
+	public static inline function shiftF(val : Float) { return Std.int(val * MUL); }
 	public static inline function shift(val : Int) { return val << BITS; }
 	public static inline function unshift(val : Int) { return val >> BITS; }
-	public static inline function unshiftF(val : Int) { return val / (1 << BITS); }
+	public static inline function unshiftF(val : Int) { return val * INV; }
 	
 }

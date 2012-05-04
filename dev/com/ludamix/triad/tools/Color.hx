@@ -106,6 +106,18 @@ class Color
 		return buildRGB(rgb.r, rgb.g, rgb.b);
 	}
 	
+	public static function getMultiplied(c : EColor, hShift : Float, sShift : Float, vShift : Float) : Int
+	{
+		var hsv = { h:0., s:0., v:0. };
+		var rgb = RGBPx(get(c));
+		RGBtoHSV(rgb,hsv);
+		hsv.v *= vShift;
+		hsv.s *= sShift;
+		hsv.h *= hShift;
+		HSVtoRGB(hsv,rgb);
+		return buildRGB(rgb.r, rgb.g, rgb.b);
+	}
+	
 	public static function get(c : EColor) : Int
 	{
 		switch(c) {
