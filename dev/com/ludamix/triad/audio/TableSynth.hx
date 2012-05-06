@@ -3,17 +3,13 @@ package com.ludamix.triad.audio;
 import nme.Vector;
 import com.ludamix.triad.audio.Sequencer;
 
+typedef TSAssign = Int;
+
 typedef TableSynthPatch = {
-	attack_envelope : Array<Float>,
-	sustain_envelope : Array<Float>,
-	release_envelope : Array<Float>,
+	envelopes : Array<Envelope>,
+	lfos : Array<LFO>,
 	oscillator : Int,
-	vibrato_frequency : Float, // hz
-	vibrato_depth : Float, // midi notes
-	vibrato_delay : Float, // seconds
-	vibrato_attack : Float, // seconds
-	modulation_vibrato : Float, // multiplier if greater than 0
-	envelope_quantization : Int, // 0 = off, lower values produce "chippier" envelope character
+	modulation_lfo : Float, // applies to LFO1, depth multiplier if greater than 0
 	arpeggiation_rate : Float // 0 = off, hz value
 };
 
@@ -31,9 +27,11 @@ class TableSynth implements SoftSynth
 	public var master_volume : Float;
 	public var velocity : Float;
 	
-	public var pulsewidth : Float;
-	public var vibrato : Float;	
 	public var arpeggio : Float;
+	
+	public var frame_pitch_adjust : Float;
+	public var frame_vol_adjust : Float;
+	public var frame_pulsewidth : Float;
 	
 	public static inline var ATTACK = 0;
 	public static inline var SUSTAIN = 1;
@@ -47,9 +45,14 @@ class TableSynth implements SoftSynth
 	public static inline var SIN = 3;
 	// phase distortion-based ( cosine * cosine with optional windowing envelope on both)
 	public static inline var PD_WINDOW_WINDOW = 4;
-	public static inline var PD_WINDOW_FREE = 5;
-	public static inline var PD_FREE_WINDOW = 6;
-	public static inline var PD_FREE_FREE = 7;
+	// fm-based
+	public static inline var FM_2OP = 5;
+	
+	public static inline var AS_PITCH_ADD = 0;
+	public static inline var AS_PITCH_MUL = 1;
+	public static inline var AS_VOLUME_ADD = 2;
+	public static inline var AS_VOLUME_MUL = 3;
+	public static inline var AS_PULSEWIDTH = 4;
 	
 	public function new()
 	{
@@ -58,10 +61,7 @@ class TableSynth implements SoftSynth
 		bufptr = 0;
 		master_volume = 0.1;
 		velocity = 1.0;
-		vibrato = 0.;
 		arpeggio = 0.;
-		
-		pulsewidth = 0.5;
 		
 	}
 	
@@ -70,18 +70,17 @@ class TableSynth implements SoftSynth
 		return new PatchGenerator(settings, function(settings,seq, ev) { return [new PatchEvent(ev, settings) ]; } );
 	}
 	
-	public static function defaultPatch() : TableSynthPatch
+	public static function defaultPatch(seq : Sequencer) : TableSynthPatch
 	{
-		return {attack_envelope:[1.0],
-				sustain_envelope:[1.0],
-				release_envelope:[1.0],
-				oscillator:PD_WINDOW_FREE,
-				vibrato_frequency:3.,
-				vibrato_depth:0.5,
-				vibrato_delay:0.05,
-				vibrato_attack:0.05,
-				modulation_vibrato:1.0,
-				envelope_quantization:0,
+		var adsr_base = SynthTools.interpretADSR(seq.secondsToFrames, 0.2, 0.4, 0.5, 0.1, SynthTools.CURVE_POW,
+			SynthTools.CURVE_POW, SynthTools.CURVE_POW, false);
+		var envs : Array<Envelope> = [ { attack:adsr_base.attack, sustain:adsr_base.sustain, release:adsr_base.release, assigns:[AS_VOLUME_ADD],
+							quantization:0 } ];
+		var lfos : Array<LFO> = [ { frequency:3., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] } ];
+		return { envelopes:envs,
+				oscillator:FM_2OP,
+				lfos : lfos,
+				modulation_lfo:1.0,
 				arpeggiation_rate:0.0
 				}
 				;
@@ -94,27 +93,67 @@ class TableSynth implements SoftSynth
 		this.followers = new Array();		
 	}
 	
-	public inline function updateVibrato(patch : TableSynthPatch, channel : SequencerChannel) : Float
+	public inline function pipeAdjustment(qty : Float, assigns : Array<Int>)
 	{
-		var cycle_length = sequencer.secondsToFrames(1. / patch.vibrato_frequency);
-		var delay_length = sequencer.secondsToFrames(patch.vibrato_delay);
-		var attack_length = sequencer.secondsToFrames(patch.vibrato_attack);
-		var modulation_amount = patch.modulation_vibrato>0 ? patch.modulation_vibrato * channel.modulation : 1.0;
- 		var mvibrato = vibrato - delay_length;
-		vibrato += 1;
-		if (mvibrato > 0)
+		for (assign in assigns)
 		{
-			if (mvibrato > attack_length)
+			switch(assign)
 			{
-				return Math.sin(2 * Math.PI * mvibrato / cycle_length) * patch.vibrato_depth * modulation_amount;
-			}
-			else // ramp up vibrato
-			{
-				return Math.sin(2 * Math.PI * mvibrato / cycle_length) * modulation_amount * 
-					(patch.vibrato_depth * (mvibrato/attack_length));
+				case AS_PITCH_ADD: frame_pitch_adjust += qty;
+				case AS_PITCH_MUL: frame_pitch_adjust *= qty;
+				case AS_VOLUME_ADD: frame_vol_adjust += qty;
+				case AS_VOLUME_MUL: frame_vol_adjust *= qty;
+				case AS_PULSEWIDTH: frame_pulsewidth += qty;
 			}
 		}
-		else return 0.;
+	}
+	
+	public inline function updateEnvelope(patch : TableSynthPatch, channel : SequencerChannel, cur_follower : EventFollower)
+	{
+		var env_num = 0;
+		for (env in cur_follower.env)
+		{
+			var patch_env = patch.envelopes[env_num];
+			var env_val = 0.;
+			switch(env.state)
+			{
+				case ATTACK: env_val = patch_env.attack[env.ptr];
+				case SUSTAIN: env_val = patch_env.sustain[env.ptr];
+				case RELEASE: env_val = patch_env.release[env.ptr];
+			}
+			if (patch_env.quantization != 0)
+				env_val = (Math.round(env_val * patch_env.quantization) / patch_env.quantization);	
+			pipeAdjustment(env_val, patch_env.assigns);
+			env_num++;
+		}		
+	}
+	
+	public inline function updateLFO(patch : TableSynthPatch, channel : SequencerChannel, cur_follower : EventFollower)
+	{
+		var lfo_num = 0;
+		for (n in patch.lfos)
+		{
+			var cycle_length = sequencer.secondsToFrames(1. / n.frequency);
+			var delay_length = sequencer.secondsToFrames(n.delay);
+			var attack_length = sequencer.secondsToFrames(n.attack);
+			var modulation_amount = (lfo_num == 0 && patch.modulation_lfo > 0) ? 
+				patch.modulation_lfo * channel.modulation : 1.0;
+			var mpos = cur_follower.lfo_pos - delay_length;
+			if (mpos > 0)
+			{
+				if (mpos > attack_length)
+				{
+					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) * n.depth * modulation_amount, n.assigns);
+				}
+				else // ramp up
+				{
+					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) * modulation_amount * 
+						(n.depth * (mpos/attack_length)), n.assigns);
+				}
+			}
+			lfo_num++;
+		}
+		cur_follower.lfo_pos += 1;
 	}
 	
 	public static inline function alg_window(i : Float, wl : Float)
@@ -131,7 +170,11 @@ class TableSynth implements SoftSynth
 	
 	public function write()
 	{	
-		while (followers.length > 0 && followers[followers.length - 1].env_state == OFF) followers.pop();
+		while (followers.length > 0)
+		{
+			if (followers[followers.length - 1].isOff()) followers.pop();
+			else break;
+		}
 		if (followers.length < 1) { pos = 0; return false; }
 		
 		var cur_follower : EventFollower = followers[followers.length - 1];		
@@ -139,7 +182,7 @@ class TableSynth implements SoftSynth
 		var patch : TableSynthPatch = cur_follower.patch_event.patch;
 		if (patch.arpeggiation_rate>0.0)
 		{
-			var available = Lambda.array(Lambda.filter(followers, function(a) { return a.env_state != OFF; } ));
+			var available = Lambda.array(Lambda.filter(followers, function(a) { return !a.isOff(); } ));
 			cur_follower = available[Std.int(((arpeggio) % 1) * available.length)];
 			cur_channel = sequencer.channels[cur_follower.patch_event.sequencer_event.channel];
 			patch = cur_follower.patch_event.patch;
@@ -151,31 +194,29 @@ class TableSynth implements SoftSynth
 		
 		var seq_event = cur_follower.patch_event.sequencer_event;
 		
+		frame_pitch_adjust = 0.;
+		frame_vol_adjust = 1.;
+		frame_pulsewidth = 0.;
+		
+		updateLFO(patch, cur_channel, cur_follower);
+		updateEnvelope(patch, cur_channel, cur_follower);
+		
 		freq = Std.int(seq_event.data.freq);
+		
 		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, 
-					pitch_bend + Std.int((updateVibrato(patch, cur_channel) * 8192 / sequencer.tuning.bend_semitones))));
+					pitch_bend + Std.int(frame_pitch_adjust * 8192 / sequencer.tuning.bend_semitones)));
 		if (wl < 1) wl = 1;
 		
 		velocity = seq_event.data.velocity / 128;
 		
-		// update envelopes and vol+envelope state
-		var attack_envelope = patch.attack_envelope;
-		var sustain_envelope = patch.sustain_envelope;
-		var release_envelope = patch.release_envelope;
-		var envelopes = [attack_envelope, sustain_envelope, release_envelope];
-		var env_val = envelopes[cur_follower.env_state][cur_follower.env_ptr];
-		if (patch.envelope_quantization != 0)
-			env_val = (Math.round(env_val * patch.envelope_quantization) / patch.envelope_quantization);	
-		var curval = master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
-					env_val;
+		var curval = master_volume * channel_volume * cur_channel.velocityCurve(velocity) * frame_vol_adjust;
 		
-		// update pulsewidth and "halfway" point
-		pulsewidth += 0.001; if (pulsewidth > 2.0) pulsewidth = 0.;
+		frame_pulsewidth = frame_pulsewidth % 2.0;
 		var hw : Int;
-		if (pulsewidth > 1.0) 
-			hw = Std.int(wl * (1.0 - (pulsewidth%1.0)));
+		if (frame_pulsewidth > 1.0) 
+			hw = Std.int(wl * (1.0 - (frame_pulsewidth%1.0)));
 		else
-			hw = Std.int(wl * pulsewidth);
+			hw = Std.int(wl * frame_pulsewidth);
 		
 		switch(patch.oscillator)
 		{
@@ -254,11 +295,11 @@ class TableSynth implements SoftSynth
 				var inner_b = 1.0;
 				var inner_c = 0.125;
 				*/
-				var outer_a = 0.5 + pulsewidth;
+				var outer_a = 0.5 + frame_pulsewidth;
 				var outer_b = 0.5;
-				var inner_a = 1.0 + pulsewidth;
+				var inner_a = 1.0 + frame_pulsewidth;
 				var inner_b = 3.0;
-				var inner_c = 0.1 + pulsewidth;
+				var inner_c = 0.1 + frame_pulsewidth;
 				
 				var peak = curval * 2;
 				var left = pan * peak;
@@ -273,101 +314,48 @@ class TableSynth implements SoftSynth
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
-			case PD_WINDOW_FREE:
-				/*
-				 * 	
-				var outer_a = 1.0;
-				var outer_b = 0.5;
-				var inner_a = 1.0;
-				var inner_b = 1.0;
-				var inner_c = 0.125;
-				*/
-				var outer_a = 0.5;
-				var outer_b = 0.5 + pulsewidth;
-				var inner_a = 1.01;
-				var inner_b = 3.1;
-				var inner_c = 0.11;
+			case FM_2OP:
 				
 				var peak = curval * 2;
+				var adjust = 2 * Math.PI / wl;
 				var left = pan * peak;
 				var right = (1. -pan) * peak;
-				
 				for (i in 0 ... buffer.length >> 1) 
 				{
-					var sum = Math.cos(alg_window(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
-								Math.cos(alg_free(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
+					var pa = pos * adjust;
+					var sum = Math.cos(pa * (1+Math.cos((frame_pulsewidth*0.2+peak)*Math.PI)));
 					buffer[bufptr] += sum * left;
 					buffer[bufptr+1] += sum * right;
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
-			case PD_FREE_WINDOW:
-				/*
-				 * 	
-				var outer_a = 1.0;
-				var outer_b = 0.5;
-				var inner_a = 1.0;
-				var inner_b = 1.0;
-				var inner_c = 0.125;
-				*/
-				var outer_a = 0.5;
-				var outer_b = 0.5;
-				var inner_a = 1.0;
-				var inner_b = 3.0;
-				var inner_c = 0.1;
 				
-				var peak = curval * 2;
-				var left = pan * peak;
-				var right = (1. -pan) * peak;
-				
-				for (i in 0 ... buffer.length >> 1) 
-				{
-					var sum = Math.cos(alg_free(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
-								Math.cos(alg_window(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
-					buffer[bufptr] += sum * left;
-					buffer[bufptr+1] += sum * right;
-					pos = (pos+2) % wl;
-					bufptr = (bufptr+2) % buffer.length;
-				}
-			case PD_FREE_FREE:
-				/*
-				 * 	
-				var outer_a = 1.0;
-				var outer_b = 0.5;
-				var inner_a = 1.0;
-				var inner_b = 1.0;
-				var inner_c = 0.125;
-				*/
-				var outer_a = 2.5;
-				var outer_b = 7.5;
-				var inner_a = 1.2;
-				var inner_b = 3.7;
-				var inner_c = 0.5;
-				
-				var peak = curval * 2;
-				var left = pan * peak;
-				var right = (1. -pan) * peak;
-				
-				for (i in 0 ... buffer.length >> 1) 
-				{
-					var sum = Math.cos(alg_free(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
-								Math.cos(alg_free(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
-					buffer[bufptr] += sum * left;
-					buffer[bufptr+1] += sum * right;
-					pos = (pos+2) % wl;
-					bufptr = (bufptr+2) % buffer.length;
-				}
 		}
 		
 		for (ev in followers)
 		{
-			ev.env_ptr++;
-			if (ev.env_state!=OFF && ev.env_ptr >= envelopes[ev.env_state].length)
+			// Advance each envelope of each follower one step.
+			
+			var idx = 0;
+			for (env in ev.env)
 			{
-				if (ev.env_state != SUSTAIN)
-					{ev.env_state += 1; }
-				ev.env_ptr = 0;
+				env.ptr++;
+				var cur_env : Array<Float> = null;
+				if (env.state==SUSTAIN)
+					cur_env = patch.envelopes[idx].sustain;
+				else if (env.state==ATTACK)
+					cur_env = patch.envelopes[idx].attack;
+				else if (env.state==RELEASE)
+					cur_env = patch.envelopes[idx].release;
+				if (env.state!=OFF && env.ptr >= cur_env.length)
+				{
+					if (env.state != SUSTAIN)
+						{env.state += 1; }
+					env.ptr = 0;
+				}
+				idx++;
 			}
+			
 		}
 		return true;
 	}
@@ -378,18 +366,14 @@ class TableSynth implements SoftSynth
 		switch(ev.type)
 		{
 			case SequencerEvent.NOTE_ON: 
-				followers.push(new EventFollower(patch_ev));
-				vibrato = 0.;
+				followers.push(new EventFollower(patch_ev, patch_ev.patch.envelopes.length));
 				pos = 0;
 			case SequencerEvent.NOTE_OFF: 
 				for (n in followers) 
 				{ 
 					if (n.patch_event.sequencer_event.id == ev.id)
 					{
-						if (n.patch_event.patch.release_envelope.length>0)
-							{ if (n.env_state!=RELEASE) {n.env_state = RELEASE; n.env_ptr = 0;} }
-						else
-							n.env_state = OFF;
+						n.setRelease();
 					}
 				}
 		}

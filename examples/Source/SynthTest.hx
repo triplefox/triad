@@ -1,7 +1,7 @@
 import com.ludamix.triad.audio.Codec;
-import com.ludamix.triad.audio.SamplerSynth;
+//import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.SMFParser;
-import com.ludamix.triad.audio.SFZ;
+//import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.TableSynth;
 import com.ludamix.triad.ui.HSlider6;
 import haxe.io.Bytes;
@@ -39,7 +39,7 @@ class ADSRUI
 		// now have the synths take a template from the channel...
 		
 		var update = function() { 
-			var envelopes = SynthTools.interpretADSR(seq, attack.highlighted, decay.highlighted,
+			var envelopes = SynthTools.interpretADSR(seq.secondsToFrames, attack.highlighted, decay.highlighted,
 				sustain.highlighted, release.highlighted, SynthTools.CURVE_POW, SynthTools.CURVE_SQR, SynthTools.CURVE_POW);
 			for (n in seq.channels) { 
 				//n.patch_generator.settings.attack_envelope = envelopes.attack_envelope; 
@@ -75,8 +75,8 @@ class SynthTest
 	var songs : Array<Array<String>>;
 	var infos : TextField;
 	var infos2 : TextField;
-	var melodic : SFZBank;
-	var percussion : SFZBank;
+	//var melodic : SFZBank;
+	//var percussion : SFZBank;
 	
 	public function hardReset()
 	{
@@ -90,19 +90,19 @@ class SynthTest
 		  for (n in 0...32)
 		#end
 		{
-			//var synth = new TableSynth();
-			var synth = new SamplerSynth();
+			var synth = new TableSynth();
+			//var synth = new SamplerSynth();
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
 		for (n in 0...16)
 		{
-			if (n == 9)
+			/*if (n == 9)
 				seq.addChannel(voices, percussion.getGenerator());
 			else
-				seq.addChannel(voices, melodic.getGenerator());
+				seq.addChannel(voices, melodic.getGenerator());*/
 			//seq.addChannel(seq.synths, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));
-			//seq.addChannel(seq.synths, TableSynth.generatorOf(TableSynth.defaultPatch()));
+			seq.addChannel(seq.synths, TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
 		}		
 	}
 	
@@ -112,34 +112,34 @@ class SynthTest
 		Audio.init({Volume:{vol:1.0,on:true}},true);
 		seq = new Sequencer();
 		
-		melodic = new SFZBank(seq, "sfz/");
+		//melodic = new SFZBank(seq, "sfz/");
 		
 		for (n in 0...128)
 		{
          #if flash
-		   var sfz_loadable = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz")) );
+		  // var sfz_loadable = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz")) );
          #else
-			var sfz_loadable = SFZ.load(seq, Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz"));
+			//var sfz_loadable = SFZ.load(seq, Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz"));
          #end
 
-			melodic.assignSFZ(sfz_loadable[0], n);
+			//melodic.assignSFZ(sfz_loadable[0], n);
 		}
 		
-		percussion = new SFZBank(seq, "sfz/");
+		//percussion = new SFZBank(seq, "sfz/");
       #if flash
-		var sfz_data = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/kit-standard.sfz")));
+		//var sfz_data = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/kit-standard.sfz")));
       #else
-		var sfz_data = SFZ.load(seq, Assets.getBytes("sfz/kit-standard.sfz"));
+		//var sfz_data = SFZ.load(seq, Assets.getBytes("sfz/kit-standard.sfz"));
       #end
 		// hack:
-		for (r in sfz_data[0].regions)
+		/*for (r in sfz_data[0].regions)
 		{
 			r.set("loop_mode", "one_shot"); // this reduces the amount of polyphony taken by stupid cymbal crashes
 		}	
 		for (n in 0...128)
 		{
 			percussion.assignSFZ(sfz_data[0], n);
-		}
+		}*/
 		
 		hardReset();
 		

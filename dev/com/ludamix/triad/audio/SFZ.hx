@@ -97,12 +97,12 @@ class SFZGroup
 				
 			}
 			
-			var envs = SynthTools.interpretDSAHDSR(seq, dsahdsr[0], dsahdsr[1], dsahdsr[2], dsahdsr[3],
+			var envs = SynthTools.interpretDSAHDSR(seq.secondsToFrames, dsahdsr[0], dsahdsr[1], dsahdsr[2], dsahdsr[3],
 				dsahdsr[4], dsahdsr[5], dsahdsr[6], SynthTools.CURVE_LINEAR, SynthTools.CURVE_LINEAR, 
 					SynthTools.CURVE_LINEAR);
-			sampler_patch.attack_envelope = envs.attack_envelope;
-			sampler_patch.sustain_envelope = envs.sustain_envelope;
-			sampler_patch.release_envelope = envs.release_envelope;
+			sampler_patch.attack_envelope = envs.attack;
+			sampler_patch.sustain_envelope = envs.sustain;
+			sampler_patch.release_envelope = envs.release;
 			
 			region_cache.push( { region:region, patch:sampler_patch } );
 		}

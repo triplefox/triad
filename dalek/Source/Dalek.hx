@@ -286,7 +286,7 @@ class Dalek
 		for (n in 0...1)
 			seq.addSynth(new TableSynth());
 		for (n in 0...16)
-			seq.addChannel(seq.synths);
+			seq.addChannel(seq.synths,TableSynth.generatorOf(TableSynth.defaultPatch()));
 		
 	}
 	

@@ -23,13 +23,14 @@ class SynthTools
 	}
 	
 	// sustainToRelease governs whether we expect to multiply against release level, or fade from the sustain level
-		
-	public static inline function interpretADSR(sequencer : Sequencer, a : Float, d : Float, s : Float, r : Float,
-		a_curve : Int, d_curve : Int, r_curve : Int, ?sustainToRelease = false)
+	
+	public static inline function interpretADSR(secondsToFrames : Float->Float, a : Float, d : Float, s : Float, r : Float,
+		a_curve : Int, d_curve : Int, r_curve : Int, ?sustainToRelease = false) : 
+			{attack:Array<Float>,release:Array<Float>,sustain:Array<Float>}
 	{
-		var af = Math.ceil(sequencer.secondsToFrames(a));
-		var df = Math.ceil(sequencer.secondsToFrames(d));
-		var rf = Math.ceil(sequencer.secondsToFrames(r));
+		var af = Math.ceil(secondsToFrames(a));
+		var df = Math.ceil(secondsToFrames(d));
+		var rf = Math.ceil(secondsToFrames(r));
 		
 		if (af == 0) af = 1;
 		if (df == 0) df = 1;
@@ -53,18 +54,18 @@ class SynthTools
 				release_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, rf, 0., 1.0, rf - n), r_curve));
 		}
 		
-		return {attack_envelope:attack_envelope,sustain_envelope:sustain_envelope,release_envelope:release_envelope};
+		return {attack:attack_envelope,sustain:sustain_envelope,release:release_envelope};
 	}	
 	
-	public static inline function interpretDSAHDSR(sequencer : Sequencer, delay : Float, start : Float, a : Float, 
+	public static inline function interpretDSAHDSR(secondsToFrames : Float->Float, delay : Float, start : Float, a : Float, 
 		decay : Float,  hold : Float, s : Float, r : Float, a_curve : Int, d_curve : Int, r_curve : Int,
-		?sustainToRelease = false)
+		?sustainToRelease = false) : {attack:Array<Float>,release:Array<Float>,sustain:Array<Float>}
 	{
-		var delayf = Math.ceil(sequencer.secondsToFrames(delay));
-		var af = Math.ceil(sequencer.secondsToFrames(a));
-		var holdf = Math.ceil(sequencer.secondsToFrames(hold));
-		var decayf = Math.ceil(sequencer.secondsToFrames(decay));
-		var rf = Math.ceil(sequencer.secondsToFrames(r));
+		var delayf = Math.ceil(secondsToFrames(delay));
+		var af = Math.ceil(secondsToFrames(a));
+		var holdf = Math.ceil(secondsToFrames(hold));
+		var decayf = Math.ceil(secondsToFrames(decay));
+		var rf = Math.ceil(secondsToFrames(r));
 		
 		if (af == 0) af = 1;
 		if (decayf == 0) decayf = 1;
@@ -93,7 +94,7 @@ class SynthTools
 				release_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, rf, 0., 1.0, rf - n), r_curve));
 		}
 		
-		return {attack_envelope:attack_envelope,sustain_envelope:sustain_envelope,release_envelope:release_envelope};
-	}	
+		return {attack:attack_envelope,sustain:sustain_envelope,release:release_envelope};
+	}
 	
 }

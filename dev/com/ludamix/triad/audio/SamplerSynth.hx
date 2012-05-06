@@ -404,8 +404,14 @@ class SamplerSynth implements SoftSynth
 		switch(ev.type)
 		{
 			case SequencerEvent.NOTE_ON: 
-				followers.push(new EventFollower(patch_ev));
-				vibrato = 0.;
+				var env_states = new Array<Int>();
+				var env_ptrs = new Array<Int>();
+				for (n in 0...patch_ev.patch.envelopes.length)
+					{ env_ptrs.push(0); env_states.push(0); }
+				var lfo_ptrs = new Array<Int>();
+				for (n in 0...patch_ev.patch.lfos.length)
+					lfo_ptrs.push(0);
+				followers.push(new EventFollower(patch_ev, env_states, env_ptrs, lfo_ptrs));
 			case SequencerEvent.NOTE_OFF: 
 				for (n in followers) 
 				{ 
