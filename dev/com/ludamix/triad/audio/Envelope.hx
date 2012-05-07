@@ -20,4 +20,15 @@ class EnvelopeState
 		state = 0;
 	}
 	
+	public inline function getTable(env : Envelope)
+	{
+		switch(state)
+		{
+			case 0: return env.attack;
+			case 1: return env.sustain;
+			case 2: return env.release;
+			default: return null;
+		}
+	}
+	
 }

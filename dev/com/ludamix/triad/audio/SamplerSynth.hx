@@ -30,15 +30,9 @@ typedef SamplerPatch = {
 	loop_end : Int,
 	loop_mode : Int,
 	volume : Float,
-	attack_envelope : Array<Float>,
-	sustain_envelope : Array<Float>,
-	release_envelope : Array<Float>,
-	vibrato_frequency : Float, // hz
-	vibrato_depth : Float, // midi notes
-	vibrato_delay : Float, // seconds
-	vibrato_attack : Float, // seconds
-	modulation_vibrato : Float, // multiplier if greater than 0
-	envelope_quantization : Int, // 0 = off, lower values produce "chippier" envelope character
+	envelopes : Array<Envelope>,
+	lfos : Array<LFO>,
+	modulation_lfo : Float, // multiplier if greater than 0
 	arpeggiation_rate : Float, // 0 = off, hz value
 };
 
@@ -55,7 +49,9 @@ class SamplerSynth implements SoftSynth
 	public var master_volume : Float;
 	public var velocity : Float;
 	
-	public var vibrato : Float;	
+	public var frame_pitch_adjust : Float;
+	public var frame_vol_adjust : Float;
+	
 	public var arpeggio : Float;
 	
 	public static inline var ATTACK = 0;
@@ -69,7 +65,6 @@ class SamplerSynth implements SoftSynth
 		bufptr = 0;
 		master_volume = 0.1;
 		velocity = 1.0;
-		vibrato = 0.;
 		arpeggio = 0.;
 		
 	}
@@ -82,6 +77,11 @@ class SamplerSynth implements SoftSynth
 	public static inline var SUSTAIN_PINGPONG = 5;
 	public static inline var ONE_SHOT = 6;
 	public static inline var NO_LOOP = 7;
+	
+	public static inline var AS_PITCH_ADD = 0;
+	public static inline var AS_PITCH_MUL = 1;
+	public static inline var AS_VOLUME_ADD = 2;
+	public static inline var AS_VOLUME_MUL = 3;
 	
 	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, ?wav_data : Array<Vector<Float>> = null)
 	{
@@ -124,16 +124,10 @@ class SamplerSynth implements SoftSynth
 			loop_start:loop_start,
 			loop_end:loop_end,
 			loop_mode:loop_type,
-			attack_envelope:[1.0],
-			sustain_envelope:[1.0],
-			release_envelope:[1.0],
+			envelopes:[{attack:[1.0],sustain:[1.0],release:[1.0],quantization:0,assigns:[AS_VOLUME_ADD]}],
 			volume:1.0,
-			vibrato_frequency:3.,
-			vibrato_depth:0.5,
-			vibrato_delay:0.05,
-			vibrato_attack:0.05,
-			modulation_vibrato:1.0,
-			envelope_quantization:0,
+			lfos:[{frequency:3.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
+			modulation_lfo:1.0,
 			arpeggiation_rate:0.0,
 			},
 			function(settings, seq, ev) : Array<PatchEvent> { return [new PatchEvent(ev,settings)]; }
@@ -161,15 +155,9 @@ class SamplerSynth implements SoftSynth
 				loop_start:0,
 				loop_end:samples.length-1,
 				loop_mode:LOOP_FORWARD,
-				attack_envelope:[1.0],
-				sustain_envelope:[1.0],
-				release_envelope:[1.0],
-				vibrato_frequency:3.,
-				vibrato_depth:0.5,
-				vibrato_delay:0.05,
-				vibrato_attack:0.05,
-				modulation_vibrato:1.0,
-				envelope_quantization:0,
+				envelopes:[{attack:[1.0],sustain:[1.0],release:[1.0],quantization:0,assigns:[AS_VOLUME_ADD]}],
+				lfos:[{frequency:3.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
+				modulation_lfo:1.0,
 				arpeggiation_rate:0.0,
 				}
 				;
@@ -183,39 +171,75 @@ class SamplerSynth implements SoftSynth
 		this.followers = new Array();		
 	}
 	
-	public inline function updateVibrato(patch : SamplerPatch, channel : SequencerChannel) : Float
+	public inline function pipeAdjustment(qty : Float, assigns : Array<Int>)
 	{
-		var cycle_length = sequencer.secondsToFrames(1. / patch.vibrato_frequency);
-		var delay_length = sequencer.secondsToFrames(patch.vibrato_delay);
-		var attack_length = sequencer.secondsToFrames(patch.vibrato_attack);
-		var modulation_amount = patch.modulation_vibrato>0 ? patch.modulation_vibrato * channel.modulation : 1.0;
- 		var mvibrato = vibrato - delay_length;
-		vibrato += 1;
-		if (mvibrato > 0)
+		for (assign in assigns)
 		{
-			if (mvibrato > attack_length)
+			switch(assign)
 			{
-				return Math.sin(2 * Math.PI * mvibrato / cycle_length) * patch.vibrato_depth * modulation_amount;
-			}
-			else // ramp up vibrato
-			{
-				return Math.sin(2 * Math.PI * mvibrato / cycle_length) * modulation_amount * 
-					(patch.vibrato_depth * (mvibrato/attack_length));
+				case AS_PITCH_ADD: frame_pitch_adjust += qty;
+				case AS_PITCH_MUL: frame_pitch_adjust *= qty;
+				case AS_VOLUME_ADD: frame_vol_adjust += qty;
+				case AS_VOLUME_MUL: frame_vol_adjust *= qty;
 			}
 		}
-		else return 0.;
+	}
+	
+	public inline function updateEnvelope(patch : SamplerPatch, channel : SequencerChannel, cur_follower : EventFollower)
+	{
+		var env_num = 0;
+		for (env in cur_follower.env)
+		{
+			if (env.state < 3)
+			{
+				var patch_env = patch.envelopes[env_num];
+				var env_val = env.getTable(patch_env)[env.ptr];
+				if (patch_env.quantization != 0)
+					env_val = (Math.round(env_val * patch_env.quantization) / patch_env.quantization);	
+				pipeAdjustment(env_val, patch_env.assigns);
+			}
+			env_num++;
+		}		
+	}
+	
+	public inline function updateLFO(patch : SamplerPatch, channel : SequencerChannel, cur_follower : EventFollower)
+	{
+		var lfo_num = 0;
+		for (n in patch.lfos)
+		{
+			var cycle_length = sequencer.secondsToFrames(1. / n.frequency);
+			var delay_length = sequencer.secondsToFrames(n.delay);
+			var attack_length = sequencer.secondsToFrames(n.attack);
+			var modulation_amount = (lfo_num == 0 && patch.modulation_lfo > 0) ? 
+				patch.modulation_lfo * channel.modulation : 1.0;
+			var mpos = cur_follower.lfo_pos - delay_length;
+			if (mpos > 0)
+			{
+				if (mpos > attack_length)
+				{
+					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) * n.depth * modulation_amount, n.assigns);
+				}
+				else // ramp up
+				{
+					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) * modulation_amount * 
+						(n.depth * (mpos/attack_length)), n.assigns);
+				}
+			}
+			lfo_num++;
+		}
+		cur_follower.lfo_pos += 1;
 	}
 	
 	public function write()
 	{	
-		while (followers.length > 0 && followers[followers.length - 1].env_state == OFF) followers.pop();
+		while (followers.length > 0 && followers[followers.length - 1].isOff()) followers.pop();
 		if (followers.length < 1) { return false; }
 		
 		var cur_follower : EventFollower = followers[followers.length - 1];		
 		var patch : SamplerPatch = cur_follower.patch_event.patch;
 		if (patch.arpeggiation_rate>0.0)
 		{
-			var available = Lambda.array(Lambda.filter(followers, function(a) { return a.env_state != OFF; } ));
+			var available = Lambda.array(Lambda.filter(followers, function(a) { return !a.isOff(); } ));
 			cur_follower = available[Std.int(((arpeggio) % 1) * available.length)];
 			patch = cur_follower.patch_event.patch;
 			arpeggio += sequencer.secondsToFrames(1.0) / (patch.arpeggiation_rate);
@@ -245,32 +269,28 @@ class SamplerSynth implements SoftSynth
 		
 		var seq_event = cur_follower.patch_event.sequencer_event;
 		
+		frame_pitch_adjust = 0.;
+		frame_vol_adjust = 0.;
+		
+		updateEnvelope(patch, cur_channel, cur_follower);
+		updateLFO(patch, cur_channel, cur_follower);
+		
 		freq = seq_event.data.freq;
 		
 		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, 
-					pitch_bend + Std.int((updateVibrato(patch, cur_channel) * 8192 / sequencer.tuning.bend_semitones))));
-					
+					pitch_bend + Std.int((frame_pitch_adjust * 8192 / sequencer.tuning.bend_semitones))));
+		
 		freq = sequencer.frequency(wl);
 		
 		velocity = seq_event.data.velocity / 128;
 		
-		var attack_envelope = patch.attack_envelope;
-		var sustain_envelope = patch.sustain_envelope;
-		var release_envelope = patch.release_envelope;
-		var envelopes = [attack_envelope, sustain_envelope, release_envelope];
-		
-		// new envelope feature: release should multiply against the MOR(moment of release) volume instead of its own
-		// thingy. This resolves the issue with having a sustain-of-0.
-		
-		if (cur_follower.env_state != OFF)
+		if (!cur_follower.isOff())
 		{
-			var env_val = envelopes[cur_follower.env_state][cur_follower.env_ptr];
-			if (cur_follower.env_state == RELEASE) // apply the release envelope on top of the release level
-				env_val *= cur_follower.release_level;
-			if (patch.envelope_quantization != 0)
-				env_val = (Math.round(env_val * patch.envelope_quantization) / patch.envelope_quantization);	
+			
+			if (cur_follower.env[0].state == RELEASE) // apply the release envelope on top of the release level
+				frame_vol_adjust *= cur_follower.release_level;
 			var curval = patch.volume * master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
-						env_val;
+				frame_vol_adjust;
 			
 			// get sample and volume data
 			var pan_sum = MathTools.limit(0., 1., pan + 2 * (patch.pan - 0.5));
@@ -308,7 +328,7 @@ class SamplerSynth implements SoftSynth
 						}
 					// SUSTAIN - loop until release, then play to the first of envelope OFF or sample endpoint
 					case SUSTAIN_FORWARD, SUSTAIN_BACKWARD, SUSTAIN_PINGPONG: 				
-						if (cur_follower.env_state < RELEASE) 
+						if (cur_follower.env[0].state < RELEASE) 
 						{
 							while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
 							for (n in 0...total_length)
@@ -336,39 +356,59 @@ class SamplerSynth implements SoftSynth
 							cur_follower.pos += inc;
 							bufptr = (bufptr + 2) % buffer.length;
 						}
-						if (cur_follower.pos >= sample_length) { cur_follower.env_state = OFF; }
+						if (cur_follower.pos >= sample_length) { cur_follower.env[0].state = OFF; }
 				}		
 			}
 			else
 			{
 				cur_follower.pos += total_inc;
-				if (cur_follower.pos > sample_length && (patch.loop_mode == ONE_SHOT || cur_follower.env_state == RELEASE))
-					cur_follower.env_state = OFF;
+				if (cur_follower.pos > sample_length && (patch.loop_mode == ONE_SHOT || cur_follower.env[0].state == RELEASE))
+					cur_follower.env[0].state = OFF;
 			}
 			
-			// envelope advancement
+			// Envelope advancement. We judge the length of the note based on the master envelope.
 			
-			cur_follower.env_ptr++;
-			
-			if (cur_follower.env_state!=OFF && cur_follower.env_ptr >= envelopes[cur_follower.env_state].length)
+			var ct = 0;
+			for (e in cur_follower.env)
 			{
-				// advance to next state if not sustaining
-				if (cur_follower.env_state != SUSTAIN || patch.loop_mode == ONE_SHOT || patch.loop_mode == NO_LOOP)
-					{cur_follower.env_state += 1; if (cur_follower.env_state == SUSTAIN && 
-						sustain_envelope.length < 1) cur_follower.env_state++; }
-				// allow one shots to play through, ignoring their envelope tail
-				if (patch.loop_mode == ONE_SHOT && cur_follower.env_state == OFF && cur_follower.pos < sample_length)
+				e.ptr++;
+				if (ct == 0) // master envelope treatment
 				{
-					cur_follower.env_state = RELEASE;
-					cur_follower.env_ptr = release_envelope.length - 1;
+					var master_env : Array<Float> = cur_follower.env[0].getTable(patch.envelopes[0]);
+					var master_state = cur_follower.env[0].state;
+					var master_ptr = cur_follower.env[0].ptr;
+					
+					if (master_state!=OFF && master_ptr >= master_env.length)
+					{
+						// advance to next state if not sustaining
+						if (master_state != SUSTAIN || patch.loop_mode == ONE_SHOT || patch.loop_mode == NO_LOOP)
+							{master_state += 1; if (master_state == SUSTAIN && 
+								patch.envelopes[0].sustain.length < 1) master_state++; }
+						// allow one shots to play through, ignoring their envelope tail
+						if (patch.loop_mode == ONE_SHOT && master_state == OFF && cur_follower.pos < sample_length)
+						{
+							master_state = RELEASE;
+							master_ptr = patch.envelopes[0].release.length - 1;
+						}
+						else
+							master_ptr = 0;
+						cur_follower.env[0].state = master_state;
+						cur_follower.env[0].ptr = master_ptr;
+					}
+					// set release level
+					if (master_state < RELEASE)
+					{
+						cur_follower.release_level = frame_vol_adjust;
+					}
 				}
-				else
-					cur_follower.env_ptr = 0;
-			}
-			// set release level
-			if (cur_follower.env_state < RELEASE)
-			{
-				cur_follower.release_level = envelopes[cur_follower.env_state][cur_follower.env_ptr];
+				else // other envelopes are simple...
+				{
+					if (e.state!=OFF && e.state!=SUSTAIN && e.ptr >= e.getTable(patch.envelopes[ct]).length)
+					{ 
+						e.state++; e.ptr = 0; 
+					}
+				}
+				ct++;
 			}
 			
 		}
@@ -394,7 +434,7 @@ class SamplerSynth implements SoftSynth
 		// Linear interpolator(unfiltered)
 		var a : Int = Std.int(Math.min(pos, sample_left.length - 1));
 		var b : Int = Std.int(Math.min(pos + inc, sample_left.length - 1));
-		buffer[bufptr] += left * ((sample_left[a]+sample_left[b])*0.5);
+		buffer[bufptr] += left * ((sample_left[a] + sample_left[b]) * 0.5);		
 		buffer[bufptr + 1] += right * ((sample_right[a] + sample_right[b])*0.5);
 	}
 	
@@ -404,26 +444,13 @@ class SamplerSynth implements SoftSynth
 		switch(ev.type)
 		{
 			case SequencerEvent.NOTE_ON: 
-				var env_states = new Array<Int>();
-				var env_ptrs = new Array<Int>();
-				for (n in 0...patch_ev.patch.envelopes.length)
-					{ env_ptrs.push(0); env_states.push(0); }
-				var lfo_ptrs = new Array<Int>();
-				for (n in 0...patch_ev.patch.lfos.length)
-					lfo_ptrs.push(0);
-				followers.push(new EventFollower(patch_ev, env_states, env_ptrs, lfo_ptrs));
+				followers.push(new EventFollower(patch_ev, patch_ev.patch.envelopes.length));
 			case SequencerEvent.NOTE_OFF: 
 				for (n in followers) 
 				{ 
-					if (n.patch_event.sequencer_event.id == ev.id) 
+					if (n.patch_event.sequencer_event.id == ev.id)
 					{
-						if (n.patch_event.patch.release_envelope.length>0)
-							{ if (n.env_state!=RELEASE) {n.env_state = RELEASE; n.env_ptr = 0;} }
-						else
-						{
-							if (n.patch_event.patch.loop_mode != ONE_SHOT)
-								n.env_state = OFF;
-						}
+						n.setRelease();
 					}
 				}
 		}

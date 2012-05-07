@@ -57,13 +57,15 @@ class SynthTools
 		return {attack:attack_envelope,sustain:sustain_envelope,release:release_envelope};
 	}	
 	
-	public static inline function interpretDSAHDSR(secondsToFrames : Float->Float, delay : Float, start : Float, a : Float, 
-		decay : Float,  hold : Float, s : Float, r : Float, a_curve : Int, d_curve : Int, r_curve : Int,
+	public static inline function interpretDSAHDSHR(secondsToFrames : Float->Float, delay : Float, start : Float, 
+		a : Float, hold_attack : Float, 
+		decay : Float,  s : Float, hold_release : Float, r : Float, a_curve : Int, d_curve : Int, r_curve : Int,
 		?sustainToRelease = false) : {attack:Array<Float>,release:Array<Float>,sustain:Array<Float>}
 	{
 		var delayf = Math.ceil(secondsToFrames(delay));
 		var af = Math.ceil(secondsToFrames(a));
-		var holdf = Math.ceil(secondsToFrames(hold));
+		var hold_af = Math.ceil(secondsToFrames(hold_attack));
+		var hold_rf = Math.ceil(secondsToFrames(hold_release));
 		var decayf = Math.ceil(secondsToFrames(decay));
 		var rf = Math.ceil(secondsToFrames(r));
 		
@@ -75,8 +77,8 @@ class SynthTools
 		for (n in 0...delayf)
 			attack_envelope.push(0.);
 		for (n in 0...af)
-			attack_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0,af,start,1.0,n),a_curve));
-		for (n in 0...holdf)
+			attack_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, af, start, 1.0, n), a_curve));
+		for (n in 0...hold_af)
 			attack_envelope.push(1.);
 		for (n in 0...decayf)
 			attack_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, decayf, s, 1.0, decayf - n), d_curve));
@@ -85,11 +87,15 @@ class SynthTools
 		var release_envelope = new Array<Float>();
 		if (sustainToRelease)
 		{
+			for (n in 0...hold_rf)
+				release_envelope.push(s);
 			for (n in 0...rf)
 				release_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, rf, 0., s, rf - n),r_curve));
 		}
 		else
 		{
+			for (n in 0...hold_rf)
+				release_envelope.push(1.);
 			for (n in 0...rf)
 				release_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, rf, 0., 1.0, rf - n), r_curve));
 		}

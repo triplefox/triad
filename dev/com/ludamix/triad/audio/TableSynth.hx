@@ -113,17 +113,15 @@ class TableSynth implements SoftSynth
 		var env_num = 0;
 		for (env in cur_follower.env)
 		{
-			var patch_env = patch.envelopes[env_num];
-			var env_val = 0.;
-			switch(env.state)
+			if (env.state < 3)
 			{
-				case ATTACK: env_val = patch_env.attack[env.ptr];
-				case SUSTAIN: env_val = patch_env.sustain[env.ptr];
-				case RELEASE: env_val = patch_env.release[env.ptr];
+				var patch_env = patch.envelopes[env_num];
+				var env_val = 0.;
+				env_val = env.getTable(patch_env)[env.ptr];
+				if (patch_env.quantization != 0)
+					env_val = (Math.round(env_val * patch_env.quantization) / patch_env.quantization);	
+				pipeAdjustment(env_val, patch_env.assigns);
 			}
-			if (patch_env.quantization != 0)
-				env_val = (Math.round(env_val * patch_env.quantization) / patch_env.quantization);	
-			pipeAdjustment(env_val, patch_env.assigns);
 			env_num++;
 		}		
 	}
@@ -170,11 +168,7 @@ class TableSynth implements SoftSynth
 	
 	public function write()
 	{	
-		while (followers.length > 0)
-		{
-			if (followers[followers.length - 1].isOff()) followers.pop();
-			else break;
-		}
+		while (followers.length > 0 && followers[followers.length - 1].isOff()) followers.pop();
 		if (followers.length < 1) { pos = 0; return false; }
 		
 		var cur_follower : EventFollower = followers[followers.length - 1];		
@@ -195,7 +189,7 @@ class TableSynth implements SoftSynth
 		var seq_event = cur_follower.patch_event.sequencer_event;
 		
 		frame_pitch_adjust = 0.;
-		frame_vol_adjust = 1.;
+		frame_vol_adjust = 0.;
 		frame_pulsewidth = 0.;
 		
 		updateLFO(patch, cur_channel, cur_follower);

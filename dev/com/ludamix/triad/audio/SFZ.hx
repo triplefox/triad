@@ -56,7 +56,7 @@ class SFZGroup
 			if (sampler_patch == null) continue; // no sample found...
 			
 			// ampeg directives are all in % and seconds.
-			var dsahdsr = [0.,1.,0.,0.,0.,1.,0.];
+			var env_vals = [0.,1.,0.,0.,1.,0.,0.];
 			
 			var midinote : Float = 60.0;
 			for (directives in [group_opcodes, region])
@@ -67,13 +67,13 @@ class SFZGroup
 				if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
 				sampler_patch.sample.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
 				
-				if (directives.exists("ampeg_delay")) { dsahdsr[0] = directives.get("ampeg_delay"); }
-				if (directives.exists("ampeg_start")) { dsahdsr[1] = directives.get("ampeg_start"); }
-				if (directives.exists("ampeg_attack")) { dsahdsr[2] = directives.get("ampeg_attack"); }
-				if (directives.exists("ampeg_hold")) { dsahdsr[3] = directives.get("ampeg_hold"); }
-				if (directives.exists("ampeg_decay")) { dsahdsr[4] = directives.get("ampeg_decay"); }
-				if (directives.exists("ampeg_sustain")) { dsahdsr[5] = directives.get("ampeg_sustain")/100; }
-				if (directives.exists("ampeg_release")) { dsahdsr[6] = directives.get("ampeg_release"); }
+				if (directives.exists("ampeg_delay")) { env_vals[0] = directives.get("ampeg_delay"); }
+				if (directives.exists("ampeg_start")) { env_vals[1] = directives.get("ampeg_start"); }
+				if (directives.exists("ampeg_attack")) { env_vals[2] = directives.get("ampeg_attack"); }
+				if (directives.exists("ampeg_hold")) { env_vals[3] = directives.get("ampeg_hold"); } 
+				if (directives.exists("ampeg_decay")) { env_vals[4] = directives.get("ampeg_decay"); }
+				if (directives.exists("ampeg_sustain")) { env_vals[5] = directives.get("ampeg_sustain")/100; }
+				if (directives.exists("ampeg_release")) { env_vals[6] = directives.get("ampeg_release"); }
 				
 				if (directives.exists("loop_mode")) {
 					switch(directives.get("loop_mode"))
@@ -97,12 +97,11 @@ class SFZGroup
 				
 			}
 			
-			var envs = SynthTools.interpretDSAHDSR(seq.secondsToFrames, dsahdsr[0], dsahdsr[1], dsahdsr[2], dsahdsr[3],
-				dsahdsr[4], dsahdsr[5], dsahdsr[6], SynthTools.CURVE_LINEAR, SynthTools.CURVE_LINEAR, 
-					SynthTools.CURVE_LINEAR);
-			sampler_patch.attack_envelope = envs.attack;
-			sampler_patch.sustain_envelope = envs.sustain;
-			sampler_patch.release_envelope = envs.release;
+			var envs = SynthTools.interpretDSAHDSHR(seq.secondsToFrames, env_vals[0], env_vals[1], env_vals[2], env_vals[3],
+				env_vals[4], env_vals[5], 0., env_vals[6], SynthTools.CURVE_POW, SynthTools.CURVE_SQR, 
+					SynthTools.CURVE_SQR);
+			sampler_patch.envelopes = [ { attack:envs.attack, sustain:envs.sustain, release:envs.release,
+				quantization:0, assigns:[SamplerSynth.AS_VOLUME_ADD]}];
 			
 			region_cache.push( { region:region, patch:sampler_patch } );
 		}
