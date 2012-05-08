@@ -20,5 +20,6 @@ interface SoftSynth
 	public function write():Bool;
 	public function event(data : PatchEvent, channel : SequencerChannel):Bool;
 	public function getEvents():Array<SequencerEvent>;
+	public function allOff():Void;
 	
 }

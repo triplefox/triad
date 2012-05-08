@@ -56,7 +56,7 @@ class SFZGroup
 			if (sampler_patch == null) continue; // no sample found...
 			
 			// ampeg directives are all in % and seconds.
-			var env_vals = [0.,1.,0.,0.,1.,0.,0.];
+			var env_vals = [0.,1.,0.,0.,0.,1.,0.];
 			
 			var midinote : Float = 60.0;
 			for (directives in [group_opcodes, region])
@@ -72,7 +72,7 @@ class SFZGroup
 				if (directives.exists("ampeg_attack")) { env_vals[2] = directives.get("ampeg_attack"); }
 				if (directives.exists("ampeg_hold")) { env_vals[3] = directives.get("ampeg_hold"); } 
 				if (directives.exists("ampeg_decay")) { env_vals[4] = directives.get("ampeg_decay"); }
-				if (directives.exists("ampeg_sustain")) { env_vals[5] = directives.get("ampeg_sustain")/100; }
+				if (directives.exists("ampeg_sustain")) { env_vals[5] = directives.get("ampeg_sustain") / 100; }
 				if (directives.exists("ampeg_release")) { env_vals[6] = directives.get("ampeg_release"); }
 				
 				if (directives.exists("loop_mode")) {

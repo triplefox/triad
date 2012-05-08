@@ -89,7 +89,11 @@ class SMFData
 	public static inline var CC_NRPN_LSB = 98;
 	public static inline var CC_NRPN_MSB = 99;
 	public static inline var CC_RPN_LSB = 100;
-	public static inline var CC_RPN_MSB = 101;
+	public static inline var CC_RPN_MSB = 101;	
+	public static inline var CC_ALL_SOUND_OFF = 120;
+	public static inline var CC_ALL_CONTROLLERS_OFF = 121;
+	public static inline var CC_LOCAL_KEYBOARD_OFF = 122;
+	public static inline var CC_ALL_NOTES_OFF = 123;
 	
 	public static inline var RPN_PITCHBEND_SENCE = 0;
 	public static inline var RPN_FINE_TUNE = 1;
@@ -442,6 +446,20 @@ class SMFParser
 														-1));
 					case SMFData.CC_BANK_SELECT_LSB: // we assume this is the same as program change...
 						return (new SequencerEvent(SequencerEvent.SET_PATCH,
+												smf.data,
+												smf.channel,
+												SequencerEvent.CHANNEL_EVENT,
+												frames,
+												-1));
+					case SMFData.CC_SUSTAIN_PEDAL:
+						return (new SequencerEvent(SequencerEvent.SUSTAIN_PEDAL,
+												smf.data,
+												smf.channel,
+												SequencerEvent.CHANNEL_EVENT,
+												frames,
+												-1));
+					case SMFData.CC_ALL_NOTES_OFF:
+						return (new SequencerEvent(SequencerEvent.ALL_NOTES_OFF,
 												smf.data,
 												smf.channel,
 												SequencerEvent.CHANNEL_EVENT,

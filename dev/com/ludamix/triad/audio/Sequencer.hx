@@ -34,6 +34,8 @@ class SequencerEvent
 	public static inline var MODULATION = 5;
 	public static inline var PAN = 6;
 	public static inline var SET_PATCH = 7;
+	public static inline var SUSTAIN_PEDAL = 8;
+	public static inline var ALL_NOTES_OFF = 9;
 	
 }
 
@@ -76,6 +78,7 @@ class SequencerChannel
 	public var pan : Float;	
 	public var patch_id : Int;	
 	public var polyphony : Int;
+	public var sustain : Bool;
 	
 	public var patch_generator : PatchGenerator;
 	
@@ -91,7 +94,8 @@ class SequencerChannel
 		channel_volume = 1.0;
 		modulation = 0.;
 		pan = 0.5;
-		polyphony = 12;
+		polyphony = 16;
+		sustain = false;
 		allocated = new Array();
 	}
 	
@@ -124,11 +128,21 @@ class SequencerChannel
 					pan = ev.data;
 				case SequencerEvent.SET_PATCH:
 					patch_id = ev.data;
+				case SequencerEvent.SUSTAIN_PEDAL:
+					sustain = (ev.data > 63);
+					if (!sustain)
+						for (n in allocated)
+							n.allOff();
+				case SequencerEvent.ALL_NOTES_OFF:
+					for (n in allocated)
+						n.allOff();
 			}
 			return;
 		}
 		else
 		{
+			if (ev.type == SequencerEvent.NOTE_OFF && sustain) return;
+			
 			var patched_events = patch_generator.generator(patch_generator.settings, seq, ev);
 			if (patched_events == null) return;
 			for (patched_ev in patched_events)

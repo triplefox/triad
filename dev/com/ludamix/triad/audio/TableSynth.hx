@@ -390,4 +390,9 @@ class TableSynth implements SoftSynth
 		return result;
 	}
 	
+	public function allOff()
+	{
+		while (followers.length>0) followers.pop();
+	}
+	
 }

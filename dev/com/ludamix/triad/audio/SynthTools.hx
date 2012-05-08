@@ -5,7 +5,8 @@ class SynthTools
 	
 	public static inline var CURVE_LINEAR = 0;
 	public static inline var CURVE_SQR = 1;
-	public static inline var CURVE_POW = 2;
+	public static inline var CURVE_CUBE = 2;
+	public static inline var CURVE_POW = 3;
 
 	public static inline function curve(value : Float, mapping : Int)
 	{
@@ -15,6 +16,8 @@ class SynthTools
 				return value;
 			case CURVE_SQR:
 				return value * value;
+			case CURVE_CUBE:
+				return value * value * value;
 			case CURVE_POW:
 				return Math.pow(value, 1.0 - value);
 			default:
