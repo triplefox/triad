@@ -395,4 +395,9 @@ class TableSynth implements SoftSynth
 		while (followers.length>0) followers.pop();
 	}
 	
+	public function allRelease()
+	{
+		for (f in followers) { f.setRelease(); }
+	}
+	
 }

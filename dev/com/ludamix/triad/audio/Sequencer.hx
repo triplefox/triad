@@ -132,7 +132,7 @@ class SequencerChannel
 					sustain = (ev.data > 63);
 					if (!sustain)
 						for (n in allocated)
-							n.allOff();
+							n.allRelease();
 				case SequencerEvent.ALL_NOTES_OFF:
 					for (n in allocated)
 						n.allOff();
