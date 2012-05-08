@@ -54,6 +54,11 @@ class TableSynth implements SoftSynth
 	public static inline var AS_VOLUME_MUL = 3;
 	public static inline var AS_PULSEWIDTH = 4;
 	
+	// heuristic to ramp down priority when releasing
+	public static inline var PRIORITY_RAMPDOWN = 0.95;
+	// and ramp up priority when sustaining
+	public static inline var PRIORITY_RAMPUP = 1;
+	
 	public function new()
 	{
 		freq = 440.;
@@ -335,12 +340,21 @@ class TableSynth implements SoftSynth
 			{
 				env.ptr++;
 				var cur_env : Array<Float> = null;
-				if (env.state==SUSTAIN)
+				if (env.state == SUSTAIN)
+				{
+					if (idx == 0)
+						cur_follower.patch_event.sequencer_event.priority += PRIORITY_RAMPUP;
 					cur_env = patch.envelopes[idx].sustain;
+				}
 				else if (env.state==ATTACK)
 					cur_env = patch.envelopes[idx].attack;
-				else if (env.state==RELEASE)
+				else if (env.state == RELEASE)
+				{
+					if (idx == 0)
+						cur_follower.patch_event.sequencer_event.priority = 
+							Std.int(cur_follower.patch_event.sequencer_event.priority * PRIORITY_RAMPDOWN);
 					cur_env = patch.envelopes[idx].release;
+				}
 				if (env.state!=OFF && env.ptr >= cur_env.length)
 				{
 					if (env.state != SUSTAIN)

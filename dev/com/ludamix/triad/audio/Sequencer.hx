@@ -94,7 +94,7 @@ class SequencerChannel
 		channel_volume = 1.0;
 		modulation = 0.;
 		pan = 0.5;
-		polyphony = 16;
+		polyphony = outputs.length;
 		sustain = false;
 		allocated = new Array();
 	}

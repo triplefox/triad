@@ -282,7 +282,7 @@ class SFZBank
 				var reader = new Reader(new BytesInput(Assets.getBytes(path + n)));
             #end
 				var header = reader.read();
-				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header);
+				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header, null, 2);
 				samples.set(n, content.settings);
 			}
 		}

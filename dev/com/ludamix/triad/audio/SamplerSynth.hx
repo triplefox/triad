@@ -83,9 +83,116 @@ class SamplerSynth implements SoftSynth
 	public static inline var AS_VOLUME_ADD = 2;
 	public static inline var AS_VOLUME_MUL = 3;
 	
-	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, ?wav_data : Array<Vector<Float>> = null)
+	// heuristic to ramp down priority when releasing
+	public static inline var PRIORITY_RAMPDOWN = 0.95;
+	// and ramp up priority when sustaining
+	public static inline var PRIORITY_RAMPUP = 1;
+	
+	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, ?wav_data : Array<Vector<Float>> = null,
+		?oversample = 1)
 	{
-		if (wav_data == null) { wav_data = Codec.WAV(wav); }
+		if (wav_data == null) { 
+			
+			wav_data = Codec.WAV(wav);
+			
+			var initial_rate = wav.header.samplingRate;
+			
+			wav.header.samplingRate = Std.int(wav.header.samplingRate * oversample);
+			wav.header.byteRate = Std.int(wav.header.byteRate * oversample);
+			if (wav.header.smpl != null && wav.header.smpl.loop_data != null)
+			for (loop in wav.header.smpl.loop_data)
+			{
+				loop.start = Std.int(loop.start * oversample);
+				loop.end = Std.int(loop.end * oversample);
+			}
+			
+			if (oversample > 1)
+			{
+				
+				var rounds = oversample;
+				
+				var idx = 0;
+				
+				// Convolving low-pass filter.
+				
+				// Oversampling adds a ton of overhead to sample load times and memory consumption,
+				// But the oversampled data is pre-filtered, improving resampling quality.
+				// I may need to turn this into an FFT implementation in order to get decent load times.
+				
+				// Some good files to test with this: SNUCKEY3.MID, Snuckey4.mid (sam and max)
+				// 								 	  ULTIMA10.MID (ultima 7)
+				
+				var table = new Array<Float>();
+				var LIM = 32; // below around 24, the quality is too low to bother with.
+				
+				// Windowed sinc
+				for (n in 0...LIM)
+				{
+					if (n == 0 ) table.push(1.) // removable singularity at 0
+					else
+					{
+						var pos = (2 * n / (LIM - 1));
+						table.push((
+							Math.sin(pos*Math.PI)/(pos * Math.PI)
+							  )
+						);
+					}
+				}
+				var lut = new Vector<Float>();
+				for (n in table)
+					lut.push(n);
+				for (n in 0...table.length - 1) // mirror
+				{
+					var pos = table.length - n - 2;
+					lut.push(table[pos]);
+				}
+				
+				for (samples in wav_data)
+				{
+					
+					var convolve = new Vector<Float>();
+					for (n in 0...table.length)
+						convolve.push(0.);
+					var tw = new Vector<Float>();
+						
+					var j = 0.;
+					var i = 0.;
+					
+					for (idx in 0...samples.length+convolve.length)
+					{
+						var s = idx < cast(samples.length,Int) ? samples[idx] : 0.;
+						
+						i = 0.;
+						for (c in 0...convolve.length-1)
+						{
+							convolve[c] = convolve[c + 1];
+							i += lut[c] * convolve[c]; 
+						}
+						convolve[convolve.length - 1] = s;
+						tw.push(i);
+						
+						// then 0-pad
+						
+						for (r in 0...rounds-1)
+						{
+							i = 0.;
+							for (c in 0...convolve.length-1)
+							{
+								convolve[c] = convolve[c + 1];
+								i += lut[c] * convolve[c]; 
+							}
+							convolve[convolve.length - 1] = 0.;
+							tw.push(i);
+						}
+						
+					}
+					
+					wav_data[idx] = tw;
+					idx++;
+				}
+			}
+		}
+		
 		
 		var loop_type = SamplerSynth.ONE_SHOT;
 		var midi_unity_note = 0;
@@ -384,6 +491,8 @@ class SamplerSynth implements SoftSynth
 						if (master_state != SUSTAIN || patch.loop_mode == ONE_SHOT || patch.loop_mode == NO_LOOP)
 							{master_state += 1; if (master_state == SUSTAIN && 
 								patch.envelopes[0].sustain.length < 1) master_state++; }
+						else if (master_state == SUSTAIN) // encourage sustains to be retained
+							cur_follower.patch_event.sequencer_event.priority += PRIORITY_RAMPUP;
 						// allow one shots to play through, ignoring their envelope tail
 						if (patch.loop_mode == ONE_SHOT && master_state == OFF && cur_follower.pos < sample_length)
 						{
@@ -399,6 +508,11 @@ class SamplerSynth implements SoftSynth
 					if (master_state < RELEASE)
 					{
 						cur_follower.release_level = frame_vol_adjust;
+					}
+					else
+					{
+						cur_follower.patch_event.sequencer_event.priority = 
+							Std.int(cur_follower.patch_event.sequencer_event.priority * PRIORITY_RAMPDOWN);
 					}
 				}
 				else // other envelopes are simple...
@@ -431,7 +545,7 @@ class SamplerSynth implements SoftSynth
 								left : Float, right : Float, 
 								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
 	{
-		// Linear interpolator(unfiltered)
+		// linear interpolator
 		var ideal = Math.min(pos, sample_left.length - 1);
 		var a : Int = Std.int(ideal);
 		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
