@@ -76,7 +76,7 @@ class TableSynth implements SoftSynth
 			SynthTools.CURVE_POW, SynthTools.CURVE_POW, false);
 		var envs : Array<Envelope> = [ { attack:adsr_base.attack, sustain:adsr_base.sustain, release:adsr_base.release, assigns:[AS_VOLUME_ADD],
 							quantization:0 } ];
-		var lfos : Array<LFO> = [ { frequency:3., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] } ];
+		var lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] } ];
 		return { envelopes:envs,
 				oscillator:FM_2OP,
 				lfos : lfos,

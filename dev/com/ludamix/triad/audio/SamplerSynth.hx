@@ -126,7 +126,7 @@ class SamplerSynth implements SoftSynth
 			loop_mode:loop_type,
 			envelopes:[{attack:[1.0],sustain:[1.0],release:[1.0],quantization:0,assigns:[AS_VOLUME_ADD]}],
 			volume:1.0,
-			lfos:[{frequency:1.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
+			lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
 			modulation_lfo:1.0,
 			arpeggiation_rate:0.0,
 			},
@@ -156,7 +156,7 @@ class SamplerSynth implements SoftSynth
 				loop_end:samples.length-1,
 				loop_mode:LOOP_FORWARD,
 				envelopes:[{attack:[1.0],sustain:[1.0],release:[1.0],quantization:0,assigns:[AS_VOLUME_ADD]}],
-				lfos:[{frequency:1.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
+				lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
 				modulation_lfo:1.0,
 				arpeggiation_rate:0.0,
 				}
