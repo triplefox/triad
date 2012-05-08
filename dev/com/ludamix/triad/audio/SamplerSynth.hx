@@ -432,10 +432,12 @@ class SamplerSynth implements SoftSynth
 								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
 	{
 		// Linear interpolator(unfiltered)
-		var a : Int = Std.int(Math.min(pos, sample_left.length - 1));
-		var b : Int = Std.int(Math.min(pos + inc, sample_left.length - 1));
-		buffer[bufptr] += left * ((sample_left[a] + sample_left[b]) * 0.5);		
-		buffer[bufptr + 1] += right * ((sample_right[a] + sample_right[b])*0.5);
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var interpolation_factor : Float = ideal - a;
+		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor);	
+		buffer[bufptr + 1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor);
 	}
 	
 	public function event(patch_ev : PatchEvent, channel : SequencerChannel)
