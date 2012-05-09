@@ -10,6 +10,15 @@ import com.ludamix.triad.audio.MIDITuning;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
 
+import com.ludamix.triad.audio.dsp.RFFT;
+import com.ludamix.triad.audio.dsp.ADSR;
+import com.ludamix.triad.audio.dsp.Reverb;
+import com.ludamix.triad.audio.dsp.IIRFilter2;
+import com.ludamix.triad.audio.dsp.IIRFilter;
+import com.ludamix.triad.audio.dsp.Biquad;
+import com.ludamix.triad.audio.dsp.GraphicalEq;
+import com.ludamix.triad.audio.dsp.SingleDelay;
+
 class SFZGroup
 {
 	
