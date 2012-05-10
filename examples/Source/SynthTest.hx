@@ -134,9 +134,9 @@ class SynthTest
 	{
 		
 		Audio.init({Volume:{vol:1.0,on:true}},true);
-		seq = new Sequencer(4096,4,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		//seq = new Sequencer();
-		var OVERSAMPLE = 1;
+		//seq = new Sequencer(4096,4,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
+		seq = new Sequencer();
+		var OVERSAMPLE = 2;
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 
@@ -155,8 +155,9 @@ class SynthTest
 				#else
 				  var sfz_loadable = SFZ.load(seq, Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz"));
 				#end
-				melodic.assignSFZ(sfz_loadable[0], n, true, OVERSAMPLE);
-				loader_gui.keys.infos.text = "Loaded "+Std.string(n+1);
+				melodic.assignSFZ(sfz_loadable[0], n);
+				loader_gui.keys.infos.text = "Loaded instrument " + Std.string(n + 1);
+				loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 			});
 
 		}
@@ -170,9 +171,10 @@ class SynthTest
 			#end
 			for (n in 0...128)
 			{
-				percussion.assignSFZ(sfz_data[0], n, true, 1);
+				percussion.assignSFZ(sfz_data[0], n);
 			}
 			loader_gui.keys.infos.text = "Loaded percussion";
+			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});
 		
 		queueFunction(function(){
