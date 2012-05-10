@@ -39,18 +39,6 @@ class DSP
 	public static inline var BANDPASS = 2;
 	public static inline var NOTCH = 3;
 
-	// Window functions
-	public static inline var BARTLETT = 1;
-	public static inline var BARTLETTHANN = 2;
-	public static inline var BLACKMAN = 3;
-	public static inline var COSINE = 4;
-	public static inline var GAUSS = 5;
-	public static inline var HAMMING = 6;
-	public static inline var HANN = 7;
-	public static inline var LANCZOS = 8;
-	public static inline var RECTANGULAR = 9;
-	public static inline var TRIANGULAR = 10;
-
 	// Loop modes
 	public static inline var OFF = 0;
 	public static inline var FW = 1;
@@ -117,7 +105,7 @@ class DSP
 	 */
 	public static function deinterleave(buffer : Vector<Float>) 
 	{
-		return [getChannel(buffer, LEFT), getChannel(buffer, RIGHT)];
+		return [getChannel(LEFT, buffer), getChannel(RIGHT, buffer)];
 	}
 
 	/**
@@ -128,7 +116,7 @@ class DSP
 	 *
 	 * @returns an Array containing a signal mono sample buffer
 	 */
-	public static function getChannel(buffer : Vector<Float>, channel : Int)
+	public static function getChannel(channel : Int, buffer : Vector<Float>)
 	{
 		var result = new Vector<Float>(Std.int(buffer.length/2));
 		switch(channel)
@@ -161,7 +149,7 @@ class DSP
 	  var outputSamples = new Vector<Float>(sampleBuffer1.length);
 
 	  for(i in 0...sampleBuffer1.length)
-		outputSamples[i] += (negate ? -sampleBuffer2[i] : sampleBuffer2[i]) / volumeCorrection;
+		outputSamples[i] += (sampleBuffer1[i] + (negate ? -sampleBuffer2[i] : sampleBuffer2[i])) / volumeCorrection;
 	 
 	  return outputSamples;
 	}

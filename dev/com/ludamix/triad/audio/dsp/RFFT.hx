@@ -74,7 +74,7 @@ class RFFT extends FourierTransform
 			h = halfSize << 1;
 			h = h >> 1;
 			r ^= h;
-			while ((r & h) == 0) { r ^= h;  h = h >> 1; }
+			while ((r & h) == 0) { h = h >> 1; r ^= h; }
 			
 			if (r >= i) { 
 				dest[i]     = source[r]; 
@@ -110,7 +110,7 @@ class RFFT extends FourierTransform
 			h = halfSize << 1;
 			h = h >> 1;
 			r ^= h;
-			while ((r & h) == 0) { r ^= h;  h = h >> 1; }
+			while ((r & h) == 0) { h = h >> 1; r ^= h; }
 
 			if (r >= i) { 
 				this.reverseTable[i] = r;

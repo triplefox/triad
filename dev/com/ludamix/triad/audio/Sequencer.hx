@@ -1,5 +1,6 @@
 package com.ludamix.triad.audio;
 
+import com.ludamix.triad.audio.dsp.Reverb;
 import flash.events.SampleDataEvent;
 import nme.media.Sound;
 import nme.media.SoundChannel;
@@ -198,6 +199,7 @@ class Sequencer
 	public var onFrame : Sequencer->Void;
 	public var onBeat : Sequencer->Void;
 	public var postFrame : Sequencer->Vector<Float>->Void;
+	public var reverb : Reverb;
 	
 	private static inline var RATE = 44100;
 	private var FRAMESIZE : Int; // buffer size of mono frame
@@ -323,14 +325,17 @@ class Sequencer
 			if (postFrame != null)
 				postFrame(this, buffer);
 			
+			var fx_buffer = buffer;
+			if (reverb != null)
+				fx_buffer = reverb.process(buffer);
+			
 			// vector -> bytearray
-			var sumL = 0.;
-			var sumR = 0.;
+			
 			for (i in 0 ... monoSize()) 
 			{
 				var i2 = i << 1;
-				event.data.writeFloat(buffer[i2]);
-				event.data.writeFloat(buffer[i2+1]);
+				event.data.writeFloat(fx_buffer[i2]);
+				event.data.writeFloat(fx_buffer[i2+1]);
 			}
 			
 			frame++;
@@ -338,7 +343,8 @@ class Sequencer
 		
 	}
 	
-	public function new(?framesize : Int = 4096, ?divisions : Int = 4, ?tuning : MIDITuning = null)
+	public function new(?framesize : Int = 4096, ?divisions : Int = 4, ?tuning : MIDITuning = null,
+		?reverb : Reverb = null)
 	{
 		setBPM(120.0);
 		this.FRAMESIZE = framesize;
@@ -354,6 +360,7 @@ class Sequencer
       #else
 		buffer = new Vector();
       #end
+		this.reverb = reverb;
 	}
 	
 	public function play(soundname : String, mixgroup : String) 

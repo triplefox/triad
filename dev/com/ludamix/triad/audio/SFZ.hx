@@ -10,15 +10,6 @@ import com.ludamix.triad.audio.MIDITuning;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
 
-import com.ludamix.triad.audio.dsp.RFFT;
-import com.ludamix.triad.audio.dsp.ADSR;
-import com.ludamix.triad.audio.dsp.Reverb;
-import com.ludamix.triad.audio.dsp.IIRFilter2;
-import com.ludamix.triad.audio.dsp.IIRFilter;
-import com.ludamix.triad.audio.dsp.Biquad;
-import com.ludamix.triad.audio.dsp.GraphicalEq;
-import com.ludamix.triad.audio.dsp.SingleDelay;
-
 class SFZGroup
 {
 	
@@ -278,7 +269,7 @@ class SFZBank
 		sfz_programs = new IntHash();
 	}
 	
-	public function assignSFZ(sfz : SFZGroup, program : Int, ?recache : Bool=true)
+	public function assignSFZ(sfz : SFZGroup, program : Int, ?recache : Bool=true, ?oversample : Int=1)
 	{
 		var req_samples = sfz.getSamples();
 		for (n in req_samples)
@@ -291,7 +282,7 @@ class SFZBank
 				var reader = new Reader(new BytesInput(Assets.getBytes(path + n)));
             #end
 				var header = reader.read();
-				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header, null, 2);
+				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header, null, oversample);
 				samples.set(n, content.settings);
 			}
 		}

@@ -13,6 +13,7 @@ import flash.events.SampleDataEvent;
 import nme.events.MouseEvent;
 import nme.Lib;
 import nme.media.Sound;
+import com.ludamix.triad.audio.dsp.Reverb;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.audio.Audio;
 import com.ludamix.triad.audio.SoftSynth;
@@ -106,97 +107,133 @@ class SynthTest
 		}		
 	}
 	
+	public function queueFunction(func : Dynamic)
+	{
+		// uses closures to run all the events with a frame of gap.
+		if (queue == null) queue = new Array();
+		queue.push(function() { 
+			func(); 
+			if (queue.length > 0)
+			{
+				var inner_func : Dynamic = null;
+				inner_func = function(_) {
+					Lib.current.removeEventListener(Event.ENTER_FRAME, inner_func);
+					queue.shift()();
+				};
+				Lib.current.addEventListener(Event.ENTER_FRAME, inner_func);
+			}
+		});
+	}
+	
+	public function startQueue() { queue.shift()(); }
+	
+	public var queue : Array<Dynamic>;
+	public var loader_gui : LayoutResult;
+	
 	public function new()
 	{
 		
 		Audio.init({Volume:{vol:1.0,on:true}},true);
-		seq = new Sequencer();
-		
-		melodic = new SFZBank(seq, "sfz/");
-		
-		for (n in 0...128)
-		{
-         #if flash
-			var sfz_loadable = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz")) );
-         #else
-			var sfz_loadable = SFZ.load(seq, Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz"));
-         #end
-
-			melodic.assignSFZ(sfz_loadable[0], n);
-		}
-		
-		percussion = new SFZBank(seq, "sfz/");
-        #if flash
-		  var sfz_data = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/kit-standard.sfz")));
-        #else
-		  var sfz_data = SFZ.load(seq, Assets.getBytes("sfz/kit-standard.sfz"));
-        #end
-		for (n in 0...128)
-		{
-			percussion.assignSFZ(sfz_data[0], n);
-		}
-		
-		hardReset();
-		
-		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, seq.waveLength(55.0), chan.id, 0, 0, 1));
-		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, seq.waveLength(110.0), chan.id, 0, Std.int(seq.BPMToFrames(1,480.0)), 1));
-		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, seq.waveLength(220.0), chan.id, 0, Std.int(seq.BPMToFrames(2,480.0)), 1));
-		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, seq.waveLength(440.0), chan.id, 0, Std.int(seq.BPMToFrames(3,480.0)), 1));
-		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, seq.waveLength(880.0), chan.id, 0, Std.int(seq.BPMToFrames(4,480.0)), 1));
-		//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_OFF, null, chan.id, 0, Std.int(seq.BPMToFrames(5,480.0)), 1));
-		
-		seq.play("synth", "Volume");
+		seq = new Sequencer(4096,4,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
+		//seq = new Sequencer();
+		var OVERSAMPLE = 1;
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
-		//Lib.current.stage.addChild(ADSRUI.make(seq).sprite);
+		loader_gui = 
+			LayoutBuilder.create(0, 0, Main.W, Main.H, LDRect9(new Rect9(CommonStyle.rr, Main.W, Main.H, true), LAC(0, 0), null,
+				LDPackV(LPMMinimum, LAC(0, 0), null, [
+					LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "Text Infos"),LAC(0,0),"infos"),
+				])));
+		Lib.current.stage.addChild(loader_gui.sprite);
 		
-		var gui_data = 
-		LayoutBuilder.create(0, 0, Main.W, Main.H, LDRect9(new Rect9(CommonStyle.rr, Main.W, Main.H, true), LAC(0, 0), null,
-			LDPackV(LPMMinimum, LAC(0, 0), null, [
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Settings").button,LAC(0,0),"settings"),
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Prev Track").button,LAC(0,0),"prev_track"),
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Next Track").button,LAC(0,0),"next_track"),
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Prev Group").button,LAC(0,0),"prev_group"),
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Next Group").button,LAC(0,0),"next_group"),
-				LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "Text Infos"),LAC(0,0),"infos"),
-				LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "0/0"),LAC(0,0),"infos2"),
-			])));
-		
-		infos = gui_data.keys.infos;
-		infos2 = gui_data.keys.infos2;
-		
-		gui_data.keys.settings.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-			CommonStyle.settings.visible = true; }
-			);
-		gui_data.keys.next_track.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-			hardReset(); incSong(); loadSong(); }
-			);
-		gui_data.keys.prev_track.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-			hardReset(); decSong(); loadSong(); }
-			);
-		gui_data.keys.next_group.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-			hardReset(); incGroup(); loadSong(); }
-			);
-		gui_data.keys.prev_group.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-			hardReset(); decGroup(); loadSong(); }
-			);
-		
-		Lib.current.stage.addChild(gui_data.sprite);
-		Lib.current.stage.addChild(CommonStyle.settings);
-		
-		songs = Json.parse(Assets.getText("assets/smf/song_db.json"));
-		song_count = 0;
-		for (n in songs)
+		melodic = new SFZBank(seq, "sfz/");
+		for (n in 0...128)
 		{
-			if (n[1] == "assets/smf/doom_1_and_2/D_E1M1 - Hanger.mid")
-			{
-				break;
-			}
-			incSong();
+			queueFunction(function(){
+				#if flash
+				  var sfz_loadable = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz")));
+				#else
+				  var sfz_loadable = SFZ.load(seq, Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz"));
+				#end
+				melodic.assignSFZ(sfz_loadable[0], n, true, OVERSAMPLE);
+				loader_gui.keys.infos.text = "Loaded "+Std.string(n+1);
+			});
+
 		}
 		
-		loadSong();
-		Lib.current.stage.addEventListener(Event.ENTER_FRAME, doLoop);
+		queueFunction(function(){
+			percussion = new SFZBank(seq, "sfz/");
+			#if flash
+			  var sfz_data = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/kit-standard.sfz")));
+			#else
+			  var sfz_data = SFZ.load(seq, Assets.getBytes("sfz/kit-standard.sfz"));
+			#end
+			for (n in 0...128)
+			{
+				percussion.assignSFZ(sfz_data[0], n, true, 1);
+			}
+			loader_gui.keys.infos.text = "Loaded percussion";
+		});
+		
+		queueFunction(function(){
+			
+			//Lib.current.stage.addChild(ADSRUI.make(seq).sprite);
+			
+			var gui_data = 
+			LayoutBuilder.create(0, 0, Main.W, Main.H, LDRect9(new Rect9(CommonStyle.rr, Main.W, Main.H, true), LAC(0, 0), null,
+				LDPackV(LPMMinimum, LAC(0, 0), null, [
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Settings").button,LAC(0,0),"settings"),
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Prev Track").button,LAC(0,0),"prev_track"),
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Next Track").button,LAC(0,0),"next_track"),
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Prev Group").button,LAC(0,0),"prev_group"),
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Next Group").button,LAC(0,0),"next_group"),
+					LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "Text Infos"),LAC(0,0),"infos"),
+					LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "0/0"),LAC(0,0),"infos2"),
+				])));
+			
+			infos = gui_data.keys.infos;
+			infos2 = gui_data.keys.infos2;
+			
+			gui_data.keys.settings.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+				CommonStyle.settings.visible = true; }
+				);
+			gui_data.keys.next_track.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+				hardReset(); incSong(); loadSong(); }
+				);
+			gui_data.keys.prev_track.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+				hardReset(); decSong(); loadSong(); }
+				);
+			gui_data.keys.next_group.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+				hardReset(); incGroup(); loadSong(); }
+				);
+			gui_data.keys.prev_group.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+				hardReset(); decGroup(); loadSong(); }
+				);
+			
+			Lib.current.stage.addChild(gui_data.sprite);
+			Lib.current.stage.addChild(CommonStyle.settings);
+			
+			songs = Json.parse(Assets.getText("assets/smf/song_db.json"));
+			song_count = 0;
+			for (n in songs)
+			{
+				if (n[1] == "assets/smf/doom_1_and_2/D_E1M1 - Hanger.mid")
+				{
+					break;
+				}
+				incSong();
+			}
+			
+			hardReset();
+			loadSong();
+		});
+		
+		queueFunction(function(){
+			seq.play("synth", "Volume");
+			Lib.current.stage.addEventListener(Event.ENTER_FRAME, doLoop);
+		});
+		
+		startQueue();
 		
 	}
 	

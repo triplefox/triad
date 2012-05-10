@@ -15,39 +15,51 @@ import nme.Vector;
 class WindowFunction
 {
 	
+	// Window functions
+	public static inline var BARTLETT = 1;
+	public static inline var BARTLETTHANN = 2;
+	public static inline var BLACKMAN = 3;
+	public static inline var COSINE = 4;
+	public static inline var GAUSS = 5;
+	public static inline var HAMMING = 6;
+	public static inline var HANN = 7;
+	public static inline var LANCZOS = 8;
+	public static inline var RECTANGULAR = 9;
+	public static inline var TRIANGULAR = 10;
+	
 	public var alpha : Float;
 	public var func : Int->Int->Float->Float;
 	
-	public function new(type, alpha : Dynamic) {
+	public function new(type, ?alpha : Dynamic) {
 	  this.alpha = alpha;
 	 
 	  switch(type) {
-		case DSP.BARTLETT:
+		case BARTLETT:
 		  this.func = WindowFunction.Bartlett;
-		case DSP.BARTLETTHANN:
+		case BARTLETTHANN:
 		  this.func = WindowFunction.BartlettHann;
-		case DSP.BLACKMAN:
+		case BLACKMAN:
 		  this.func = WindowFunction.Blackman;
 		  this.alpha = alpha == null ? 0.16 : alpha;
-		case DSP.COSINE:
+		case COSINE:
 		  this.func = WindowFunction.Cosine;
-		case DSP.GAUSS:
+		case GAUSS:
 		  this.func = WindowFunction.Gauss;
 		  this.alpha = alpha == null ? 0.25 : alpha;
-		case DSP.HAMMING:
+		case HAMMING:
 		  this.func = WindowFunction.Hamming;
-		case DSP.HANN:
+		case HANN:
 		  this.func = WindowFunction.Hann;
-		case DSP.LANCZOS:
+		case LANCZOS:
 		  this.func = WindowFunction.Lanczos;
-		case DSP.RECTANGULAR:
+		case RECTANGULAR:
 		  this.func = WindowFunction.Rectangular;
-		case DSP.TRIANGULAR:
+		case TRIANGULAR:
 		  this.func = WindowFunction.Triangular;
 	  }
 	}
 
-	public function process(buffer : Vector<Float>) {
+	public function process(buffer : Vector<Float>) : Vector<Float> {
 	  var length = buffer.length;
 	  for ( i in 0...length ) {
 		buffer[i] *= this.func(length, i, this.alpha);

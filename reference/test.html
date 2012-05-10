@@ -1,0 +1,29 @@
+<script language="javascript" src="dsp.js"></script>
+
+<div id="textdata">Hello</div>
+
+<script language="javascript">
+
+var SZ = 4096;
+var HSZ = 2048;
+
+var ar = Float32Array(SZ);
+for(var i=0; i<HSZ; i++)
+{
+    ar[i*2] = Math.sin(HSZ/(Math.PI*2));
+    ar[i*2+1] = -0.5 + HSZ*(i/HSZ)*2;
+}
+
+var sampleRate = 44100;
+var frameSize = 4096;
+var lp12 = new Reverb(512, 128, 1.0, 1.0, 1.0, 8000);
+ar = lp12.process(ar);
+
+var a2 = [];
+for (var i=0; i<SZ; i++)
+{
+    a2[i] = ar[i];
+}
+
+document.getElementById('textdata').innerHTML = a2.join();
+</script>

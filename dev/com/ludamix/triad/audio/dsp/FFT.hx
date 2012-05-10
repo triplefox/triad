@@ -64,7 +64,7 @@ class FFT extends FourierTransform
 	 *
 	 * @returns The frequency spectrum array
 	 */
-	public function forward(buffer : Vector<Float>) 
+	public function forward(buffer : Vector<Float>) : Vector<Float>
 	{
 		// Locally scope variables for speed up
 		var bufferSize      = this.bufferSize;
@@ -135,7 +135,7 @@ class FFT extends FourierTransform
 		return this.calculateSpectrum();
 	}
 
-	public function inverse(real : Vector<Float>, imag : Vector<Float>) 
+	public function inverse(?real : Vector<Float>, ?imag : Vector<Float>, ?buffer : Vector<Float>) 
 	{
 		// Locally scope variables for speed up
 		var bufferSize      = this.bufferSize;
@@ -202,8 +202,9 @@ class FFT extends FourierTransform
 
 			halfSize = halfSize << 1;
 		}
-
-		var buffer = new Vector<Float>(bufferSize); // this should be reused instead
+		
+		if (buffer==null)
+			buffer = new Vector<Float>(bufferSize);
 		for (i in 0...bufferSize) {
 			buffer[i] = real[i] / bufferSize;
 		}

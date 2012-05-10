@@ -50,7 +50,7 @@ class FourierTransform
    */
 	public inline function getBandFrequency(index) { return this.bandwidth * index + this.bandwidth / 2; }
 
-	public inline function calculateSpectrum() 
+	public inline function calculateSpectrum()
 	{
 		var spectrum  = this.spectrum;
 		var real      = this.real;
@@ -73,7 +73,7 @@ class FourierTransform
 
 		  spectrum[i] = mag;
 		}
-		
+		return spectrum;
 	}
 }
 
