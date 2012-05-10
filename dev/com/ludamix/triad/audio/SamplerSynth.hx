@@ -106,23 +106,6 @@ class SamplerSynth implements SoftSynth
 			return 0.;
 	}
 	
-	private static inline function get_interpolated_data(buffer : Vector<Float>, method : Float->Float, 
-		out_offset : Int, oversample : Int) : Float
-	{
-		// helper if doing a interpolating strategy.
-		var in_offset = Std.int(out_offset / oversample);
-		var padpos = out_offset % oversample;
-		if (padpos == 0)
-		{
-			if (in_offset<Std.int(buffer.length))
-				return buffer[Std.int(in_offset)];
-			else
-				return 0.;
-		}
-		else
-			return 0.;
-	}
-	
 	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, ?wav_data : Array<Vector<Float>> = null,
 		?oversample = 1)
 	{
@@ -133,10 +116,8 @@ class SamplerSynth implements SoftSynth
 			if (oversample > 1)
 			{
 				
-				// I get the feeling that I have done something seriously wrong here.
-				// 2x sounds bad. 3x sounds bad. The ones in the table are OK.
-				// I can't figure out what is going on here.
-				// It may be the filter at fault...
+				if (oversample>1 && oversample<=8) {}
+				else throw "oversampling factor not implemented";
 				
 				var initial_rate = wav.header.samplingRate;
 				
@@ -154,8 +135,13 @@ class SamplerSynth implements SoftSynth
 				// Oversampling adds a ton of overhead to sample load times and memory consumption,
 				// But the oversampled data is pre-filtered, improving resampling quality.
 				
+				// We need a better filtering method, and a more accurate post-filter gain.
+				// Filtering artifacts start to dominate at higher levels of oversampling. 
+				// Right now 2x is the sweet spot for most use-cases.
+				
 				// Some good files to test with this: SNUCKEY3.MID, Snuckey4.mid (sam and max)
 				// 								 	  ULTIMA10.MID (ultima 7)
+				//									  HOCGM1.MID (heart of china)
 				
 				for (samples in wav_data)
 				{
@@ -165,11 +151,132 @@ class SamplerSynth implements SoftSynth
 					var result_l = new Vector<Float>();
 					var result_r = new Vector<Float>();
 					
-					for (n in 0...Std.int((input.length * oversample)*0.5))
+					var w = Std.int(input.length);
+					var hw = Std.int(input.length * 0.5);
+					
+					var filter_l = new IIRFilter2(DSP.LOWPASS, Std.int(initial_rate * 0.45), 0, initial_rate * oversample);
+					var filter_r = new IIRFilter2(DSP.LOWPASS, Std.int(initial_rate * 0.45), 0, initial_rate * oversample);
+					if (oversample == 2)
 					{
-						result_l.push(get_padded_data(input,n,oversample));
-						result_r.push(get_padded_data(input,n,oversample));
+						for (n in 0...hw)
+						{
+							var l = input[n * 2] * oversample; var r = input[1 + n * 2] * oversample;
+							result_l.push(l);
+							result_l.push(0.);
+							result_r.push(r);
+							result_r.push(0.);
+						}
 					}
+					else if (oversample == 3)
+					{
+						for (n in 0...hw)
+						{
+							var l = input[n * 2] * oversample; var r = input[1 + n * 2] * oversample;
+							result_l.push(l);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_r.push(r);
+							result_r.push(0.);
+							result_r.push(0.);
+						}
+					}
+					else if (oversample == 4)
+					{
+						for (n in 0...hw)
+						{
+							var l = input[n * 2] * oversample; var r = input[1 + n * 2] * oversample;
+							result_l.push(l);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_r.push(r);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+						}
+					}
+					else if (oversample == 5)
+					{
+						for (n in 0...hw)
+						{
+							var l = input[n * 2] * oversample; var r = input[1 + n * 2] * oversample;
+							result_l.push(l);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_r.push(r);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+						}
+					}
+					else if (oversample == 6)
+					{
+						for (n in 0...hw)
+						{
+							var l = input[n * 2] * oversample; var r = input[1 + n * 2] * oversample;
+							result_l.push(l);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_r.push(r);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+						}
+					}
+					else if (oversample == 7)
+					{
+						for (n in 0...hw)
+						{
+							var l = input[n * 2] * oversample; var r = input[1 + n * 2] * oversample;
+							result_l.push(l);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_r.push(r);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+						}
+					}
+					else if (oversample == 8)
+					{
+						for (n in 0...hw)
+						{
+							var l = input[n * 2] * oversample; var r = input[1 + n * 2] * oversample;
+							result_l.push(l);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_l.push(0.);
+							result_r.push(r);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+							result_r.push(0.);
+						}
+					}
+					filter_l.process(result_l);
+					filter_r.process(result_r);
 					
 					var ct = 0;
 					var result = new Vector<Float>();
