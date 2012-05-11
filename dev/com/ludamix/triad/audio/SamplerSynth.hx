@@ -59,6 +59,11 @@ class SamplerSynth implements SoftSynth
 	
 	public var arpeggio : Float;
 	
+	// # of octaves before increasing the interpolation factor; ideal is 1.
+	// below 1 it will start filtering the percieved results
+	// above 1 cpu usage will be lower but more pitch artifacts may occur
+	public var interpolation_tolerance : Float; 
+	
 	public static inline var ATTACK = 0;
 	public static inline var SUSTAIN = 1;
 	public static inline var RELEASE = 2;
@@ -71,7 +76,7 @@ class SamplerSynth implements SoftSynth
 		master_volume = 0.1;
 		velocity = 1.0;
 		arpeggio = 0.;
-		
+		interpolation_tolerance = 1.2;
 	}
 	
 	public static inline var LOOP_FORWARD = 0;
@@ -92,6 +97,8 @@ class SamplerSynth implements SoftSynth
 	public static inline var PRIORITY_RAMPDOWN = 0.95;
 	// and ramp up priority when sustaining
 	public static inline var PRIORITY_RAMPUP = 1;
+	// and ramp down priority this much each time a new voice is added to the channel
+	public static inline var PRIORITY_VOICE = 0.95;
 	
 	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, ?wav_data : Array<Vector<Float>> = null)
 	{
@@ -336,9 +343,9 @@ class SamplerSynth implements SoftSynth
 				var RESAMPLE_LIN3 = 3;
 				var RESAMPLE_LIN4 = 4;
 				var resample_type = RESAMPLE_DROP;
-				if (inc > 4 || inc < 1. / 4) resample_type = RESAMPLE_LIN4;
-				else if (inc > 3 || inc < 1. / 3) resample_type = RESAMPLE_LIN3;
-				else if (inc > 2 || inc < 1. / 2) resample_type = RESAMPLE_LIN2;
+				if (inc > interpolation_tolerance*4 || inc < 1. / (interpolation_tolerance*4)) resample_type = RESAMPLE_LIN4;
+				else if (inc > (interpolation_tolerance*3) || inc < 1. / (interpolation_tolerance*3)) resample_type = RESAMPLE_LIN3;
+				else if (inc > (interpolation_tolerance*2) || inc < 1. / (interpolation_tolerance*2)) resample_type = RESAMPLE_LIN2;
 				else if (inc != 1) resample_type = RESAMPLE_LIN;
 				switch(patch.loop_mode)
 				{
@@ -660,7 +667,14 @@ class SamplerSynth implements SoftSynth
 		switch(ev.type)
 		{
 			case SequencerEvent.NOTE_ON: 
+				// as the channel adds more voices, the priority of its notes gets squashed.
+				// doing this on note ons naturally favors squashing of repetitive drum hits and stacattos,
+				// which have plenty of release tails, instead of held notes.
 				followers.push(new EventFollower(patch_ev, patch_ev.patch.envelopes.length));
+				for (f in channel.allocated)
+				{
+					patch_ev.sequencer_event.priority = Std.int((patch_ev.sequencer_event.priority * PRIORITY_VOICE));
+				}
 			case SequencerEvent.NOTE_OFF: 
 				for (n in followers) 
 				{ 

@@ -88,7 +88,7 @@ class SynthTest
 		#if debug
 		  for (n in 0...4) // trying not to kill cpu!
 		#else
-		  for (n in 0...32)
+		  for (n in 0...24)
 		#end
 		{
 			//var synth = new TableSynth();
