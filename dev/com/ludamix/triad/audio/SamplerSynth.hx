@@ -76,7 +76,7 @@ class SamplerSynth implements SoftSynth
 		master_volume = 0.1;
 		velocity = 1.0;
 		arpeggio = 0.;
-		interpolation_tolerance = 1.2;
+		interpolation_tolerance = 1.02;
 	}
 	
 	public static inline var LOOP_FORWARD = 0;
