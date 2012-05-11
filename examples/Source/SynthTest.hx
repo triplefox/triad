@@ -134,9 +134,8 @@ class SynthTest
 	{
 		
 		Audio.init({Volume:{vol:1.0,on:true}},true);
-		//seq = new Sequencer(4096,4,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		seq = new Sequencer();
-		var OVERSAMPLE = 2;
+		seq = new Sequencer(4096,4,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
+		//seq = new Sequencer();
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 

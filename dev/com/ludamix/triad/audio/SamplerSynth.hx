@@ -175,7 +175,6 @@ class SamplerSynth implements SoftSynth
 	
 	public function init(sequencer : Sequencer)
 	{
-		
 		this.sequencer = sequencer;
 		this.buffer = sequencer.buffer;
 		this.followers = new Array();		
@@ -432,6 +431,20 @@ class SamplerSynth implements SoftSynth
 			
 	}
 	
+	// A possible future strategy for the linear interpolators:
+	// Each octave of distance from the base note, use one more level of interpolation.
+	
+	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+	{
+		// Drop
+		var a : Int = Std.int(Math.min(pos, sample_left.length - 1));
+		buffer[bufptr] += left * (sample_left[a]);
+		buffer[bufptr + 1] += right * (sample_right[a]);
+	}*/
+	
 	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
@@ -443,7 +456,7 @@ class SamplerSynth implements SoftSynth
 		buffer[bufptr + 1] += right * (sample_right[a]);
 	}*/
 	
-	public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
 								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
@@ -452,10 +465,124 @@ class SamplerSynth implements SoftSynth
 		var ideal = Math.min(pos, sample_left.length - 1);
 		var a : Int = Std.int(ideal);
 		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
-		var interpolation_factor : Float = ideal - a;
+		var interpolation_factor : Float = pos - a;
 		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor);	
 		buffer[bufptr + 1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor);
+	}*/
+
+	public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+	{
+		// 2x linear; upsampled material is slightly more agreeable
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var c : Int = Std.int(Math.max(0.,Math.min(pos - 1, sample_left.length - 1)));
+		var d : Int = Std.int(Math.min(pos + 2, sample_left.length - 1));
+		var interpolation_factor : Float = (pos - a);
+		var interpolation_factor_2 : Float = (pos + 2 - c)/(3);
+		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor +
+								sample_left[c] * (1. -interpolation_factor_2) + sample_left[d] * interpolation_factor_2) * 0.5;	
+		buffer[bufptr+1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor +
+								sample_right[c] * (1. -interpolation_factor_2) + sample_right[d] * interpolation_factor_2) * 0.5;
 	}
+	
+	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+	{
+		// 3x linear - pretty filtered-sounding at this level.
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var c : Int = Std.int(Math.max(0.,Math.min(pos - 1, sample_left.length - 1)));
+		var d : Int = Std.int(Math.min(pos + 2, sample_left.length - 1));
+		var e : Int = Std.int(Math.min(pos + 3, sample_left.length - 1));
+		var f : Int = Std.int(Math.max(0.,Math.min(pos - 2, sample_left.length - 1)));
+		var interpolation_factor : Float = (pos - a);
+		var interpolation_factor_2 : Float = (pos + 2 - c)/(3);
+		var interpolation_factor_3 : Float = (pos + 3 - f)/(5);
+		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor +
+								sample_left[c] * (1. -interpolation_factor_2) + sample_left[d] * interpolation_factor_2+
+								sample_left[e] * (1. -interpolation_factor_3) + sample_left[f] * interpolation_factor_3) * 0.33;	
+		buffer[bufptr+1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor +
+								sample_right[c] * (1. -interpolation_factor_2) + sample_right[d] * interpolation_factor_2+
+								sample_right[e] * (1. -interpolation_factor_3) + sample_right[f] * interpolation_factor_3) * 0.33;	
+	}*/
+	
+	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+	{
+		// 4x linear - extremely filtered, but material very distant from source does great
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var c : Int = Std.int(Math.max(0.,Math.min(pos - 1, sample_left.length - 1)));
+		var d : Int = Std.int(Math.min(pos + 2, sample_left.length - 1));
+		var e : Int = Std.int(Math.min(pos + 3, sample_left.length - 1));
+		var f : Int = Std.int(Math.max(0.,Math.min(pos - 2, sample_left.length - 1)));
+		var g : Int = Std.int(Math.min(pos + 4, sample_left.length - 1));
+		var h : Int = Std.int(Math.max(0.,Math.min(pos - 3, sample_left.length - 1)));
+		var interpolation_factor : Float = (pos - a);
+		var interpolation_factor_2 : Float = (pos + 2 - c)/(3);
+		var interpolation_factor_3 : Float = (pos + 3 - f)/(5);
+		var interpolation_factor_4 : Float = (pos + 4 - h)/(7);
+		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor +
+								sample_left[c] * (1. -interpolation_factor_2) + sample_left[d] * interpolation_factor_2+
+								sample_left[e] * (1. -interpolation_factor_3) + sample_left[f] * interpolation_factor_3+
+								sample_left[g] * (1. -interpolation_factor_4) + sample_left[h] * interpolation_factor_4) * 0.25;	
+		buffer[bufptr+1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor +
+								sample_right[c] * (1. -interpolation_factor_2) + sample_right[d] * interpolation_factor_2+
+								sample_right[e] * (1. -interpolation_factor_3) + sample_right[f] * interpolation_factor_3+
+								sample_right[g] * (1. -interpolation_factor_4) + sample_right[h] * interpolation_factor_4) * 0.25;	
+	}*/
+	
+	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+	{
+		// optimal 2x - 4p 4o - experimental. Accurate pitches, but dynamic range is almost entirely gone.
+		// from http://www.student.oulu.fi/~oniemita/dsp/deip.pdf
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var ideal2 = Math.min(pos + 2, sample_left.length - 1);
+		
+		var x = ideal - Std.int(ideal);
+		var z = x - 0.5;
+		
+		var ym1 = 0.;
+		var y0 = sample_left[Std.int(ideal)];
+		var y1 = 0.;
+		var y2 = sample_left[Std.int(ideal2)];
+		
+		var even1 = y1+y0, odd1 = y1-y0;
+		var even2 = y2+ym1, odd2 = y2-ym1;
+		var c0 = even1*0.45645918406487612 + even2*0.04354173901996461;
+		var c1 = odd1*0.47236675362442071 + odd2*0.17686613581136501;
+		var c2 = even1*-0.253674794204558521 + even2*0.25371918651882464;
+		var c3 = odd1*-0.37917091811631082 + odd2*0.11952965967158000;
+		var c4 = even1 * 0.04252164479749607 + even2 * -0.04289144034653719;
+		buffer[bufptr] += (left * (((c4*z+c3)*z+c2)*z+c1)*z+c0) * 0.1;
+		
+		var ym1 = 0.;
+		var y0 = sample_right[Std.int(ideal)];
+		var y1 = 0.;
+		var y2 = sample_right[Std.int(ideal2)];
+		
+		var even1 = y1+y0, odd1 = y1-y0;
+		var even2 = y2+ym1, odd2 = y2-ym1;
+		var c0 = even1*0.45645918406487612 + even2*0.04354173901996461;
+		var c1 = odd1*0.47236675362442071 + odd2*0.17686613581136501;
+		var c2 = even1*-0.253674794204558521 + even2*0.25371918651882464;
+		var c3 = odd1*-0.37917091811631082 + odd2*0.11952965967158000;
+		var c4 = even1 * 0.04252164479749607 + even2 * -0.04289144034653719;
+		buffer[bufptr+1] += (right * (((c4*z+c3)*z+c2)*z+c1)*z+c0) * 0.1;
+	}*/
 	
 	public function event(patch_ev : PatchEvent, channel : SequencerChannel)
 	{
