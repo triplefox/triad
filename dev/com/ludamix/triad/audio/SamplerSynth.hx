@@ -39,6 +39,8 @@ typedef SamplerPatch = {
 	arpeggiation_rate : Float, // 0 = off, hz value
 };
 
+typedef CopySamples = Vector<Float>->Int->Float->Float->Float->Float->Vector<Float>->Vector<Float>->Float->Void;
+
 class SamplerSynth implements SoftSynth
 {
 	
@@ -322,50 +324,70 @@ class SamplerSynth implements SoftSynth
 			var total_length = buffer.length >> 1;
 			var total_inc : Float = inc * total_length;
 			
+			
 			if (write)
 			{
+				// TODO: cleanup the function calls so I'm not passing in a gazillion useless arguments
+				//		 actually implement all loop modes...
+				
+				var RESAMPLE_DROP = 0;
+				var RESAMPLE_LIN = 1;
+				var RESAMPLE_LIN2 = 2;
+				var RESAMPLE_LIN3 = 3;
+				var RESAMPLE_LIN4 = 4;
+				var resample_type = RESAMPLE_DROP;
+				if (inc > 4 || inc < 1. / 4) resample_type = RESAMPLE_LIN4;
+				else if (inc > 3 || inc < 1. / 3) resample_type = RESAMPLE_LIN3;
+				else if (inc > 2 || inc < 1. / 2) resample_type = RESAMPLE_LIN2;
+				else if (inc != 1) resample_type = RESAMPLE_LIN;
 				switch(patch.loop_mode)
 				{
 					// LOOP - repeat loop until envelope reaches OFF
 					case LOOP_FORWARD, LOOP_BACKWARD, LOOP_PINGPONG: 
-						while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
-						for (n in 0...total_length)
+						switch(resample_type)
 						{
-							copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
-							cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
-							bufptr = (bufptr + 2) % buffer.length;
+							case RESAMPLE_DROP: loopForward(copy_samples_drop, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN: loopForward(copy_samples_lin, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN2: loopForward(copy_samples_lin2, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN3: loopForward(copy_samples_lin3, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN4: loopForward(copy_samples_lin4, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 						}
 					// SUSTAIN - loop until release, then play to the first of envelope OFF or sample endpoint
-					case SUSTAIN_FORWARD, SUSTAIN_BACKWARD, SUSTAIN_PINGPONG: 				
-						if (cur_follower.env[0].state < RELEASE) 
+					case SUSTAIN_FORWARD, SUSTAIN_BACKWARD, SUSTAIN_PINGPONG:
+						switch(resample_type)
 						{
-							while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
-							for (n in 0...total_length)
-							{
-								copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
-								cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
-								bufptr = (bufptr + 2) % buffer.length;
-							}
-						}
-						else
-						{
-							for (n in 0...total_length)
-							{
-								copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
-								cur_follower.pos += inc;
-								bufptr = (bufptr + 2) % buffer.length;
-							}
+							case RESAMPLE_DROP: loopSustain(copy_samples_drop, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN: loopSustain(copy_samples_lin, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN2: loopSustain(copy_samples_lin2, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN3: loopSustain(copy_samples_lin3, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN4: loopSustain(copy_samples_lin4, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 						}
 					// ONE_SHOT - play until the sample endpoint, do not respect note off
 					// NO_LOOP - play until the sample endpoint, cut on note off
 					case ONE_SHOT, NO_LOOP:
-						for (n in 0...total_length)
+						switch(resample_type)
 						{
-							copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
-							cur_follower.pos += inc;
-							bufptr = (bufptr + 2) % buffer.length;
+							case RESAMPLE_DROP: runUnlooped(copy_samples_drop, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN: runUnlooped(copy_samples_lin, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN2: runUnlooped(copy_samples_lin2, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN3: runUnlooped(copy_samples_lin3, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN4: runUnlooped(copy_samples_lin4	, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 						}
-						if (cur_follower.pos >= sample_length) { cur_follower.env[0].state = OFF; }
 				}		
 			}
 			else
@@ -431,10 +453,58 @@ class SamplerSynth implements SoftSynth
 			
 	}
 	
+	private inline function loopForward(copy_samples : CopySamples, cur_follower : EventFollower , loop_idx:Int, loop_len, buffer, bufptr, inc, left, right,
+		sample_left, sample_right, freq,total_length, sample_length)
+	{
+		while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
+		for (n in 0...total_length)
+		{
+			copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
+			cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
+			bufptr = (bufptr + 2) % buffer.length;
+		}		
+	}
+	
+	private inline function loopSustain(copy_samples : CopySamples, cur_follower: EventFollower, loop_idx:Int, loop_len, buffer, bufptr, inc, left, right,
+		sample_left, sample_right, freq,total_length, sample_length)
+	{
+		if (cur_follower.env[0].state < RELEASE) 
+		{
+			while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
+			for (n in 0...total_length)
+			{
+				copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
+				cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
+				bufptr = (bufptr + 2) % buffer.length;
+			}
+		}
+		else
+		{
+			for (n in 0...total_length)
+			{
+				copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
+				cur_follower.pos += inc;
+				bufptr = (bufptr + 2) % buffer.length;
+			}
+		}		
+	}
+	
+	private inline function runUnlooped(copy_samples : CopySamples, cur_follower: EventFollower, loop_idx:Int, loop_len, buffer, bufptr, inc, left, right,
+		sample_left, sample_right, freq,total_length, sample_length)
+	{
+		for (n in 0...total_length)
+		{
+			copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
+			cur_follower.pos += inc;
+			bufptr = (bufptr + 2) % buffer.length;
+		}
+		if (cur_follower.pos >= sample_length) { cur_follower.env[0].state = OFF; }		
+	}
+	
 	// A possible future strategy for the linear interpolators:
 	// Each octave of distance from the base note, use one more level of interpolation.
 	
-	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_drop(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
 								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
@@ -443,9 +513,9 @@ class SamplerSynth implements SoftSynth
 		var a : Int = Std.int(Math.min(pos, sample_left.length - 1));
 		buffer[bufptr] += left * (sample_left[a]);
 		buffer[bufptr + 1] += right * (sample_right[a]);
-	}*/
+	}
 	
-	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+	/*public inline function copy_samples_nearest(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
 								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
@@ -456,7 +526,7 @@ class SamplerSynth implements SoftSynth
 		buffer[bufptr + 1] += right * (sample_right[a]);
 	}*/
 	
-	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_lin(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
 								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
@@ -468,9 +538,9 @@ class SamplerSynth implements SoftSynth
 		var interpolation_factor : Float = pos - a;
 		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor);	
 		buffer[bufptr + 1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor);
-	}*/
+	}
 
-	public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_lin2(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
 								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
@@ -489,7 +559,7 @@ class SamplerSynth implements SoftSynth
 								sample_right[c] * (1. -interpolation_factor_2) + sample_right[d] * interpolation_factor_2) * 0.5;
 	}
 	
-	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_lin3(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
 								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
@@ -511,9 +581,9 @@ class SamplerSynth implements SoftSynth
 		buffer[bufptr+1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor +
 								sample_right[c] * (1. -interpolation_factor_2) + sample_right[d] * interpolation_factor_2+
 								sample_right[e] * (1. -interpolation_factor_3) + sample_right[f] * interpolation_factor_3) * 0.33;	
-	}*/
+	}
 	
-	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_lin4(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
 								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
@@ -540,7 +610,7 @@ class SamplerSynth implements SoftSynth
 								sample_right[c] * (1. -interpolation_factor_2) + sample_right[d] * interpolation_factor_2+
 								sample_right[e] * (1. -interpolation_factor_3) + sample_right[f] * interpolation_factor_3+
 								sample_right[g] * (1. -interpolation_factor_4) + sample_right[h] * interpolation_factor_4) * 0.25;	
-	}*/
+	}
 	
 	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 
 								pos : Float, inc : Float, 
