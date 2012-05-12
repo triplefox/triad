@@ -188,19 +188,21 @@ class TableSynth implements SoftSynth
 	
 	public static inline var TABLE_BASS = 8192; // the size of our "bass note"
 	public static inline var TABLE_START = 2048; // roughly, the accuracy of our lowest regular note
-	public static inline var TABLE_PITCHES = 16; // num of unique pitches sampled linearly between table start and end
+	public static inline var TABLE_PITCHES = 32; // num of unique pitches sampled linearly between table start and end
 	public static inline var TABLE_MODULATIONS = 24; // number of unique modulations sampled per pitch
-	public static inline var TABLE_OVERSAMPLE = 22; // determines which table is chosen at runtime. 
+	public static inline var TABLE_OVERSAMPLE = 8; // determines which table is chosen at runtime. 
 		// Using tables oversampled brings out the highs more prominently, but puts more pressure on pitch accuracy,
 		// and makes the lows "run out" much faster.
-	public static inline var SINE_CROSSOVER = 160; // below this wavelength we use a sine instead of a table.
-	public static inline var TABLE_END = 1024; // below this wavelength we stop extending the table.
+	public static inline var SINE_CROSSOVER = 100; // below this wavelength we use a sine instead of a table.
+	public static inline var TABLE_END = 128; // below this wavelength we stop extending the table.
 		// if set too low, high-pitched samples start to contain no power (which screws up the gain controller)
 		// and all the other factors may affect when a no-power sample occurs - jitter them if it breaks.
 		// a higher value helps us gain pitch accuracy by reducing the territory each sample has to cover.
-	public static inline var LOWEST_SINE_LENGTH = 18; // below this wavelength we stop bothering to emit new sines.
+	public static inline var LOWEST_SINE_LENGTH = 2; // below this wavelength we stop bothering to emit new sines.
 													  // higher vals dramatically improve table generation speed and help
 													  // keep noticable aliasing down, but make the sound "cut" less.
+													  // overall it's not beneficial because you're likely to oversample
+													  // more to compensate, and thus generate much larger tables.
     public static inline var MAX_OCTAVES = 64; // another means of improving table generation speed, limiting # of sines
 											   // mainly intended for the pathological case of the bass note.
 											   // we get a slightly duller bass, but it remains accurate.
@@ -211,6 +213,8 @@ class TableSynth implements SoftSynth
 	
 	public static function genPulseWT()
 	{
+		// a to-do: try making the table sizes with a non-linear function? it'd fit resampling behavior better.
+		
 		pulseWavetable = new Array();
 		for (base_o in -1...TABLE_PITCHES)
 		{
