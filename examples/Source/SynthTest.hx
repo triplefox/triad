@@ -8,6 +8,9 @@ import haxe.io.Bytes;
 import haxe.io.BytesInput;
 import haxe.Json;
 import nme.Assets;
+import nme.display.Bitmap;
+import nme.display.BitmapData;
+import nme.display.Sprite;
 import nme.events.Event;
 import flash.events.SampleDataEvent;
 import nme.events.MouseEvent;
@@ -85,25 +88,42 @@ class SynthTest
 		seq.channels = new Array();
 		seq.events = new Array();
 		var voices = new Array<SoftSynth>();
+		var percussion_voices = new Array<SoftSynth>();
+		// set up melodic voices
 		#if debug
 		  for (n in 0...4) // trying not to kill cpu!
 		#else
 		  for (n in 0...24)
 		#end
 		{
-			//var synth = new TableSynth();
-			var synth = new SamplerSynth();
+			//var synth = new SamplerSynth();
+			var synth = new TableSynth();
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
+		// dedicated percussion for when testing tablesynth
+		for (n in 0...8)
+		{
+			var synth = new SamplerSynth();
+			seq.addSynth(synth);
+			percussion_voices.push(synth);
+		}
+		// setup channels
 		for (n in 0...16)
 		{
-			if (n == 9)
+			/*if (n == 9)
 				seq.addChannel(voices, percussion.getGenerator());
 			else
 				seq.addChannel(voices, melodic.getGenerator());
-			/*seq.addChannel(seq.synths, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
-			/*seq.addChannel(seq.synths, TableSynth.generatorOf(TableSynth.defaultPatch(seq)));*/
+			*/
+			
+			/*seq.addChannel(voices, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
+			
+			if (n == 9)
+				seq.addChannel(percussion_voices, percussion.getGenerator());
+			else
+				seq.addChannel(voices, TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
+			
 		}		
 	}
 	
@@ -213,6 +233,7 @@ class SynthTest
 			
 			Lib.current.stage.addChild(gui_data.sprite);
 			Lib.current.stage.addChild(CommonStyle.settings);
+			CommonStyle.settings.visible = false;
 			
 			songs = Json.parse(Assets.getText("assets/smf/song_db.json"));
 			song_count = 0;
@@ -232,10 +253,33 @@ class SynthTest
 		queueFunction(function(){
 			seq.play("synth", "Volume");
 			Lib.current.stage.addEventListener(Event.ENTER_FRAME, doLoop);
+			
+			drawDebugwaveform();
+			
 		});
 		
 		startQueue();
 		
+	}
+	
+	public function drawDebugwaveform()
+	{
+		TableSynth.genPulseWT();
+		var wf = TableSynth.pulseWavetable[0][0];
+		var spr : Bitmap = new Bitmap(new BitmapData(wf.length, Main.H, false, 0));
+		Lib.current.stage.addChild(spr);
+		for (n in 0...wf.length)
+		{
+			spr.bitmapData.setPixel(Std.int(n), Std.int(Main.H/2 - 100), 0x444400);
+			spr.bitmapData.setPixel(Std.int(n), Std.int(Main.H/2 + 100), 0x444400);
+			spr.bitmapData.setPixel(Std.int(n), Std.int(Main.H/2), 0x444400);
+		}
+		for (n in 0...wf.length)
+		{
+			spr.bitmapData.setPixel(Std.int(n), Std.int(wf[n] * 100 + Main.H/2), 0x00FF00);
+		}
+		spr.scaleX *= Main.W / spr.width;
+		spr.alpha = 0.5;
 	}
 	
 	public function decSong()

@@ -295,7 +295,8 @@ class Sequencer
 		while (events.length > 0 && events[0].frame <= this.frame)
 		{
 			var e = events.shift();
-			channels[e.channel].pipe(e, this);
+			if (channels.length-1>e.channel)
+				channels[e.channel].pipe(e, this);
 		}
 		if (events.length < 1)
 			{}
