@@ -559,7 +559,7 @@ class SamplerSynth implements SoftSynth
 		var c : Int = Std.int(Math.max(0.,Math.min(pos - 1, sample_left.length - 1)));
 		var d : Int = Std.int(Math.min(pos + 2, sample_left.length - 1));
 		var interpolation_factor : Float = (pos - a);
-		var interpolation_factor_2 : Float = (pos + 2 - c)/(3);
+		var interpolation_factor_2 : Float = (pos + 2 - c)*0.33333333;
 		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor +
 								sample_left[c] * (1. -interpolation_factor_2) + sample_left[d] * interpolation_factor_2) * 0.5;	
 		buffer[bufptr+1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor +
