@@ -30,120 +30,105 @@
  * DAMAGE.
  */
 package com.ludamix.triad.format.wav;
+import com.ludamix.triad.audio.Codec;
+import com.ludamix.triad.format.ExtendedByteArray;
 import com.ludamix.triad.format.wav.Data;
 import haxe.Int32;
-import haxe.io.Bytes;
+import nme.utils.ByteArray;
+import nme.Vector;
+import nme.utils.Endian;
 
 private typedef IFFSubChunk = {name:String,idx:Int,len:Int,bytes:haxe.io.Bytes};
 
 class Reader {
 
-	var i : haxe.io.Input;
-	var version : Int;
-
-	public function new(i) {
-		this.i = i;
-		i.bigEndian = false;
-	}
-	
-	private function readSubChunks(chunk_len : Int)
-	{
-		var pos = 0;
-		var chunks = new Array<IFFSubChunk>();
-		var idx = 0;
-		while (pos<chunk_len)
-		{
-			var name = i.readString(4);
-			var len = Int32.toInt(i.readInt32());
-			var bytes = i.read(len);
-			
-			chunks.push( { name:name, idx:idx, len:len, bytes:bytes } );
-			pos += 4 + 4 + len;
-			idx++;
-		}
+	public static function read(ba : ByteArray) : WAVE {
 		
-		return chunks;
-	}
-
-	public function read() : WAVE {
-
-		if (i.readString(4) != "RIFF")
-			throw "RIFF header expected";
-
-		var len = Int32.toInt(i.readInt32());
+		ba.endian = Endian.LITTLE_ENDIAN;
+		var eba = ExtendedByteArray.fromByteArray(ba);
 		
-		if (i.readString(4) != "WAVE")
-			throw "WAVE signature not found";
+		var head = eba.getStruct([
+			NamedSD("riff", SDField(STASCII(4))),
+			NamedSD("len", SDField(STInt)),
+			NamedSD("wave", SDField(STASCII(4))),
+		]);
 		
-		var chunks = readSubChunks(len - 4);
+		if (head.riff !="RIFF") throw "RIFF header expected";
+		if (head.wave != "WAVE") throw "WAVE signature not found";
+		var chunks : Array<FourByteChunk> = eba.get4ByteChunks(head.len - 4);
 		
 		// fmt
-		var fmt_chk : IFFSubChunk = null;
+		var fmt_chk : FourByteChunk = null;
 		for (c in Lambda.filter(chunks, function(chk) { return chk.name == "fmt "; } )) { fmt_chk = c; }
 		if (fmt_chk == null) throw "expected fmt subchunk";
 		
-		var sub_i = new haxe.io.BytesInput(fmt_chk.bytes);
+		ba.position = fmt_chk.position;
 		
-		var format = switch (sub_i.readUInt16()) {
+		var fmt_data = eba.getStruct([
+			NamedSD("format", SDField(STUShort)),
+			NamedSD("channels", SDField(STUShort)),
+			NamedSD("samplingRate",SDField(STUInt)),
+			NamedSD("byteRate",SDField(STUInt)),
+			NamedSD("blockAlign",SDField(STUShort)),
+			NamedSD("bitsPerSample",SDField(STUShort)),
+		]);
+			
+		var format = switch (fmt_data.format) {
 			case 1: WF_PCM;
-			default: throw "only PCM (uncompressed) WAV files are supported";
+			default: throw "only PCM (uncompressed) WAV files are supported - got "+Std.string(fmt_data.format);
 		}
-		var channels = sub_i.readUInt16();
-		var samplingRate = Int32.toInt(sub_i.readInt32());
-		var byteRate = Int32.toInt(sub_i.readInt32());
-		var blockAlign = sub_i.readUInt16();
-		var bitsPerSample = sub_i.readUInt16();			
-		var data : Bytes = null;
+		var data_chk : FourByteChunk = null;
 		var smpl : SMPLChunk = null;
 		
 		for (chk in chunks)
 		{
-			var sub_i = new haxe.io.BytesInput(chk.bytes);
+			ba.position = chk.position;
 			if (chk.name == "smpl") // sampler data
 			{
-				smpl = { 
-					manufacturer : Int32.toInt(sub_i.readInt32()),
-					product : Int32.toInt(sub_i.readInt32()),
-					sample_period : Int32.toInt(sub_i.readInt32()),
-					midi_unity_note : Int32.toInt(sub_i.readInt32()),
-					midi_pitch_fraction : Int32.toInt(sub_i.readInt32()),
-					smpte_format : Int32.toInt(sub_i.readInt32()),
-					smpte_offset : Int32.toInt(sub_i.readInt32()),
-					num_sampler_loops : Int32.toInt(sub_i.readInt32()),
-					sampler_data : Int32.toInt(sub_i.readInt32()),
-					loop_data : new Array<SMPLLoopData>()				
-					};
+				smpl = eba.getStruct([
+					NamedSD("manufacturer",SDField(STUInt)),
+					NamedSD("product",SDField(STUInt)),
+					NamedSD("sample_period",SDField(STUInt)),
+					NamedSD("midi_unity_note",SDField(STUInt)),
+					NamedSD("midi_pitch_fraction",SDField(STUInt)),
+					NamedSD("smpte_format",SDField(STUInt)),
+					NamedSD("smpte_offset",SDField(STUInt)),
+					NamedSD("num_sampler_loops",SDField(STUInt)),
+					NamedSD("sampler_data",SDField(STUInt)),
+				]);
+				smpl.loop_data = new Array<SMPLLoopData>();
 				for (n in 0...smpl.num_sampler_loops)
 				{
 					smpl.loop_data.push(
-						{
-							cue_point_id:Int32.toInt(sub_i.readInt32()), 
-							type:Int32.toInt(sub_i.readInt32()), 
-							start:Int32.toInt(sub_i.readInt32()), 
-							end:Int32.toInt(sub_i.readInt32()), 
-							fraction:Int32.toInt(sub_i.readInt32()), 
-							play_count:Int32.toInt(sub_i.readInt32())		
-						}
+						eba.getStruct([
+							NamedSD("cue_point_id",SDField(STUInt)),
+							NamedSD("type",SDField(STUInt)),
+							NamedSD("start",SDField(STUInt)),
+							NamedSD("end",SDField(STUInt)),
+							NamedSD("fraction",SDField(STUInt)),
+							NamedSD("play_count",SDField(STUInt))
+						])
 					);
 				}
 			}
 			else if (chk.name == "data")
 			{
-				data = sub_i.read(chk.len);
+				data_chk = chk;
 			}
 		}
 		
-		return {
-			header: {
+		var header : WAVEHeader = {
 				format: format,
-				channels: channels,
-				samplingRate: samplingRate,
-				byteRate: byteRate,
-				blockAlign: blockAlign,
-				bitsPerSample: bitsPerSample,
+				channels: fmt_data.channels,
+				samplingRate: fmt_data.samplingRate,
+				byteRate: fmt_data.byteRate,
+				blockAlign: fmt_data.blockAlign,
+				bitsPerSample: fmt_data.bitsPerSample,
 				smpl: smpl
-			},
-			data: data
+		};
+		return {
+			header:header,
+			data: Codec.WAV(header, ba, data_chk)
 		}
 		
 	}

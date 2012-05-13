@@ -96,34 +96,34 @@ class SynthTest
 		  for (n in 0...24)
 		#end
 		{
-			//var synth = new SamplerSynth();
-			var synth = new TableSynth();
+			var synth = new SamplerSynth();
+			//var synth = new TableSynth();
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
 		// dedicated percussion for when testing tablesynth
-		for (n in 0...8)
+		/*for (n in 0...8)
 		{
 			var synth = new SamplerSynth();
 			seq.addSynth(synth);
 			percussion_voices.push(synth);
-		}
+		}*/
 		// setup channels
 		for (n in 0...16)
 		{
-			/*if (n == 9)
+			if (n == 9)
 				seq.addChannel(voices, percussion.getGenerator());
 			else
 				seq.addChannel(voices, melodic.getGenerator());
-			*/
+			
 			
 			/*seq.addChannel(voices, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 			
-			if (n == 9)
+			/*if (n == 9)
 				seq.addChannel(percussion_voices, percussion.getGenerator());
 			else
 				seq.addChannel(voices, TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
-			
+			*/
 		}		
 	}
 	
@@ -132,15 +132,22 @@ class SynthTest
 		// uses closures to run all the events with a frame of gap.
 		if (queue == null) queue = new Array();
 		queue.push(function() { 
+			var time_start = Lib.getTimer();
 			func(); 
+			var time_end = Lib.getTimer();
 			if (queue.length > 0)
 			{
-				var inner_func : Dynamic = null;
-				inner_func = function(_) {
-					Lib.current.removeEventListener(Event.ENTER_FRAME, inner_func);
+				if (time_end - time_start < 250)
 					queue.shift()();
-				};
-				Lib.current.addEventListener(Event.ENTER_FRAME, inner_func);
+				else
+				{
+					var inner_func : Dynamic = null;
+					inner_func = function(_) {
+						Lib.current.removeEventListener(Event.ENTER_FRAME, inner_func);
+						queue.shift()();
+					};
+					Lib.current.addEventListener(Event.ENTER_FRAME, inner_func);
+				}
 			}
 		});
 	}

@@ -29,9 +29,11 @@
  */
 package com.ludamix.triad.format.wav;
 
+import nme.Vector;
+
 typedef WAVE = {
 	header : WAVEHeader,
-	data : haxe.io.Bytes,
+	data : Array<Vector<Float>>,
 }
 
 typedef SMPLLoopData = {

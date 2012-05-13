@@ -100,11 +100,9 @@ class SamplerSynth implements SoftSynth
 	// and ramp down priority this much each time a new voice is added to the channel
 	public static inline var PRIORITY_VOICE = 0.95;
 	
-	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, ?wav_data : Array<Vector<Float>> = null)
+	public static function ofWAVE(tuning : MIDITuning, wav : WAVE)
 	{
-		if (wav_data == null) { 
-			wav_data = Codec.WAV(wav);
-		}
+		var wav_data = wav.data;
 		
 		var loop_type = SamplerSynth.ONE_SHOT;
 		var midi_unity_note = 0;
