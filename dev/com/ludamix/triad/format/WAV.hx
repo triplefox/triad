@@ -1,5 +1,5 @@
 /*
- * Extended by James Hofmann to support "smpl" blocks (C) 2012
+ * Rewritten by James Hofmann (smpl chunk, usage of Bytearray) (C) 2012
  * 
  * format - haXe File Formats
  *
@@ -29,18 +29,57 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
  */
-package com.ludamix.triad.format.wav;
+package com.ludamix.triad.format;
 import com.ludamix.triad.audio.Codec;
 import com.ludamix.triad.format.ExtendedByteArray;
-import com.ludamix.triad.format.wav.Data;
-import haxe.Int32;
 import nme.utils.ByteArray;
 import nme.Vector;
 import nme.utils.Endian;
 
 private typedef IFFSubChunk = {name:String,idx:Int,len:Int,bytes:haxe.io.Bytes};
 
-class Reader {
+typedef WAVE = {
+	header : WAVEHeader,
+	data : Array<Vector<Float>>,
+}
+
+typedef SMPLLoopData = {
+	cue_point_id:Int, 
+	type:Int, 
+	start:Int, 
+	end:Int, 
+	fraction:Int, 
+	play_count:Int
+};
+
+typedef SMPLChunk = {
+	manufacturer : Int,
+	product : Int,
+	sample_period : Int,
+	midi_unity_note : Int,
+	midi_pitch_fraction : Int,
+	smpte_format : Int,
+	smpte_offset : Int,
+	num_sampler_loops : Int,
+	sampler_data : Int,
+	loop_data : Array<SMPLLoopData>
+};
+
+typedef WAVEHeader = {
+	format : WAVEFormat,
+	channels : Int,
+	samplingRate : Int,
+	byteRate : Int,		// samplingRate * channels * bitsPerSample / 8
+	blockAlign : Int,	 // channels * bitsPerSample / 8
+	bitsPerSample : Int,
+	smpl : SMPLChunk
+}
+
+enum WAVEFormat {
+	WF_PCM;
+}
+
+class WAV {
 
 	public static function read(ba : ByteArray) : WAVE {
 		
@@ -133,4 +172,117 @@ class Reader {
 		
 	}
 
+	public static function write(wav : WAVE) 
+	{
+		var hdr = wav.header;
+		var buf : WAVBuffer = new WAVBuffer(wav.header);
+		if (hdr.bitsPerSample == 32)
+		{
+			for (n in 0...wav.data[0].length)
+			{
+				for (c in 0...hdr.channels)
+				{
+					buf.writeFloatAsInt32(wav.data[c][n]);
+				}
+			}
+		}
+		else if (hdr.bitsPerSample == 16)
+		{
+			for (n in 0...wav.data[0].length)
+			{
+				for (c in 0...hdr.channels)
+				{
+					buf.writeFloatAsInt16(wav.data[c][n]);
+				}
+			}
+		}
+		else if (hdr.bitsPerSample == 8)
+		{
+			for (n in 0...wav.data[0].length)
+			{
+				for (c in 0...hdr.channels)
+				{
+					buf.writeFloatAsInt8(wav.data[c][n]);
+				}
+			}
+		}
+		else throw "I only know how to write 8, 16, and 32-bit PCM";
+		
+		return buf.toByteArray();
+	}
+	
+	public static function writeStream(header : WAVEHeader) : WAVBuffer
+	{
+		return new WAVBuffer(header);
+	}
+	
 }
+
+class WAVBuffer
+{
+	public var header : WAVEHeader;
+	public var ba : ByteArray;
+	public var data_byte_offset: Int; 
+	public var riff_byte_offset: Int;
+	public var written : Int;
+	
+	public function new(header : WAVEHeader)
+	{
+		this.header = header;
+		ba = new ByteArray();
+		ba.endian = Endian.LITTLE_ENDIAN;
+		
+		ba.writeMultiByte("RIFF", "us-ascii");
+		riff_byte_offset = ba.position;
+		ba.writeInt(36 + 0);
+		ba.writeMultiByte("WAVE", "us-ascii");
+
+		ba.writeMultiByte("fmt ", "us-ascii");
+		ba.writeInt(16);
+		ba.writeShort(1);
+		ba.writeShort(header.channels);
+		ba.writeInt(header.samplingRate);
+		ba.writeInt(header.byteRate);
+		ba.writeShort(header.blockAlign);
+		ba.writeShort(header.bitsPerSample);
+		
+		ba.writeMultiByte("data", "us-ascii");
+		data_byte_offset = ba.position;
+		ba.writeInt(0);
+		
+	}
+	
+	public static inline var MUL_32 = 4294967296.;
+	public static inline var MUL_16 = 65536.;
+	public static inline var MUL_8 = 256.;
+	
+	public inline function writeFloatAsInt32(v : Float):Void 
+	{
+		ba.writeInt(Std.int(v * MUL_32));
+		written+=4;
+	}
+	
+	public inline function writeFloatAsInt16(v : Float):Void 
+	{
+		ba.writeShort(Std.int(v * MUL_16));
+		written+=2;
+	}
+	
+	public inline function writeFloatAsInt8(v : Float):Void 
+	{
+		ba.writeByte(Std.int(v * MUL_8));
+		written++;
+	}
+	
+	public function toByteArray()
+	{
+		ba.position = riff_byte_offset;
+		ba.writeInt(36 + written);
+		ba.position = data_byte_offset;
+		ba.writeInt(written);
+		ba.position = ba.length;
+		return ba;
+	}
+
+}
+

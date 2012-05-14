@@ -1,6 +1,6 @@
 package com.ludamix.triad.audio;
 
-import com.ludamix.triad.format.wav.Reader;
+import com.ludamix.triad.format.WAV;
 import haxe.Json;
 import nme.Assets;
 
@@ -276,7 +276,7 @@ class SFZBank
 		{
 			if (!samples.exists(n))
 			{
-				var header = Reader.read(Assets.getBytes(path + n));
+				var header = WAV.read(Assets.getBytes(path + n));
 				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header);
 				samples.set(n, content.settings);
 			}

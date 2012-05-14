@@ -2,7 +2,7 @@ package com.ludamix.triad.audio;
 import com.ludamix.triad.format.ExtendedByteArray;
 import nme.utils.ByteArray;
 import nme.Vector;
-import com.ludamix.triad.format.wav.Data;
+import com.ludamix.triad.format.WAV;
 import haxe.io.BytesInput;
 
 class Codec

@@ -20,7 +20,7 @@ class FlashIO
 	
 	public static function exportBytes(bytes : Bytes, filename : String) 
 	{ var fio = new FlashIOInst(); fio.exportBytes(bytes, filename); }
-
+	
 }
 
 class FlashIOInst

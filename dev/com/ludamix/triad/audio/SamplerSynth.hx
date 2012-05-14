@@ -7,7 +7,7 @@ import com.ludamix.triad.audio.dsp.IIRFilter2;
 import com.ludamix.triad.audio.dsp.DSP;
 import com.ludamix.triad.audio.dsp.WindowFunction;
 import com.ludamix.triad.tools.MathTools;
-import com.ludamix.triad.format.wav.Data;
+import com.ludamix.triad.format.WAV;
 import com.ludamix.triad.audio.SFZ;
 import nme.Assets;
 import nme.utils.ByteArray;
