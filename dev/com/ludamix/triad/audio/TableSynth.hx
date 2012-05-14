@@ -89,10 +89,10 @@ class TableSynth implements SoftSynth
 			SynthTools.CURVE_POW, SynthTools.CURVE_POW, false);
 		var envs : Array<Envelope> = [ { attack:adsr_base.attack, sustain:adsr_base.sustain, release:adsr_base.release, assigns:[AS_VOLUME_ADD],
 							quantization:0 } ];
-		var lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] } ];
-			//{ frequency:0.5, depth:0.5, delay:0., attack:0.5, assigns:[AS_PULSEWIDTH] }];
+		var lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] },
+			{ frequency:1.7, depth:1., delay:0., attack:0., assigns:[AS_PULSEWIDTH] }];
 		return { envelopes:envs,
-				oscillator:TRI_WT,
+				oscillator:SAW_WT,
 				lfos : lfos,
 				modulation_lfo:1.0,
 				arpeggiation_rate:0.0,
@@ -186,30 +186,23 @@ class TableSynth implements SoftSynth
 		return i/wl;
 	}
 	
-	public static inline var TABLE_START = 4410; // roughly, the accuracy of our lowest regular note
+	public static inline var TABLE_START = 512; // roughly, the accuracy of our lowest regular note
 												 // 44100*TABLE_OVERSAMPLE/TABLE_START = the bassiest frequency in hz
-	public static inline var TABLE_PITCHES = 148;// num of unique pitches sampled between table start and end
-    public static function tableMapping(i : Float) : Float {return Math.pow(i, 8);} // biases the pitches we sample from 
-	public static inline var TABLE_MODULATIONS = 20; // number of unique modulations sampled per pitch
-	public static inline var TABLE_OVERSAMPLE = 10; // determines which table is chosen at runtime. 
-		// Using tables oversampled brings out the highs more prominently, but puts more pressure on pitch accuracy,
+	public static inline var TABLE_PITCHES = 48;// num of unique pitches sampled between table start and end
+    public static function tableMapping(i : Float) : Float {return Math.pow(i, 6);} // biases the pitches we sample from 
+	public static inline var TABLE_MODULATIONS = 6; // number of unique modulations sampled per pitch
+	public static inline var TABLE_OVERSAMPLE = 1; // determines which table is chosen at runtime. 
+		// Using tables oversampled brings out the highs more prominently, but puts more pressure on resampling accuracy,
 		// and makes the lows "run out" much faster.
-	public static inline var SINE_CROSSOVER = 150; // below this wavelength we mix in a sine and demphasize the table.
-	public static inline var SINE_CROSSOVER_END = 50; // after here it's all sine.
-	public static inline var TABLE_END = 500; // below this wavelength we stop extending the table.
+	public static inline var TABLE_END = 16; // below this wavelength we stop extending the table.
 		// if set too low, high-pitched samples start to contain no power (which screws up the gain controller)
+		// 		- or worse, they contain so little power that numeric error occurs.
 		// and all the other factors may affect when a no-power sample occurs - jitter them if it breaks.
 		// a higher value helps us gain pitch accuracy by reducing the territory each sample has to cover,
 		// but hurts accuracy after the table end.
-	public static inline var LOWEST_SINE_LENGTH = 2; // below this wavelength we stop bothering to emit new sines.
-													  // higher vals dramatically improve table generation speed and help
-													  // keep noticable aliasing down, but make the sound "cut" less.
-													  // overall it's not beneficial because you're likely to oversample
-													  // more to compensate, and thus generate much larger tables.
-    public static inline var MAX_OCTAVES = 64; // another means of improving table generation speed, limiting # of sines
-											   // mainly intended for the pathological case of the bass note.
-											   // we get a slightly duller bass, but it generates faster.
-    public static inline var DOUBLE_INTERPOLATE = 1.2; // start using 2x interpolation at this ratio of frequency diff
+	public static inline var SINE_START = 10; // replace table with sinewave
+    public static inline var MAX_OCTAVES = 128; // essentially, how many passes per sample
+    public static inline var DOUBLE_INTERPOLATE = 2; // start using 2x interpolation at this ratio of frequency diff
 	
 	public static var pulseWavetable : Array<Array<Vector<Float>>>;
 	public static var sawWavetable : Array<Array<Vector<Float>>>;
@@ -217,7 +210,8 @@ class TableSynth implements SoftSynth
 	
 	public static function genPulseWT()
 	{
-		// a to-do: try making the table sizes with a non-linear function? it'd fit resampling behavior better.
+		// todo - gen with 2 extra samples on each side so that we can do 2x interp faster
+		// 		  do something about the tiny tables - when they're so small runtime slows down due to excessive modulo
 		
 		pulseWavetable = new Array();
 		for (o in 0...TABLE_PITCHES)
@@ -225,7 +219,7 @@ class TableSynth implements SoftSynth
 			var fn = tableMapping;
 			var tablesize = Std.int(TABLE_END + (TABLE_START - TABLE_END) * fn(o) / fn(TABLE_PITCHES - 1));
 			var modTable =  new Array();
-			pulseWavetable.push(modTable);
+			pulseWavetable.insert(0, modTable);
 			for (m in 0...TABLE_MODULATIONS)
 			{
 				var wave = new Vector<Float>(tablesize+1); // pad with a sample so that linear interp works cleanly
@@ -241,7 +235,7 @@ class TableSynth implements SoftSynth
 				pw *= tablesize;
 				var OTABLESIZE = 1. / tablesize;
 				var half_pw = pw / 2;
-				while (ts/(oo) > LOWEST_SINE_LENGTH && oo < MAX_OCTAVES) 
+				while (oo < MAX_OCTAVES) 
 					// shrink effective table size until it's too tiny to bother with.
 				{
 					var oo_pi = oo * Math.PI;
@@ -277,7 +271,7 @@ class TableSynth implements SoftSynth
 			var fn = tableMapping;
 			var tablesize = Std.int(TABLE_END + (TABLE_START - TABLE_END) * fn(o) / fn(TABLE_PITCHES - 1));
 			var modTable =  new Array();
-			sawWavetable.push(modTable);
+			sawWavetable.insert(0, modTable);
 			for (m in 0...TABLE_MODULATIONS)
 			{
 				var wave = new Vector<Float>(tablesize+1); // pad with a sample so that linear interp works cleanly
@@ -287,14 +281,13 @@ class TableSynth implements SoftSynth
 				
 				var ts = Std.int(tablesize/ (o+1));
 				var oo = 1;
-				var pw = m/TABLE_MODULATIONS * 0.9; // we use pulsewidth to distort the harmonics
+				var pw = Math.pow(m / (TABLE_MODULATIONS-1), 0.5) * 125; // filtering effect
 				var sign = -1;
 				var OTABLESIZE = 1. / tablesize;
-				while (ts/(oo) > LOWEST_SINE_LENGTH && oo < MAX_OCTAVES) 
+				while (oo < MAX_OCTAVES - pw) 
 					// shrink effective table size until it's too tiny to bother with.
 				{
-					var distort = pw * (oo - 1);
-					var div_factor = 1. / (oo - distort);
+					var div_factor = 1. / (oo);
 					for (i in 0...tablesize+1)
 					{
 						wave[i] += Math.sin((i*Math.PI*2*OTABLESIZE)*oo) * sign * div_factor;
@@ -325,7 +318,7 @@ class TableSynth implements SoftSynth
 			var fn = tableMapping;
 			var tablesize = Std.int(TABLE_END + (TABLE_START - TABLE_END) * fn(o) / fn(TABLE_PITCHES - 1));
 			var modTable =  new Array();
-			triWavetable.push(modTable);
+			triWavetable.insert(0, modTable);
 			for (m in 0...TABLE_MODULATIONS)
 			{
 				var wave = new Vector<Float>(tablesize+1); // pad with a sample so that linear interp works cleanly
@@ -334,10 +327,10 @@ class TableSynth implements SoftSynth
 				// derived from wikipedia entry
 				
 				var ts = Std.int(tablesize/ (o+1));
-				var oo = m/TABLE_MODULATIONS * 0.1; // pulsewidth adds a fairly dramatic waveshaping effect
+				var oo = m/TABLE_MODULATIONS * 0.1; // pulsewidth adds a fairly dramatic, FM-like waveshaping effect
 				var sign = -1;
 				var OTABLESIZE = 1. / tablesize;
-				while (ts/(oo) > LOWEST_SINE_LENGTH && oo < MAX_OCTAVES) 
+				while (oo < MAX_OCTAVES) 
 					// shrink effective table size until it's too tiny to bother with.
 				{
 					var twokplus1overtablesize = (2*oo+1)/(tablesize>>4);
@@ -582,22 +575,6 @@ class TableSynth implements SoftSynth
 		var base_wl : Float = table[oct][0].length - 1;
 		var test_wl = wl * TABLE_OVERSAMPLE;
 		// we try to pick the nearest wavelength, starting from the biggest one and working downwards.
-		if (test_wl < SINE_CROSSOVER) // we're at a pitch where we should just use a sine wave
-		{
-			// equal-power crossfade
-			var dist = Math.min(1.,Math.max(0., (test_wl - SINE_CROSSOVER_END) / (SINE_CROSSOVER - SINE_CROSSOVER_END)));
-			var mixpeak = peak * Math.cos((dist)*Math.PI/2);
-			peak *= Math.sin((dist)*Math.PI/2);
-			var adjust = 2 * Math.PI / wl;
-			for (i in 0 ... buffer.length >> 1) 
-			{
-				var sum = mixpeak * Math.cos(pos * adjust); // use a cos, actually (phasing aid)
-				buffer[bufptr] += sum * left;
-				buffer[bufptr+1] += sum * right;
-				pos = (pos+2) % wl;
-				bufptr = (bufptr+2) % buffer.length;
-			}
-		}
 		while (test_wl < base_wl && oct < table.length-1)
 		{
 			oct += 1;
@@ -608,11 +585,25 @@ class TableSynth implements SoftSynth
 		var di = 0.;
 		if (test_wl > base_wl) di = Math.abs(test_wl / base_wl);
 		else di = Math.abs(base_wl / test_wl);
-		if (di > DOUBLE_INTERPOLATE)
+		if (test_wl < SINE_START)
+		{
+			pos = pos % wl;
+			var adjust = Math.PI*2 / wl;
+			for (i in 0 ... buffer.length >> 1) 
+			{
+				var sum = peak * Math.sin(pos * adjust);
+				buffer[bufptr] += sum * left;
+				buffer[bufptr+1] += sum * right;
+				pos = (pos+2) % wl;
+				bufptr = (bufptr+2) % buffer.length;
+			}		
+		}
+		else if (di > DOUBLE_INTERPOLATE)
 		{
 			// run with a 2x linear implementation to make the wavetable part more filtered
 			var pwi = Std.int(hw / wl * TABLE_MODULATIONS);
-			if (pwi < 0) pwi = 0; if (pwi >= TABLE_MODULATIONS) pwi = TABLE_MODULATIONS-1;
+			if (pwi < 0) pwi = Std.int(Math.abs(pwi)); 
+			if (pwi >= TABLE_MODULATIONS) pwi = TABLE_MODULATIONS - 1;
 			var wave = table[oct][pwi];
 			var adjust = base_wl / wl;
 			pos = pos % wl;
@@ -637,16 +628,18 @@ class TableSynth implements SoftSynth
 		else // regular linear
 		{
 			var pwi = Std.int(hw / wl * TABLE_MODULATIONS);
-			if (pwi < 0) pwi = 0; if (pwi >= TABLE_MODULATIONS) pwi = TABLE_MODULATIONS-1;
+			if (pwi < 0) pwi = Std.int(Math.abs(pwi)); 
+			if (pwi >= TABLE_MODULATIONS) pwi = TABLE_MODULATIONS - 1;
 			var wave = table[oct][pwi];
 			var adjust = base_wl / wl;
 			pos = pos % wl;
 			for (i in 0 ... buffer.length >> 1) 
 			{
 				var pa = pos * adjust;
-				var dist = pa - Std.int(pa);
-				var l = wave[Std.int(pa)];
-				var r = wave[Std.int(pa) + 1];
+				var spa = Std.int(pa);
+				var dist = pa - spa;
+				var l = wave[spa];
+				var r = wave[spa + 1];
 				var sum = peak * (l * (dist) + r * (1. - dist));
 				buffer[bufptr] += sum * left;
 				buffer[bufptr+1] += sum * right;

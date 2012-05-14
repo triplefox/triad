@@ -96,34 +96,34 @@ class SynthTest
 		  for (n in 0...24)
 		#end
 		{
-			var synth = new SamplerSynth();
-			//var synth = new TableSynth();
+			//var synth = new SamplerSynth();
+			var synth = new TableSynth();
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
 		// dedicated percussion for when testing tablesynth
-		/*for (n in 0...8)
+		for (n in 0...8)
 		{
 			var synth = new SamplerSynth();
 			seq.addSynth(synth);
 			percussion_voices.push(synth);
-		}*/
+		}
 		// setup channels
 		for (n in 0...16)
 		{
-			if (n == 9)
+			/*if (n == 9)
 				seq.addChannel(voices, percussion.getGenerator());
 			else
 				seq.addChannel(voices, melodic.getGenerator());
-			
+			*/
 			
 			/*seq.addChannel(voices, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 			
-			/*if (n == 9)
+			if (n == 9)
 				seq.addChannel(percussion_voices, percussion.getGenerator());
 			else
 				seq.addChannel(voices, TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
-			*/
+			
 		}		
 	}
 	
@@ -271,7 +271,6 @@ class SynthTest
 	
 	public function drawDebugwaveform()
 	{
-		TableSynth.genPulseWT();
 		var wf = TableSynth.pulseWavetable[0][0];
 		var spr : Bitmap = new Bitmap(new BitmapData(wf.length, Main.H, false, 0));
 		Lib.current.stage.addChild(spr);
