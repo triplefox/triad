@@ -37,6 +37,7 @@ class SequencerEvent
 	public static inline var SET_PATCH = 7;
 	public static inline var SUSTAIN_PEDAL = 8;
 	public static inline var ALL_NOTES_OFF = 9;
+	public static inline var SET_BPM = 10;
 	
 }
 
@@ -119,6 +120,8 @@ class SequencerChannel
 		{
 			switch(ev.type)
 			{
+				case SequencerEvent.SET_BPM:
+					seq.setBPM(ev.data, true);
 				case SequencerEvent.PITCH_BEND:
 					pitch_bend = ev.data;
 				case SequencerEvent.VOLUME:
