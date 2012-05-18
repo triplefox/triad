@@ -125,8 +125,11 @@ class SMFParser
 		
 		if (remove_intro) // most of the time, we have no reason to ever want a big delay at the start of the file.
 		{
-			var firstframe = events[0].frame;
-			for (n in events) n.frame -= firstframe;
+			if (events.length > 0)
+			{
+				var firstframe = events[0].frame;
+				for (n in events) n.frame -= firstframe;
+			}
 		}
 		
 		return events;

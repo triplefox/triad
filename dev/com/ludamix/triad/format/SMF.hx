@@ -1,5 +1,6 @@
 package com.ludamix.triad.format;
 import nme.utils.ByteArray;
+import nme.utils.Endian;
 
 class SMFEvent
 {
@@ -7,22 +8,27 @@ class SMFEvent
 	public var type:Int; 	
 	public var channel:Int; 
 	public var data:Dynamic;
-	public function new(tick, type, channel, data) 
+	public function new(tick : Int, type : Int, channel : Int, data : Dynamic) 
 	{ this.tick = tick; this.type = type; this.channel = channel; this.data = data; }
 }
 
 class SMF
 {
 	
+	public var signature_sf : Int;
+	public var signature_mi : Int;	
 	public var signature_n : Int;
 	public var signature_d : Int;
 	public var resolution : Int;
+	
 	public var tracks:Array<Array<SMFEvent>>;		
+	public var track_texts:Array<Array<{tick:Int,message:String,type:Int}>>;
 	public var tempos : Array<{tick:Int,tempo:Int,bpm:Float}>;
 	
 	public static function read(bytes : ByteArray)
 	{
-		var smf = new SMF(0, 0, 0);
+		bytes.position = 0;
+		var smf = new SMF(0, 0, 0, 0, 0);
 		var len:Int = 0;
 		var num_tracks = 1;
 		var format = 0;
@@ -39,12 +45,16 @@ class SMF
 				{
 					//trace(resolution);
 				}
-				else // we're using "frames per second" method - not implemented yet
+				else // we're using "frames per second" method.
 				{
+					var fps = Math.abs(smf.resolution >> 8);
+					var frame_subdivisions = smf.resolution & 0xFF;
 				}
 			case "MTrk": // start of track data
 				len = bytes.readUnsignedInt();
-				smf.tracks.push(smf.getTrack(bytes));
+				var tk = smf.getTrack(bytes);
+				smf.tracks.push(tk.track);
+				smf.track_texts.push(tk.text);
 			default:
 				len = bytes.readUnsignedInt();
 				bytes.position += len;
@@ -60,6 +70,7 @@ class SMF
 	{
 		
 		var track = new Array<SMFEvent>();
+		var track_text = new Array<{tick:Int,type:Int,message:String}>();
 		
 		var cont = true;
 		
@@ -100,20 +111,21 @@ class SMF
 			
 			if (status == META)
 			{
-				var event:{type:Int, value:Int} = null; 
 				var metaEventType:Int = bytes.readUnsignedByte() | 0xff00;
 				var len = readVariableLength(bytes);				
 				if ((metaEventType & 0x00f0) == 0) {
-					// meta text data - ignore
 					var text = bytes.readMultiByte(len, "us-ascii");
+					track_text.push({tick:time,message:text,type:metaEventType});
 				} else {
 					switch (metaEventType) {
+					case META_KEY_SIGNATURE:
+						this.signature_sf = bytes.readUnsignedByte();
+						this.signature_mi = bytes.readUnsignedByte();
 					case META_TEMPO:
 						var tempo = ((bytes.readUnsignedByte() << 16) | bytes.readUnsignedShort());
 						var bpm = 60000000 / tempo;
 						this.tempos.push({ tick:time, tempo:tempo, bpm:bpm});
 					case META_TIME_SIGNATURE:
-						// not properly implemented yet... it should be like tempo changes.
 						var value = (bytes.readUnsignedByte() << 16) | (1 << bytes.readUnsignedByte());
 						this.signature_n = value>>16;
 						this.signature_d = value & 0xffff;
@@ -168,7 +180,7 @@ class SMF
 			}
 		}
 		
-		return track;
+		return {track:track,text:track_text};
 		
 	}
 	
@@ -245,18 +257,223 @@ class SMF
 	public static inline var RPN_FINE_TUNE = 1;
 	public static inline var RPN_COARSE_TUNE = 2;
 
-	public function new(signature_n, signature_d, resolution)
+	public function new(signature_n, signature_d, signature_sf, signature_mi, resolution)
 	{
 		this.signature_n = signature_n;
 		this.signature_d = signature_d;
+		this.signature_sf = signature_sf;
+		this.signature_mi = signature_mi;
 		this.resolution = resolution;
 		this.tracks = new Array();
+		this.track_texts = new Array();
 		this.tempos = new Array();
 	}
 	
 	public function toByteArray()
 	{
-		// for now we'll save only type 0
+		if (tracks.length == 0) throw "no tracks available!";
+		
+		var bytes = new ByteArray();
+		bytes.endian = Endian.BIG_ENDIAN;
+		bytes.writeMultiByte("MThd", "us-ascii");
+		bytes.writeInt(6);
+		
+		var prepped_tracks = new Array<Array<SMFEvent>>();
+		
+		// copy tracks and convert to absolute timing (so that we can inject the meta and tempo a bit more easily)
+		for (t in tracks)
+		{
+			var cur_tick = 0;
+			var prep = new Array<SMFEvent>();
+			for (e in t) 
+			{
+				cur_tick += e.tick;
+				var e_abs = new SMFEvent(cur_tick, e.type, e.channel, e.data);
+				prep.push(e_abs);
+			}
+			
+			prepped_tracks.push(prep);
+		}
+		
+		for (n in 0...track_texts.length)
+		{
+			var t = prepped_tracks[n];
+			var tt = track_texts[n];
+			for (text in tt)
+			{
+				t.push(new SMFEvent(text.tick, text.type, 0, text.message));
+				trace([text.tick, text.message]);
+			}
+		}
+		
+		var meta_track : Array<SMFEvent> = null;
+		if (prepped_tracks.length>0)
+			meta_track = prepped_tracks[0];
+		else { meta_track = new Array<SMFEvent>(); prepped_tracks.push(meta_track); }
+		meta_track.push(new SMFEvent(0, META_KEY_SIGNATURE, 0, {sf:signature_sf,mi:signature_mi}));
+		for (n in 0...tempos.length)
+		{
+			meta_track.push(new SMFEvent(tempos[n].tick, META_TEMPO, 0, tempos[n].tempo)); 
+		}
+		
+		for (t in prepped_tracks) t.sort(function(a, b) { if (a.tick == b.tick) return b.type - a.type;
+			else return a.tick - b.tick; } );
+		
+		// finish header
+		if (prepped_tracks.length==1)
+			bytes.writeShort(0);
+		else
+			bytes.writeShort(1);
+		bytes.writeShort(prepped_tracks.length);
+		bytes.writeShort(resolution);
+		
+		var cur_track = 0;
+		for (track in prepped_tracks)
+		{
+			var cur_tick = 0;
+			
+			bytes.writeMultiByte("MTrk", "us-ascii");
+			var tl_pos = bytes.position;
+			bytes.writeUnsignedInt(0xDEADBEEF); // placeholder
+			
+			var l_e : SMFEvent = null;
+			for (e in track)
+			{			
+				writeEvent(bytes, e, l_e, cur_tick);
+				l_e = e;
+				
+				cur_tick = e.tick;
+			}
+			
+			writeEvent(bytes, new SMFEvent(cur_tick, META_TRACK_END, 0, null), null, cur_tick);
+			
+			// rewrite header
+			var end_pos = bytes.position;
+			bytes.position = tl_pos;
+			bytes.writeUnsignedInt(end_pos - tl_pos - 4);
+			bytes.position = end_pos;
+			
+			cur_track++;
+		}
+		
+		return bytes;
+	}
+	
+	private inline function writeEvent(bytes : ByteArray, ev : SMFEvent, last_ev : SMFEvent, cur_tick : Int)
+	{
+		if (bytes.position < 120) trace([ev.type,ev.channel,ev.data,ev.tick,bytes.position]);
+		writeVariableLength(bytes, ev.tick-cur_tick);
+		if (ev.type >= META)
+		{
+			bytes.writeShort(ev.type);
+			switch(ev.type)
+			{
+				case META_TEXT, META_AUTHOR, META_LYRICS, META_CUE, META_MARKER, META_TITLE, 
+					META_INSTRUMENT, META_PROGRAM_NAME, META_DEVICE_NAME:
+					writeVariableLength(bytes, ev.data.length);
+					bytes.writeMultiByte(ev.data, "us-ascii");
+				case META_SEQNUM: // the seq number for type 2 MIDI
+					writeVariableLength(bytes, 2);
+					bytes.writeShort(ev.data);
+				case META_TIME_SIGNATURE:
+					writeVariableLength(bytes, 4);
+					bytes.writeByte(ev.data.numerator); 
+					bytes.writeByte(ev.data.denominator);
+					bytes.writeByte(ev.data.ticks_per_quarter); // MIDI ticks
+					bytes.writeByte(ev.data.notated_32nds_per_quarter); // Notated values
+					// FF 58 04 06 03 24 08 = TS (4 bytes) 4/6, 24 clocks per quarter, 8 32nds per quarter
+				case META_KEY_SIGNATURE:
+					writeVariableLength(bytes, 2);
+					bytes.writeByte(ev.data.sf); // sharps and flats, 0 = C, 1 = 1 sharp, -1 = 1 flat, etc.
+					bytes.writeByte(ev.data.mi); // major/minor: 0 = major, 1 = minor
+				case META_TRACK_END:
+					writeVariableLength(bytes, 0);
+				case META_TEMPO:
+					writeVariableLength(bytes, 3);
+					bytes.writeByte(ev.data >> 16); 
+					bytes.writeByte((ev.data >> 8) & 0xFF); 
+					bytes.writeByte(ev.data & 0xFF); 
+				case META_CHANNEL, META_PORT:
+					writeVariableLength(bytes, 1);
+					bytes.writeByte(ev.data);
+				case META_SMPTE_OFFSET:
+					writeVariableLength(bytes, 5);
+					bytes.writeByte(ev.data.hours);
+					bytes.writeByte(ev.data.minutes);
+					bytes.writeByte(ev.data.seconds);
+					bytes.writeByte(ev.data.frames);
+					bytes.writeByte(ev.data.frame_fractions);
+				default:
+					throw "wrote a meta i didn't cover";
+			}
+		}
+		else if (ev.type == SYSTEM_EXCLUSIVE || ev.type == SYSTEM_EXCLUSIVE_SHORT)
+		{
+			bytes.writeShort(ev.type);
+			writeVariableLength(bytes, ev.data.length);
+			bytes.writeMultiByte(ev.data, "us-ascii");
+		}
+		else
+		{
+			
+			if (ev.type == NOTE_OFF && ev.data.velocity == 0)
+				{ ev.type = NOTE_ON; }
+			if (last_ev == null || last_ev.type != ev.type || last_ev.channel != ev.channel)
+				bytes.writeByte(ev.type | ev.channel);
+			switch(ev.type)
+			{
+				case NOTE_ON: bytes.writeByte(ev.data.note); bytes.writeByte(ev.data.velocity);
+				case NOTE_OFF: bytes.writeByte(ev.data.note); bytes.writeByte(ev.data.velocity);
+				case KEY_PRESSURE: bytes.writeByte(ev.data.note); bytes.writeByte(ev.data.pressure);
+				case CONTROL_CHANGE: bytes.writeByte(ev.data.controller); bytes.writeByte(ev.data.value);
+				case PROGRAM_CHANGE: bytes.writeByte(ev.data);
+				case CHANNEL_PRESSURE: bytes.writeByte(ev.data);
+				case PITCH_BEND: bytes.writeByte(ev.data & 0x7F); bytes.writeByte((ev.data & 0x7F00) >> 7);
+				default: throw "wrote a midi code i don't cover";
+			}
+		}
+	}
+	
+	public function setTimeSignature(numerator : Int, denominator : Int)
+	{
+		signature_n = numerator;
+		signature_d = denominator;
+	}
+	
+	public function addEvent(event : SMFEvent, ?track = 0)
+	{
+		while (tracks.length - 1 < track) { tracks.push(new Array()); track_texts.push(new Array()); }
+		tracks[track].push(event);
+	}
+	
+	public function addTempo(tick : Int, bpm : Float):Void 
+	{
+		tempos.push({tick:tick, bpm:bpm, tempo:Std.int(60000000/bpm)});
+	}
+
+	public function addText(tick : Int, track : Int, text : String, meta_type : Int):Void 
+	{
+		while (tracks.length - 1 < track) { tracks.push(new Array()); track_texts.push(new Array()); }
+		track_texts[track].push({tick:tick,message:text,type:meta_type});
+	}
+	
+	private static function writeVariableLength(bytes:ByteArray, value:Int)
+	{
+        var buffer = value & 0x7f;
+        while ((value >>= 7) >0)
+        {
+            buffer <<=  8; 
+            buffer |= 0x80;
+            buffer += (value & 0x7f);
+        }
+        while (true)
+        {
+			bytes.writeByte(buffer);
+            if (buffer & 0x80 != 0)
+                buffer >>= 8;
+            else
+                break;
+        }
 	}
 	
 }
