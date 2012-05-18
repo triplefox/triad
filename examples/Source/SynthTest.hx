@@ -99,6 +99,7 @@ class SynthTest
 		{
 			var synth = new SamplerSynth();
 			//var synth = new TableSynth();
+			synth.master_volume = 2.0;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}

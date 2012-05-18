@@ -81,7 +81,9 @@ enum WAVEFormat {
 
 class WAV {
 
-	public static function read(ba : ByteArray) : WAVE {
+	public static function read(ba : ByteArray, ?filename : String) : WAVE {
+		
+		if (ba == null) throw "didn't find " + filename;
 		
 		ba.endian = Endian.LITTLE_ENDIAN;
 		var eba = ExtendedByteArray.fromByteArray(ba);

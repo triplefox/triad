@@ -225,10 +225,12 @@ class SFZ
 		{
 			l = StringTools.trim(l);
 			if (l.length == 0 || StringTools.startsWith(l, "//")) { } // pass
-			else if (StringTools.startsWith(l, "<group>")) { cur_group = new SFZGroup(); groups.push(cur_group); 
+			else if (StringTools.startsWith(l, "<group>")) { 
+				cur_group = new SFZGroup(); groups.push(cur_group); 
 				ctx = GROUP;  } // group
-			else if (StringTools.startsWith(l, "<region>")) { cur_region = new Hash<Dynamic>(); 
+			else if (StringTools.startsWith(l, "<region>")) { 
 				if (cur_group == null) { cur_group = new SFZGroup(); groups.push(cur_group); }
+				cur_region = new Hash<Dynamic>(); 
 				cur_group.regions.push(cur_region); ctx = REGION;  } // region
 			else if (l.indexOf("=") >= 0) // opcode
 			{
@@ -269,14 +271,14 @@ class SFZBank
 		sfz_programs = new IntHash();
 	}
 	
-	public function assignSFZ(sfz : SFZGroup, program : Int, ?recache : Bool=true, ?oversample : Int=1)
+	public function assignSFZ(sfz : SFZGroup, program : Int, ?recache : Bool=true)
 	{
 		var req_samples = sfz.getSamples();
 		for (n in req_samples)
 		{
 			if (!samples.exists(n))
 			{
-				var header = WAV.read(Assets.getBytes(path + n));
+				var header = WAV.read(Assets.getBytes(path + n), path+n);
 				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header);
 				samples.set(n, content.settings);
 			}

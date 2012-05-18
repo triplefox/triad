@@ -157,38 +157,58 @@ class Reverb
 	public function process(interleavedSamples : Vector<Float>){ 
 	  // NB. Make a copy to put in the output samples to return.
 	  var outputSamples = new Vector<Float>(interleavedSamples.length);
+	  var reusableBuffer = new Vector<Float>(interleavedSamples.length);
 	 
 	  // Perform low pass on the input samples to mimick damp
 	  var leftRightMix = DSP.deinterleave(interleavedSamples);
 	  this.LOWPASSL.process( leftRightMix[DSP.LEFT] );
 	  this.LOWPASSR.process( leftRightMix[DSP.RIGHT] ); 
 	  var filteredSamples = DSP.interleave(leftRightMix[DSP.LEFT], leftRightMix[DSP.RIGHT]);
-
+	  
 	  // Process MultiDelays in parallel
 	  for (i in 0...NR_OF_MULTIDELAYS) {
 		// Invert the signal of every even multiDelay
-		outputSamples = DSP.mixSampleBuffers(outputSamples, this.multiDelays[i].process(filteredSamples), 2%i == 0, NR_OF_MULTIDELAYS);
+		reusableBuffer = multiDelays[i].process(filteredSamples, reusableBuffer);
+		if (2 % i == 0)
+		{
+			for (s in 0...filteredSamples.length)
+			{
+				outputSamples[s] = (outputSamples[s] - reusableBuffer[s]) / NR_OF_MULTIDELAYS;
+			}
+		}
+		else
+		{
+			for (s in 0...filteredSamples.length)
+			{
+				outputSamples[s] = (outputSamples[s] + reusableBuffer[s]) / NR_OF_MULTIDELAYS;
+			}
+		}
 	  }
 	 
 	  // Process SingleDelays in series
 	  var singleDelaySamples = new Vector<Float>(outputSamples.length);
 	  for (i in 0...NR_OF_SINGLEDELAYS) {
 		// Invert the signal of every even singleDelay
-		singleDelaySamples = DSP.mixSampleBuffers(singleDelaySamples, this.singleDelays[i].process(outputSamples), 2%i == 0, 1);
-	  }
-
-	  // Apply the volume of the reverb signal
-	  for (i in 0...singleDelaySamples.length) {
-		singleDelaySamples[i] *= this.mixVolume;
+		var postDelaySamples = singleDelays[i].process(outputSamples, reusableBuffer);
+		if (2 % i == 0)
+		{
+			for (s in 0...singleDelaySamples.length) 
+			{
+				singleDelaySamples[s] = singleDelaySamples[s] - postDelaySamples[s] * this.mixVolume;
+			}
+		}
+		else
+		{
+			for (s in 0...singleDelaySamples.length) 
+			{
+				singleDelaySamples[s] = singleDelaySamples[s] + postDelaySamples[s] * this.mixVolume;
+			}
+		}
 	  }
 	 
 	  // Mix the original signal with the reverb signal
-	  outputSamples = DSP.mixSampleBuffers(singleDelaySamples, interleavedSamples, false, 1);
-
-	  // Apply the master volume to the complete signal
-	  for (i in 0...outputSamples.length) {
-		outputSamples[i] *= this.masterVolume;
-	  }
+	  for (i in 0...outputSamples.length)
+		outputSamples[i] = singleDelaySamples[i] + interleavedSamples[i] * this.masterVolume;
 	   
 	  return outputSamples;
 	}	

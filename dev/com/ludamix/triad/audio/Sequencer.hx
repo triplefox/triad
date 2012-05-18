@@ -204,6 +204,7 @@ class Sequencer
 	public var postFrame : Sequencer->Vector<Float>->Void;
 	public var reverb : Reverb;
 	
+	private static inline var DC_OFFSET = -0.00001;
 	private static inline var RATE = 44100;
 	private var FRAMESIZE : Int; // buffer size of mono frame
 	private var DIVISIONS : Int; // to increase the framerate we slice the buffer by this number of divisions
@@ -221,6 +222,10 @@ class Sequencer
 		{ return (beat / (bpm / 60) * frameRate()); }
 	public inline function framesToBeats(frames : Int, bpm : Float) : Float
 		{ return frames / BPMToFrames(1., bpm); }
+	public inline function framesToMidiTicks(frames : Int, resolution : Int) : Float
+		{ return framesToBeats(frames, bpm) * resolution; }
+	public inline function beatsToMidiTicks(beats : Float, resolution : Int) : Float
+		{ return beats * resolution; }
 	
 	public inline function waveLength(frequency : Float) { return sampleRate() / frequency; }
 	public inline function frequency(wavelength : Float) { return wavelength / sampleRate(); }
@@ -298,7 +303,7 @@ class Sequencer
 		while (events.length > 0 && events[0].frame <= this.frame)
 		{
 			var e = events.shift();
-			if (channels.length-1>e.channel)
+			if (channels.length-1>=e.channel)
 				channels[e.channel].pipe(e, this);
 		}
 		if (events.length < 1)
@@ -310,8 +315,8 @@ class Sequencer
 		for (i in 0 ... monoSize()) 
 		{
 			var i2 = i << 1;
-			buffer[i2] = 0.;
-			buffer[i2+1] = 0.;
+			buffer[i2] = DC_OFFSET;
+			buffer[i2+1] = DC_OFFSET;
 		}
 		
 		// sum buffer
@@ -329,9 +334,11 @@ class Sequencer
 			if (postFrame != null)
 				postFrame(this, buffer);
 			
-			var fx_buffer = buffer;
+			var fx_buffer : Vector<Float> = buffer;
 			if (reverb != null)
-				fx_buffer = reverb.process(buffer);
+			{
+				fx_buffer = reverb.process(fx_buffer);
+			}
 			
 			// vector -> bytearray
 			

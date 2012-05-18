@@ -15,6 +15,10 @@ class SMFEvent
 class SMF
 {
 	
+	// Things to do:
+	//    Better support for signature meta events
+	//    Test more obscure things like sysex and smpte
+	
 	public var signature_sf : Int;
 	public var signature_mi : Int;	
 	public var signature_n : Int;
@@ -269,7 +273,7 @@ class SMF
 		this.tempos = new Array();
 	}
 	
-	public function toByteArray()
+	public function toByteArray(?ticks_stored_as_delta = true)
 	{
 		if (tracks.length == 0) throw "no tracks available!";
 		
@@ -281,18 +285,34 @@ class SMF
 		var prepped_tracks = new Array<Array<SMFEvent>>();
 		
 		// copy tracks and convert to absolute timing (so that we can inject the meta and tempo a bit more easily)
-		for (t in tracks)
+		if (ticks_stored_as_delta)
 		{
-			var cur_tick = 0;
-			var prep = new Array<SMFEvent>();
-			for (e in t) 
+			for (t in tracks)
 			{
-				cur_tick += e.tick;
-				var e_abs = new SMFEvent(cur_tick, e.type, e.channel, e.data);
-				prep.push(e_abs);
-			}
-			
-			prepped_tracks.push(prep);
+				var cur_tick = 0;
+				var prep = new Array<SMFEvent>();
+				for (e in t) 
+				{
+					cur_tick += e.tick;
+					var e_abs = new SMFEvent(cur_tick, e.type, e.channel, e.data);
+					prep.push(e_abs);
+				}
+				
+				prepped_tracks.push(prep);
+			}			
+		}
+		else
+		{
+			for (t in tracks)
+			{
+				var prep = new Array<SMFEvent>();
+				for (e in t) 
+				{
+					prep.push(new SMFEvent(e.tick, e.type, e.channel, e.data));
+				}
+				
+				prepped_tracks.push(prep);
+			}			
 		}
 		
 		for (n in 0...track_texts.length)

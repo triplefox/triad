@@ -81,9 +81,10 @@ class SingleDelay
 	 *
 	 * @returns A new Float32Array interleaved or mono non-interleaved as was fed to this function.
 	 */
-	public function process(samples : Vector<Float>) {
+	public function process(samples : Vector<Float>, ?outputSamples : Vector<Float>) {
 	  // NB. Make a copy to put in the output samples to return.
-	  var outputSamples = new Vector<Float>(samples.length);
+	  if (outputSamples==null)
+		outputSamples = new Vector<Float>(samples.length);
 
 	  for (i in 0...samples.length) {
 
