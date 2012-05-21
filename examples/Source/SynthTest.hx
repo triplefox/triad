@@ -4,6 +4,7 @@ import com.ludamix.triad.audio.SMFParser;
 import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.TableSynth;
+import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.ui.HSlider6;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
@@ -163,8 +164,11 @@ class SynthTest
 	{
 		
 		Audio.init({Volume:{vol:1.0,on:true}},true);
-		seq = new Sequencer(4096,4,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		//seq = new Sequencer();
+		#if alchemy
+			FastFloatBuffer.init(1024 * 1024 * 128);
+		#end
+		//seq = new Sequencer(4096,4,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
+		seq = new Sequencer();
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 
