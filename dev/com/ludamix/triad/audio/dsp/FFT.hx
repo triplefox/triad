@@ -10,14 +10,15 @@
 
 package com.ludamix.triad.audio.dsp;
 
+import com.ludamix.triad.tools.FastFloatBuffer;
 import nme.Vector;
 
 class FFT extends FourierTransform
 {
 	
 	public var reverseTable : Vector<Int>;
-	public var sinTable : Vector<Float>;
-	public var cosTable : Vector<Float>;
+	public var sinTable : FastFloatBuffer;
+	public var cosTable : FastFloatBuffer;
 	
 	/**
 	 * FFT is a class for calculating the Discrete Fourier Transform of a signal
@@ -31,7 +32,7 @@ class FFT extends FourierTransform
 	public function new(bufferSize, sampleRate) {
 	  super(bufferSize, sampleRate);
 	   
-	  this.reverseTable = new Vector<Int>(bufferSize);
+	  this.reverseTable = new Vector<Int>();
 
 	  var limit = 1;
 	  var bit = bufferSize >> 1;
@@ -47,12 +48,12 @@ class FFT extends FourierTransform
 		bit = bit >> 1;
 	  }
 
-	  this.sinTable = new Vector<Float>(bufferSize);
-	  this.cosTable = new Vector<Float>(bufferSize);
+	  this.sinTable = new FastFloatBuffer(bufferSize);
+	  this.cosTable = new FastFloatBuffer(bufferSize);
 
 	  for (i in 0...bufferSize) {
-		this.sinTable[i] = Math.sin(-Math.PI/i);
-		this.cosTable[i] = Math.cos(-Math.PI/i);
+		this.sinTable.set(i, Math.sin(-Math.PI/i));
+		this.cosTable.set(i, Math.cos(-Math.PI/i));
 	  }
 	}
 	
@@ -64,7 +65,7 @@ class FFT extends FourierTransform
 	 *
 	 * @returns The frequency spectrum array
 	 */
-	public function forward(buffer : Vector<Float>) : Vector<Float>
+	public function forward(buffer : FastFloatBuffer) : FastFloatBuffer
 	{
 		// Locally scope variables for speed up
 		var bufferSize      = this.bufferSize;
@@ -94,16 +95,16 @@ class FFT extends FourierTransform
 
 		for (i in 0...bufferSize) 
 		{
-			real[i] = buffer[reverseTable[i]];
-			imag[i] = 0;
+			real.set(i, buffer.get(reverseTable[i]));
+			imag.set(i, 0);
 		}
 
 		while (halfSize < bufferSize) 
 		{
 			//phaseShiftStepReal = Math.cos(-Math.PI/halfSize);
 			//phaseShiftStepImag = Math.sin(-Math.PI/halfSize);
-			phaseShiftStepReal = cosTable[halfSize];
-			phaseShiftStepImag = sinTable[halfSize];
+			phaseShiftStepReal = cosTable.get(halfSize);
+			phaseShiftStepImag = sinTable.get(halfSize);
 			
 			currentPhaseShiftReal = 1;
 			currentPhaseShiftImag = 0;
@@ -113,13 +114,13 @@ class FFT extends FourierTransform
 
 			  while (i < bufferSize) {
 				off = i + halfSize;
-				tr = (currentPhaseShiftReal * real[off]) - (currentPhaseShiftImag * imag[off]);
-				ti = (currentPhaseShiftReal * imag[off]) + (currentPhaseShiftImag * real[off]);
+				tr = (currentPhaseShiftReal * real.get(off)) - (currentPhaseShiftImag * imag.get(off));
+				ti = (currentPhaseShiftReal * imag.get(off)) + (currentPhaseShiftImag * real.get(off));
 
-				real[off] = real[i] - tr;
-				imag[off] = imag[i] - ti;
-				real[i] += tr;
-				imag[i] += ti;
+				real.set(off, real.get(i) - tr);
+				imag.set(off, imag.get(i) - ti);
+				real.set(i, real.get(i) + tr);
+				imag.set(i, real.get(i) + ti);
 
 				i += halfSize << 1;
 			  }
@@ -135,7 +136,7 @@ class FFT extends FourierTransform
 		return this.calculateSpectrum();
 	}
 
-	public function inverse(?real : Vector<Float>, ?imag : Vector<Float>, ?buffer : Vector<Float>) 
+	public function inverse(?real : FastFloatBuffer, ?imag : FastFloatBuffer, ?buffer : FastFloatBuffer) 
 	{
 		// Locally scope variables for speed up
 		var bufferSize      = this.bufferSize;
@@ -159,23 +160,23 @@ class FFT extends FourierTransform
 		var i = 0;
 
 		for (i in 0...bufferSize) {
-			imag[i] *= -1;
+			imag.set(i, imag.get(i) * -1);
 		}
 
-		var revReal = new Vector<Float>(bufferSize);
-		var revImag = new Vector<Float>(bufferSize);
+		var revReal = new FastFloatBuffer(bufferSize);
+		var revImag = new FastFloatBuffer(bufferSize);
 		 
 		for (i in 0...real.length) {
-			revReal[i] = real[reverseTable[i]];
-			revImag[i] = imag[reverseTable[i]];
+			revReal.set(i, real.get(reverseTable[i]));
+			revImag.set(i, imag.get(reverseTable[i]));
 		}
 		 
 		real = revReal;
 		imag = revImag;
 
 		while (halfSize < bufferSize) {
-			phaseShiftStepReal = cosTable[halfSize];
-			phaseShiftStepImag = sinTable[halfSize];
+			phaseShiftStepReal = cosTable.get(halfSize);
+			phaseShiftStepImag = sinTable.get(halfSize);
 			currentPhaseShiftReal = 1;
 			currentPhaseShiftImag = 0;
 
@@ -184,13 +185,13 @@ class FFT extends FourierTransform
 
 				while (i < bufferSize) {
 					off = i + halfSize;
-					tr = (currentPhaseShiftReal * real[off]) - (currentPhaseShiftImag * imag[off]);
-					ti = (currentPhaseShiftReal * imag[off]) + (currentPhaseShiftImag * real[off]);
+					tr = (currentPhaseShiftReal * real.get(off)) - (currentPhaseShiftImag * imag.get(off));
+					ti = (currentPhaseShiftReal * imag.get(off)) + (currentPhaseShiftImag * real.get(off));
 
-					real[off] = real[i] - tr;
-					imag[off] = imag[i] - ti;
-					real[i] += tr;
-					imag[i] += ti;
+					real.set(off, real.get(i) - tr);
+					imag.set(off, imag.get(i) - ti);
+					real.set(i, real.get(i) + tr);
+					imag.set(i, imag.get(i) + ti);
 
 					i += halfSize << 1;
 				}
@@ -204,9 +205,9 @@ class FFT extends FourierTransform
 		}
 		
 		if (buffer==null)
-			buffer = new Vector<Float>(bufferSize);
+			buffer = new FastFloatBuffer(bufferSize);
 		for (i in 0...bufferSize) {
-			buffer[i] = real[i] / bufferSize;
+			buffer.set(i, real.get(i) / bufferSize);
 		}
 
 		return buffer;

@@ -10,6 +10,7 @@
 
 package com.ludamix.triad.audio.dsp;
 
+import com.ludamix.triad.tools.FastFloatBuffer;
 import nme.Vector;
 
 class Biquad
@@ -280,43 +281,46 @@ class Biquad
 		this.a2a0 = this.a2/this.a0;
 	  }
 
-	public function process(buffer : Vector<Float>) {
+	public function process(buffer : FastFloatBuffer) {
 		  //y[n] = (b0/a0)*x[n] + (b1/a0)*x[n-1] + (b2/a0)*x[n-2]
 		  //       - (a1/a0)*y[n-1] - (a2/a0)*y[n-2]
 
 		  var len = buffer.length;
-		  var output = new Vector<Float>(len);
+		  var output = new FastFloatBuffer(len);
 
 		  for ( i in 0...buffer.length) {
-			output[i] = this.b0a0*buffer[i] + this.b1a0*this.x_1_l + this.b2a0*this.x_2_l - this.a1a0*this.y_1_l - this.a2a0*this.y_2_l;
+			output.set(i, this.b0a0 * buffer.get(i) + this.b1a0 * this.x_1_l + 
+						this.b2a0*this.x_2_l - this.a1a0*this.y_1_l - this.a2a0*this.y_2_l);
 			this.y_2_l = this.y_1_l;
-			this.y_1_l = output[i];
+			this.y_1_l = output.get(i);
 			this.x_2_l = this.x_1_l;
-			this.x_1_l = buffer[i];
+			this.x_1_l = buffer.get(i);
 		  }
 
 		  return output;
 	  }
 
-	public function processStereo(buffer : Vector<Float>) {
+	public function processStereo(buffer : FastFloatBuffer) {
 		  //y[n] = (b0/a0)*x[n] + (b1/a0)*x[n-1] + (b2/a0)*x[n-2]
 		  //       - (a1/a0)*y[n-1] - (a2/a0)*y[n-2]
 
 		  var len = buffer.length;
-		  var output = new Vector<Float>(len);
+		  var output = new FastFloatBuffer(len);
 		 
 		  for (i in 0...len>>1) {
-			output[2*i] = this.b0a0*buffer[2*i] + this.b1a0*this.x_1_l + this.b2a0*this.x_2_l - this.a1a0*this.y_1_l - this.a2a0*this.y_2_l;
+			output.set(2 * i, this.b0a0 * buffer.get(2 * i) + this.b1a0 * this.x_1_l + 
+							this.b2a0*this.x_2_l - this.a1a0*this.y_1_l - this.a2a0*this.y_2_l);
 			this.y_2_l = this.y_1_l;
-			this.y_1_l = output[2*i];
+			this.y_1_l = output.get(2*i);
 			this.x_2_l = this.x_1_l;
-			this.x_1_l = buffer[2*i];
+			this.x_1_l = buffer.get(2*i);
 
-			output[2*i+1] = this.b0a0*buffer[2*i+1] + this.b1a0*this.x_1_r + this.b2a0*this.x_2_r - this.a1a0*this.y_1_r - this.a2a0*this.y_2_r;
+			output.set(2 * i + 1, this.b0a0 * buffer.get(2 * i + 1) + this.b1a0 * this.x_1_r + 
+						this.b2a0*this.x_2_r - this.a1a0*this.y_1_r - this.a2a0*this.y_2_r);
 			this.y_2_r = this.y_1_r;
-			this.y_1_r = output[2*i+1];
+			this.y_1_r = output.get(2*i+1);
 			this.x_2_r = this.x_1_r;
-			this.x_1_r = buffer[2*i+1];
+			this.x_1_r = buffer.get(2*i+1);
 		  }
 
 		  return output;

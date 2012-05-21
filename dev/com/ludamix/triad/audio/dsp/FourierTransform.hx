@@ -10,6 +10,7 @@
 
 package com.ludamix.triad.audio.dsp;
 
+import com.ludamix.triad.tools.FastFloatBuffer;
 import nme.Vector;
 
 class FourierTransform
@@ -18,9 +19,9 @@ class FourierTransform
 	public var bufferSize : Int;
 	public var sampleRate : Int;
 	public var bandwidth : Float;
-	public var spectrum : Vector<Float>;
-	public var real : Vector<Float>;
-	public var imag : Vector<Float>;
+	public var spectrum : FastFloatBuffer;
+	public var real : FastFloatBuffer;
+	public var imag : FastFloatBuffer;
 	public var peakBand : Float;
 	public var peak : Float;
 	
@@ -32,9 +33,9 @@ class FourierTransform
 	  this.sampleRate = sampleRate;
 	  this.bandwidth  = 2 / bufferSize * sampleRate / 2;
 
-	  this.spectrum   = new Vector<Float>(bufferSize>>1);
-	  this.real       = new Vector<Float>(bufferSize);
-	  this.imag       = new Vector<Float>(bufferSize);
+	  this.spectrum   = new FastFloatBuffer(bufferSize>>1);
+	  this.real       = new FastFloatBuffer(bufferSize);
+	  this.imag       = new FastFloatBuffer(bufferSize);
 
 	  this.peakBand   = 0.;
 	  this.peak       = 0.;
@@ -62,8 +63,8 @@ class FourierTransform
 
 		for (i in 0...bufferSize >> 1) 
 		{			
-		  rval = real[i];
-		  ival = imag[i];
+		  rval = real.get(i);
+		  ival = imag.get(i);
 		  mag = bSi * Math.sqrt(rval * rval + ival * ival);
 
 		  if (mag > this.peak) {
@@ -71,7 +72,7 @@ class FourierTransform
 			this.peak = mag;
 		  }
 
-		  spectrum[i] = mag;
+		  spectrum.set(i,  mag);
 		}
 		return spectrum;
 	}
