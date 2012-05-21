@@ -7,20 +7,20 @@ import com.ludamix.triad.audio.dsp.IIRFilter2;
 import com.ludamix.triad.audio.dsp.DSP;
 import com.ludamix.triad.audio.dsp.WindowFunction;
 import com.ludamix.triad.tools.MathTools;
+import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.format.WAV;
 import com.ludamix.triad.audio.SFZ;
 import nme.Assets;
 import nme.utils.ByteArray;
 import nme.utils.CompressionAlgorithm;
-import nme.Vector;
 import com.ludamix.triad.audio.Sequencer;
 
 // I think I need a polymorphic sample format;
 // as it is, there's a lot of overlap
 
 typedef RawSample = {
-	sample_left : Vector<Float>, // only this side is used for mono
-	sample_right : Vector<Float>,
+	sample_left : FastFloatBuffer, // only this side is used for mono
+	sample_right : FastFloatBuffer,
 	sample_rate : Int, // mono rate
 	base_frequency : Float // hz
 };
@@ -39,12 +39,12 @@ typedef SamplerPatch = {
 	arpeggiation_rate : Float, // 0 = off, hz value
 };
 
-typedef CopySamples = Vector<Float>->Int->Float->Float->Float->Float->Vector<Float>->Vector<Float>->Float->Void;
+typedef CopySamples = FastFloatBuffer->Int->Float->Float->Float->Float->FastFloatBuffer->FastFloatBuffer->Float->Void;
 
 class SamplerSynth implements SoftSynth
 {
 	
-	public var buffer : Vector<Float>;
+	public var buffer : FastFloatBuffer;
 	public var followers : Array<EventFollower>;
 	public var sequencer : Sequencer;
 	
@@ -131,8 +131,8 @@ class SamplerSynth implements SoftSynth
 		return new PatchGenerator(
 			{
 			sample: {
-				sample_left:wav_data[0],
-				sample_right:wav_data[1],
+				sample_left:FastFloatBuffer.fromVector(wav_data[0]),
+				sample_right:FastFloatBuffer.fromVector(wav_data[1]),
 				sample_rate:wav.header.samplingRate,
 				base_frequency:tuning.midiNoteToFrequency( midi_unity_note + midi_pitch_fraction/0xFFFFFFFF),
 				},
@@ -153,10 +153,10 @@ class SamplerSynth implements SoftSynth
 	
 	public static function defaultPatch() : SamplerPatch
 	{
-		var samples = new Vector<Float>();
+		var samples = new FastFloatBuffer(44100);
 		for (n in 0...44100)
 		{
-			samples.push(Math.sin(n / 44100 * Math.PI * 2));
+			samples.set(n, Math.sin(n / 44100 * Math.PI * 2));
 		}
 		
 		return { 
@@ -313,8 +313,8 @@ class SamplerSynth implements SoftSynth
 			var left = curval * pan_sum * 2;
 			var right = curval * (1. - pan_sum) * 2;
 			var sample : RawSample = patch.sample;
-			var sample_left : Vector<Float> = sample.sample_left;
-			var sample_right : Vector<Float> = sample.sample_right;
+			var sample_left : FastFloatBuffer = sample.sample_left;
+			var sample_right : FastFloatBuffer = sample.sample_right;
 			if (!patch.stereo) sample_right = sample_left;
 			
 			// we are assuming the sample rate is the mono rate.
@@ -509,15 +509,15 @@ class SamplerSynth implements SoftSynth
 	// A possible future strategy for the linear interpolators:
 	// Each octave of distance from the base note, use one more level of interpolation.
 	
-	public inline function copy_samples_drop(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_drop(buffer : FastFloatBuffer, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
-								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float)
 	{
 		// Drop
 		var a : Int = Std.int(Math.min(pos, sample_left.length - 1));
-		buffer[bufptr] += left * (sample_left[a]);
-		buffer[bufptr + 1] += right * (sample_right[a]);
+		buffer.set(bufptr, buffer.get(bufptr) + left * (sample_left.get(a)));
+		buffer.set(bufptr + 1, buffer.get(bufptr+1) +  right * (sample_right.get(a)));
 	}
 	
 	/*public inline function copy_samples_nearest(buffer : Vector<Float>, bufptr : Int, 
@@ -531,24 +531,28 @@ class SamplerSynth implements SoftSynth
 		buffer[bufptr + 1] += right * (sample_right[a]);
 	}*/
 	
-	public inline function copy_samples_lin(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_lin(buffer : FastFloatBuffer, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
-								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float)
 	{
 		// linear interpolator
 		var ideal = Math.min(pos, sample_left.length - 1);
 		var a : Int = Std.int(ideal);
 		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
 		var interpolation_factor : Float = pos - a;
-		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor);	
-		buffer[bufptr + 1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor);
+		buffer.set(bufptr, 
+			buffer.get(bufptr) + left * (sample_left.get(a) * (1. -interpolation_factor) + 
+				sample_left.get(b) * interpolation_factor));	
+		buffer.set(bufptr + 1, 
+			buffer.get(bufptr + 1) + right * (sample_right.get(a) * (1. -interpolation_factor) + 
+				sample_right.get(b) * interpolation_factor));
 	}
 
-	public inline function copy_samples_lin2(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_lin2(buffer : FastFloatBuffer, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
-								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float)
 	{
 		// 2x linear; upsampled material is slightly more agreeable
 		var ideal = Math.min(pos, sample_left.length - 1);
@@ -558,16 +562,20 @@ class SamplerSynth implements SoftSynth
 		var d : Int = Std.int(Math.min(pos + 2, sample_left.length - 1));
 		var interpolation_factor : Float = (pos - a);
 		var interpolation_factor_2 : Float = (pos + 2 - c)*0.33333333;
-		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor +
-								sample_left[c] * (1. -interpolation_factor_2) + sample_left[d] * interpolation_factor_2) * 0.5;	
-		buffer[bufptr+1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor +
-								sample_right[c] * (1. -interpolation_factor_2) + sample_right[d] * interpolation_factor_2) * 0.5;
+		buffer.set(bufptr, buffer.get(bufptr) + left * (sample_left.get(a) * (1. -interpolation_factor) + 
+								sample_left.get(b) * interpolation_factor +
+								sample_left.get(c) * (1. -interpolation_factor_2) + 
+								sample_left.get(d) * interpolation_factor_2) * 0.5);	
+		buffer.set(bufptr + 1, buffer.get(bufptr + 1) + right * (sample_right.get(a) * (1. -interpolation_factor) + 
+								sample_right.get(b) * interpolation_factor +
+								sample_right.get(c) * (1. -interpolation_factor_2) + 
+								sample_right.get(d) * interpolation_factor_2) * 0.5);
 	}
 	
-	public inline function copy_samples_lin3(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_lin3(buffer : FastFloatBuffer, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
-								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float)
 	{
 		// 3x linear - pretty filtered-sounding at this level.
 		var ideal = Math.min(pos, sample_left.length - 1);
@@ -580,18 +588,24 @@ class SamplerSynth implements SoftSynth
 		var interpolation_factor : Float = (pos - a);
 		var interpolation_factor_2 : Float = (pos + 2 - c)/(3);
 		var interpolation_factor_3 : Float = (pos + 3 - f)/(5);
-		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor +
-								sample_left[c] * (1. -interpolation_factor_2) + sample_left[d] * interpolation_factor_2+
-								sample_left[e] * (1. -interpolation_factor_3) + sample_left[f] * interpolation_factor_3) * 0.33;	
-		buffer[bufptr+1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor +
-								sample_right[c] * (1. -interpolation_factor_2) + sample_right[d] * interpolation_factor_2+
-								sample_right[e] * (1. -interpolation_factor_3) + sample_right[f] * interpolation_factor_3) * 0.33;	
+		buffer.set(bufptr, buffer.get(bufptr) + left * (sample_left.get(a) * (1. -interpolation_factor) + 
+								sample_left.get(b) * interpolation_factor +
+								sample_left.get(c) * (1. -interpolation_factor_2) + 
+								sample_left.get(d) * interpolation_factor_2+
+								sample_left.get(e) * (1. -interpolation_factor_3) + 
+								sample_left.get(f) * interpolation_factor_3) * 0.33);	
+		buffer.set(bufptr + 1, buffer.get(bufptr + 1) + right * (sample_right.get(a) * (1. -interpolation_factor) + 
+								sample_right.get(b) * interpolation_factor +
+								sample_right.get(c) * (1. -interpolation_factor_2) + 
+								sample_right.get(d) * interpolation_factor_2+
+								sample_right.get(e) * (1. -interpolation_factor_3) + 
+								sample_right.get(f) * interpolation_factor_3) * 0.33);	
 	}
 	
-	public inline function copy_samples_lin4(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_lin4(buffer : FastFloatBuffer, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
-								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float)
 	{
 		// 4x linear - extremely filtered, but material very distant from source does great
 		var ideal = Math.min(pos, sample_left.length - 1);
@@ -607,14 +621,22 @@ class SamplerSynth implements SoftSynth
 		var interpolation_factor_2 : Float = (pos + 2 - c)/(3);
 		var interpolation_factor_3 : Float = (pos + 3 - f)/(5);
 		var interpolation_factor_4 : Float = (pos + 4 - h)/(7);
-		buffer[bufptr] += left * (sample_left[a] * (1. -interpolation_factor) + sample_left[b] * interpolation_factor +
-								sample_left[c] * (1. -interpolation_factor_2) + sample_left[d] * interpolation_factor_2+
-								sample_left[e] * (1. -interpolation_factor_3) + sample_left[f] * interpolation_factor_3+
-								sample_left[g] * (1. -interpolation_factor_4) + sample_left[h] * interpolation_factor_4) * 0.25;	
-		buffer[bufptr+1] += right * (sample_right[a] * (1. -interpolation_factor) + sample_right[b] * interpolation_factor +
-								sample_right[c] * (1. -interpolation_factor_2) + sample_right[d] * interpolation_factor_2+
-								sample_right[e] * (1. -interpolation_factor_3) + sample_right[f] * interpolation_factor_3+
-								sample_right[g] * (1. -interpolation_factor_4) + sample_right[h] * interpolation_factor_4) * 0.25;	
+		buffer.set(bufptr, buffer.get(bufptr) + left * (sample_left.get(a) * (1. -interpolation_factor) + 
+								sample_left.get(b) * interpolation_factor +
+								sample_left.get(c) * (1. -interpolation_factor_2) + 
+								sample_left.get(d) * interpolation_factor_2+
+								sample_left.get(e) * (1. -interpolation_factor_3) + 
+								sample_left.get(f) * interpolation_factor_3+
+								sample_left.get(g) * (1. -interpolation_factor_4) + 
+								sample_left.get(h) * interpolation_factor_4) * 0.25);	
+		buffer.set(bufptr + 1, buffer.get(bufptr + 1) + right * (sample_right.get(a) * (1. -interpolation_factor) + 
+								sample_right.get(b) * interpolation_factor +
+								sample_right.get(c) * (1. -interpolation_factor_2) + 
+								sample_right.get(d) * interpolation_factor_2+
+								sample_right.get(e) * (1. -interpolation_factor_3) + 
+								sample_right.get(f) * interpolation_factor_3+
+								sample_right.get(g) * (1. -interpolation_factor_4) + 
+								sample_right.get(h) * interpolation_factor_4) * 0.25);	
 	}
 	
 	/*public inline function copy_samples(buffer : Vector<Float>, bufptr : Int, 

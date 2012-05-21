@@ -1,6 +1,7 @@
 package com.ludamix.triad.audio;
 
 import com.ludamix.triad.audio.dsp.Reverb;
+import com.ludamix.triad.tools.FastFloatBuffer;
 import flash.events.SampleDataEvent;
 import nme.media.Sound;
 import nme.media.SoundChannel;
@@ -198,10 +199,10 @@ class Sequencer
 	public var sound : Sound;
 	public var channel : SoundChannel;
 	public var tuning : MIDITuning;
-	public var buffer : Vector<Float>;
+	public var buffer : FastFloatBuffer;
 	public var onFrame : Sequencer->Void;
 	public var onBeat : Sequencer->Void;
-	public var postFrame : Sequencer->Vector<Float>->Void;
+	public var postFrame : Sequencer->FastFloatBuffer->Void;
 	public var reverb : Reverb;
 	
 	private static inline var DC_OFFSET = -0.00001;
@@ -226,6 +227,7 @@ class Sequencer
 		{ return framesToBeats(frames, bpm) * resolution; }
 	public inline function beatsToMidiTicks(beats : Float, resolution : Int) : Float
 		{ return beats * resolution; }
+	public inline function beatsToSeconds(beats : Float) : Float { return beats / (bpm / 60); }
 	
 	public inline function waveLength(frequency : Float) { return sampleRate() / frequency; }
 	public inline function frequency(wavelength : Float) { return wavelength / sampleRate(); }
@@ -315,8 +317,8 @@ class Sequencer
 		for (i in 0 ... monoSize()) 
 		{
 			var i2 = i << 1;
-			buffer[i2] = DC_OFFSET;
-			buffer[i2+1] = DC_OFFSET;
+			buffer.set(i2, DC_OFFSET);
+			buffer.set(i2+1, DC_OFFSET);
 		}
 		
 		// sum buffer
@@ -334,7 +336,7 @@ class Sequencer
 			if (postFrame != null)
 				postFrame(this, buffer);
 			
-			var fx_buffer : Vector<Float> = buffer;
+			var fx_buffer : FastFloatBuffer = buffer;
 			if (reverb != null)
 			{
 				fx_buffer = reverb.process(fx_buffer);
@@ -345,8 +347,8 @@ class Sequencer
 			for (i in 0 ... monoSize()) 
 			{
 				var i2 = i << 1;
-				event.data.writeFloat(fx_buffer[i2]);
-				event.data.writeFloat(fx_buffer[i2+1]);
+				event.data.writeFloat(fx_buffer.get(i2));
+				event.data.writeFloat(fx_buffer.get(i2+1));
 			}
 			
 			frame++;
@@ -366,11 +368,7 @@ class Sequencer
 		events = new Array();
 		channels = new Array();
 		synths = new Array();
-      #if flash
-		buffer = new Vector(stereoSize(), true);
-      #else
-		buffer = new Vector();
-      #end
+		buffer = new FastFloatBuffer(stereoSize());
 		this.reverb = reverb;
 	}
 	

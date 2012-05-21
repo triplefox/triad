@@ -10,6 +10,7 @@
 
 package com.ludamix.triad.audio.dsp;
 
+import com.ludamix.triad.tools.FastFloatBuffer;
 import nme.Vector;
 
 class IIRFilter2
@@ -22,7 +23,7 @@ class IIRFilter2
 	public var freq : Float;
 	public var damp : Float;
 	public var sampleRate : Int;
-	public var f : Vector<Float>;
+	public var f : FastFloatBuffer;
 	public var calcCoeff : Float->Float->Void;
 	
 	public function new(type, cutoff, resonance, sampleRate) {
@@ -31,11 +32,11 @@ class IIRFilter2
 	  this.resonance = resonance;
 	  this.sampleRate = sampleRate;
 
-	  this.f = new Vector<Float>(4);
-	  this.f[0] = 0.0; // lp
-	  this.f[1] = 0.0; // hp
-	  this.f[2] = 0.0; // bp
-	  this.f[3] = 0.0; // br 
+	  this.f = new FastFloatBuffer(4);
+	  this.f.set(0, 0.0); // lp
+	  this.f.set(1, 0.0); // hp
+	  this.f.set(2, 0.0); // bp
+	  this.f.set(3, 0.0); // br 
 	 
 	  this.calcCoeff = function(cutoff, resonance) {
 		this.freq = 2 * Math.sin(Math.PI * Math.min(0.25, cutoff/(this.sampleRate*2)));  
@@ -45,33 +46,33 @@ class IIRFilter2
 	  this.calcCoeff(cutoff, resonance);
 	}
 
-	public function process(buffer : Vector<Float>) {
+	public function process(buffer : FastFloatBuffer) {
 	  var input : Float;
 	  var output : Float;
 	  var f = this.f;
 
 	  for ( i in 0...buffer.length ) {
-		input = buffer[i];
+		input = buffer.get(i);
 
 		// first pass
-		f[3] = input - this.damp * f[2];
-		f[0] = f[0] + this.freq * f[2];
-		f[1] = f[3] - f[0];
-		f[2] = this.freq * f[1] + f[2];
-		output = 0.5 * f[this.type];
+		f.set(3, input - this.damp * f.get(2));
+		f.set(0, f.get(0) + this.freq * f.get(2));
+		f.set(1, f.get(3) - f.get(0));
+		f.set(2, this.freq * f.get(1) + f.get(2));
+		output = 0.5 * f.get(this.type);
 
 		// second pass
-		f[3] = input - this.damp * f[2];
-		f[0] = f[0] + this.freq * f[2];
-		f[1] = f[3] - f[0];
-		f[2] = this.freq * f[1] + f[2];
-		output += 0.5 * f[this.type];
+		f.set(3, input - this.damp * f.get(2));
+		f.set(0, f.get(0) + this.freq * f.get(2));
+		f.set(1, f.get(3) - f.get(0));
+		f.set(2, this.freq * f.get(1) + f.get(2));
+		output += 0.5 * f.get(this.type);
 
 		if (this.envelope!=null) {
-		  buffer[i] = (buffer[i] * (1 - this.envelope.value())) + (output * this.envelope.value());
+		  buffer.set(i, (buffer.get(i) * (1 - this.envelope.value())) + (output * this.envelope.value()));
 		  this.envelope.samplesProcessed++;
 		} else {
-		  buffer[i] = output;
+		  buffer.set(i, output);
 		}
 	  }
 	}

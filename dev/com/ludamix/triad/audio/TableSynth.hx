@@ -1,7 +1,8 @@
 package com.ludamix.triad.audio;
 
-import nme.Vector;
+import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.audio.Sequencer;
+import com.ludamix.triad.math.LFSR;
 
 typedef TSAssign = Int;
 
@@ -11,13 +12,13 @@ typedef TableSynthPatch = {
 	oscillator : Int,
 	modulation_lfo : Float, // applies to LFO1, depth multiplier if greater than 0
 	arpeggiation_rate : Float, // 0 = off, hz value
-	base_pulsewidth : Float
+	base_pulsewidth : Float,
 };
 
 class TableSynth implements SoftSynth
 {
 	
-	public var buffer : Vector<Float>;
+	public var buffer : FastFloatBuffer;
 	public var followers : Array<EventFollower>;
 	public var sequencer : Sequencer;
 	
@@ -33,6 +34,10 @@ class TableSynth implements SoftSynth
 	public var frame_pitch_adjust : Float;
 	public var frame_vol_adjust : Float;
 	public var frame_pulsewidth : Float;
+	
+	public var lfsr : LFSR;
+	public var lfsr_pos : Int;
+	public var lfsr_wavelength : Int;
 	
 	public static inline var ATTACK = 0;
 	public static inline var SUSTAIN = 1;
@@ -53,6 +58,25 @@ class TableSynth implements SoftSynth
 	public static inline var PD_WINDOW_WINDOW = 100;
 	// fm-based
 	public static inline var FM_2OP = 101;
+	
+	public static inline var LFSR_2 = 202;
+	public static inline var LFSR_3 = 203;
+	public static inline var LFSR_4 = 204;
+	public static inline var LFSR_5 = 205;
+	public static inline var LFSR_6 = 206;
+	public static inline var LFSR_7 = 207;
+	public static inline var LFSR_8 = 208;
+	public static inline var LFSR_9 = 209;
+	public static inline var LFSR_10 = 210;
+	public static inline var LFSR_11 = 211;
+	public static inline var LFSR_12 = 212;
+	public static inline var LFSR_13 = 213;
+	public static inline var LFSR_14 = 214;
+	public static inline var LFSR_15 = 215;
+	public static inline var LFSR_16 = 216;
+	public static inline var LFSR_17 = 217;
+	public static inline var LFSR_18 = 218;
+	public static inline var LFSR_19 = 219;
 	
 	public static inline var AS_PITCH_ADD = 0;
 	public static inline var AS_PITCH_MUL = 1;
@@ -75,7 +99,8 @@ class TableSynth implements SoftSynth
 		master_volume = 0.1;
 		velocity = 1.0;
 		arpeggio = 0.;
-		
+		lfsr_wavelength = 16;
+		lfsr_pos = Std.int(Math.random() * lfsr_wavelength);
 	}
 	
 	public static function generatorOf(settings : TableSynthPatch)
@@ -106,6 +131,7 @@ class TableSynth implements SoftSynth
 		this.sequencer = sequencer;
 		this.buffer = sequencer.buffer;
 		this.followers = new Array();
+		this.lfsr = new LFSR();
 		
 		if (pulseWavetable == null) genPulseWT();
 		if (sawWavetable == null) genSawWT();
@@ -204,9 +230,24 @@ class TableSynth implements SoftSynth
     public static inline var MAX_OCTAVES = 128; // essentially, how many passes per sample
     public static inline var DOUBLE_INTERPOLATE = 2; // start using 2x interpolation at this ratio of frequency diff
 	
-	public static var pulseWavetable : Array<Array<Vector<Float>>>;
-	public static var sawWavetable : Array<Array<Vector<Float>>>;
-	public static var triWavetable : Array<Array<Vector<Float>>>;
+	public static var pulseWavetable : Array<Array<FastFloatBuffer>>;
+	public static var sawWavetable : Array<Array<FastFloatBuffer>>;
+	public static var triWavetable : Array<Array<FastFloatBuffer>>;
+	
+	public static inline function normalizeWave(wave : FastFloatBuffer, tablesize : Int, infos : String)
+	{
+		var pow = 0.;
+		for (i in 0...tablesize)
+		{
+			pow += Math.abs(wave.get(i) - wave.get(i+1));
+		}
+		if (pow == 0.) throw Std.string(tablesize)+" samples produced no power "+infos;
+		var pow_mod = 4.0/pow; // power of a sine, measured by delta, is 2. We let our samples be a bit stronger.
+		for (i in 0...tablesize+1)
+		{
+			wave.set(i, wave.get(i) * pow_mod);
+		}
+	}
 	
 	public static function genPulseWT()
 	{
@@ -222,7 +263,7 @@ class TableSynth implements SoftSynth
 			pulseWavetable.insert(0, modTable);
 			for (m in 0...TABLE_MODULATIONS)
 			{
-				var wave = new Vector<Float>(tablesize+1); // pad with a sample so that linear interp works cleanly
+				var wave = new FastFloatBuffer(tablesize+1); // pad with a sample so that linear interp works cleanly
 				modTable.push(wave);
 				
 				// derived from wikipedia entry
@@ -242,22 +283,12 @@ class TableSynth implements SoftSynth
 					var oo_pi_otablesize = oo * Math.PI * OTABLESIZE;
 					for (i in 0...tablesize+1)
 					{
-						wave[i] += 2. / (oo_pi) * Math.sin(pw*oo_pi_otablesize) * 
-							Math.cos(2 * (i - half_pw) * oo_pi_otablesize);
+						wave.set(i, wave.get(i) + 2. / (oo_pi) * Math.sin(pw*oo_pi_otablesize) * 
+							Math.cos(2 * (i - half_pw) * oo_pi_otablesize));
 					}
 					oo += 2;
 				}
-				var pow = 0.;
-				for (i in 0...tablesize)
-				{
-					pow += Math.abs(wave[i] - wave[i+1]);
-				}
-				if (pow == 0.) throw Std.string(tablesize)+" samples produced no power (pulse) (mod "+m+")";
-				var pow_mod = 4.0/pow; // power of a sine, measured by delta, is 2. We let our samples be a bit stronger.
-				for (i in 0...tablesize+1)
-				{
-					wave[i] *= pow_mod;
-				}
+				normalizeWave(wave, tablesize, "pulse");
 			}
 			tablesize -= Std.int(TABLE_START / (TABLE_PITCHES+1));
 		}
@@ -274,7 +305,7 @@ class TableSynth implements SoftSynth
 			sawWavetable.insert(0, modTable);
 			for (m in 0...TABLE_MODULATIONS)
 			{
-				var wave = new Vector<Float>(tablesize+1); // pad with a sample so that linear interp works cleanly
+				var wave = new FastFloatBuffer(tablesize+1); // pad with a sample so that linear interp works cleanly
 				modTable.push(wave);
 				
 				// derived from wikipedia entry
@@ -290,22 +321,12 @@ class TableSynth implements SoftSynth
 					var div_factor = 1. / (oo);
 					for (i in 0...tablesize+1)
 					{
-						wave[i] += Math.sin((i*Math.PI*2*OTABLESIZE)*oo) * sign * div_factor;
+						wave.set(i, wave.get(i) + Math.sin((i*Math.PI*2*OTABLESIZE)*oo) * sign * div_factor);
 					}
 					sign = -sign;
 					oo += 1;
 				}
-				var pow = 0.;
-				for (i in 0...tablesize)
-				{
-					pow += Math.abs(wave[i] - wave[i+1]);
-				}
-				if (pow == 0.) throw Std.string(tablesize)+" samples produced no power (pulse) (mod "+m+")";
-				var pow_mod = 3.0/pow; // power of a sine, measured by delta, is 2. We let our samples be a bit stronger.
-				for (i in 0...tablesize+1)
-				{
-					wave[i] *= pow_mod;
-				}
+				normalizeWave(wave, tablesize, "saw");
 			}
 		}		
 	}
@@ -321,7 +342,7 @@ class TableSynth implements SoftSynth
 			triWavetable.insert(0, modTable);
 			for (m in 0...TABLE_MODULATIONS)
 			{
-				var wave = new Vector<Float>(tablesize+1); // pad with a sample so that linear interp works cleanly
+				var wave = new FastFloatBuffer(tablesize+1); // pad with a sample so that linear interp works cleanly
 				modTable.push(wave);
 				
 				// derived from wikipedia entry
@@ -337,22 +358,12 @@ class TableSynth implements SoftSynth
 					var one_over_twokplus1_sq = 1. / ((2 * oo + 1) * (2 * oo + 1));
 					for (i in 0...tablesize+1)
 					{
-						wave[i] += Math.sin(twokplus1overtablesize*i) * sign * one_over_twokplus1_sq;
+						wave.set(i, wave.get(i) + Math.sin(twokplus1overtablesize*i) * sign * one_over_twokplus1_sq);
 					}
 					sign = -sign;
 					oo += 1;
 				}
-				var pow = 0.;
-				for (i in 0...tablesize)
-				{
-					pow += Math.abs(wave[i] - wave[i+1]);
-				}
-				if (pow == 0.) throw Std.string(tablesize)+" samples produced no power (pulse) (mod "+m+")";
-				var pow_mod = 3.0/pow; // power of a sine, measured by delta, is 2. We let our samples be a bit stronger.
-				for (i in 0...tablesize+1)
-				{
-					wave[i] *= pow_mod;
-				}
+				normalizeWave(wave, tablesize, "tri");
 			}
 		}		
 	}
@@ -414,17 +425,17 @@ class TableSynth implements SoftSynth
 				for (i in 0 ... buffer.length >> 2) {
 					if (pos % wl < hw)
 					{
-						buffer[bufptr] += left;
-						buffer[bufptr+1] += right;
-						buffer[bufptr+2] += left;
-						buffer[bufptr+3] += right;
+						buffer.set(bufptr, buffer.get(bufptr)+left);
+						buffer.set(bufptr+1, buffer.get(bufptr+1)+right);
+						buffer.set(bufptr+2, buffer.get(bufptr+2)+left);
+						buffer.set(bufptr+3, buffer.get(bufptr+3)+right);
 					}
 					else
 					{
-						buffer[bufptr] += -left;
-						buffer[bufptr+1] += -right;
-						buffer[bufptr+2] += -left;
-						buffer[bufptr+3] += -right;
+						buffer.set(bufptr, buffer.get(bufptr)-left);
+						buffer.set(bufptr+1, buffer.get(bufptr+1)-right);
+						buffer.set(bufptr+2, buffer.get(bufptr+2)-left);
+						buffer.set(bufptr+3, buffer.get(bufptr+3)-right);
 					}
 					pos = (pos+4) % wl;
 					bufptr = (bufptr+4) % buffer.length;
@@ -437,10 +448,10 @@ class TableSynth implements SoftSynth
 				for (i in 0 ... buffer.length >> 2) 
 				{
 					var sum = ((wl-(pos<<1)) % wl) * one_over_wl;
-					buffer[bufptr] += sum * left;
-					buffer[bufptr+1] += sum * right;
-					buffer[bufptr+2] += sum * left;
-					buffer[bufptr+3] += sum * right;
+					buffer.set(bufptr, buffer.get(bufptr) + sum * left);
+					buffer.set(bufptr, buffer.get(bufptr+1) + sum * right);
+					buffer.set(bufptr, buffer.get(bufptr+2) + sum * left);
+					buffer.set(bufptr, buffer.get(bufptr+3) + sum * right);
 					pos = (pos+4) % wl;
 					bufptr = (bufptr+4) % buffer.length;
 				}
@@ -457,8 +468,8 @@ class TableSynth implements SoftSynth
 						sum = -sum - 1;
 					else
 						sum += 1;
-					buffer[bufptr] += sum * left;
-					buffer[bufptr+1] += sum * right;
+					buffer.set(bufptr, buffer.get(bufptr)+sum * left);
+					buffer.set(bufptr+1, buffer.get(bufptr+1)+sum * right);
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
@@ -470,8 +481,8 @@ class TableSynth implements SoftSynth
 				for (i in 0 ... buffer.length >> 1) 
 				{
 					var sum = peak * Math.sin(pos * adjust);
-					buffer[bufptr] += sum * left;
-					buffer[bufptr+1] += sum * right;
+					buffer.set(bufptr, buffer.get(bufptr)+sum * left);
+					buffer.set(bufptr+1, buffer.get(bufptr+1)+sum * right);
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
@@ -501,8 +512,8 @@ class TableSynth implements SoftSynth
 				{
 					var sum = Math.cos(alg_window(pos * outer_a, wl * outer_b) * Math.PI * 2 * 
 								Math.cos(alg_window(pos * inner_a, wl * inner_b) * inner_c * Math.PI * 2));								
-					buffer[bufptr] += sum * left;
-					buffer[bufptr+1] += sum * right;
+					buffer.set(bufptr, buffer.get(bufptr)+sum * left);
+					buffer.set(bufptr+1, buffer.get(bufptr+1)+sum * right);
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
@@ -516,12 +527,29 @@ class TableSynth implements SoftSynth
 				{
 					var pa = pos * adjust;
 					var sum = Math.cos(pa * (1+Math.cos((frame_pulsewidth*0.2+peak)*Math.PI)));
-					buffer[bufptr] += sum * left;
-					buffer[bufptr+1] += sum * right;
+					buffer.set(bufptr, buffer.get(bufptr)+sum * left);
+					buffer.set(bufptr+1, buffer.get(bufptr+1)+sum * right);
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
-				
+			case LFSR_2: runLfsr(curval, pan, wl, hw, 2);
+			case LFSR_3: runLfsr(curval, pan, wl, hw, 3);
+			case LFSR_4: runLfsr(curval, pan, wl, hw, 4);
+			case LFSR_5: runLfsr(curval, pan, wl, hw, 5);
+			case LFSR_6: runLfsr(curval, pan, wl, hw, 6);
+			case LFSR_7: runLfsr(curval, pan, wl, hw, 7);
+			case LFSR_8: runLfsr(curval, pan, wl, hw, 8);
+			case LFSR_9: runLfsr(curval, pan, wl, hw, 9);
+			case LFSR_10: runLfsr(curval, pan, wl, hw, 10);
+			case LFSR_11: runLfsr(curval, pan, wl, hw, 11);
+			case LFSR_12: runLfsr(curval, pan, wl, hw, 12);
+			case LFSR_13: runLfsr(curval, pan, wl, hw, 13);
+			case LFSR_14: runLfsr(curval, pan, wl, hw, 14);
+			case LFSR_15: runLfsr(curval, pan, wl, hw, 15);
+			case LFSR_16: runLfsr(curval, pan, wl, hw, 16);
+			case LFSR_17: runLfsr(curval, pan, wl, hw, 17);
+			case LFSR_18: runLfsr(curval, pan, wl, hw, 18);
+			case LFSR_19: runLfsr(curval, pan, wl, hw, 19);
 		}
 		
 		for (ev in followers)
@@ -565,7 +593,46 @@ class TableSynth implements SoftSynth
 		return true;
 	}
 	
-	public inline function runWavetable(table : Array<Array<Vector<Float>>>, curval : Float, wl : Int, hw : Float,
+	public inline function runLfsr(curval : Float, pan : Float, wl : Int, hw : Int, taps : Int)
+	{
+		var peak = curval * 0.3;
+		var left = pan * 2;
+		var right = (1. -pan) * 2;
+		var pw = hw / wl;
+		hw = Std.int(wl * 0.5);
+		var gen_level = 1. - (pw * 0.5);
+		var gen = lfsr.noiseThresh(taps, gen_level);
+		var gl = gen * left;
+		var gr = gen * right;
+		for (i in 0 ... buffer.length >> 2) 
+		{
+			if (pos % wl < hw)
+			{
+				buffer.set(bufptr, buffer.get(bufptr) + gl);
+				buffer.set(bufptr+1, buffer.get(bufptr+1) + gr);
+				buffer.set(bufptr+2, buffer.get(bufptr+2) + gl);
+				buffer.set(bufptr+3, buffer.get(bufptr+3) + gr);
+			}
+			else
+			{
+				buffer.set(bufptr, buffer.get(bufptr) - gl);
+				buffer.set(bufptr+1, buffer.get(bufptr+1) - gr);
+				buffer.set(bufptr+2, buffer.get(bufptr+2) - gl);
+				buffer.set(bufptr+3, buffer.get(bufptr+3) - gr);
+			}
+			pos = (pos+4) % wl;
+			bufptr = (bufptr+4) % buffer.length;
+			lfsr_pos++;
+			if (lfsr_pos > lfsr_wavelength) { 
+				gen = lfsr.noiseThresh(taps, gen_level);
+				gl = gen * left;
+				gr = gen * right;
+			}
+		}
+		
+	}
+	
+	public inline function runWavetable(table : Array<Array<FastFloatBuffer>>, curval : Float, wl : Int, hw : Float,
 		pan : Float)
 	{
 		var peak = curval * 0.3;
@@ -592,8 +659,8 @@ class TableSynth implements SoftSynth
 			for (i in 0 ... buffer.length >> 1) 
 			{
 				var sum = peak * Math.sin(pos * adjust);
-				buffer[bufptr] += sum * left;
-				buffer[bufptr+1] += sum * right;
+				buffer.set(bufptr, buffer.get(bufptr)+ sum * left);
+				buffer.set(bufptr+1, buffer.get(bufptr+1) + sum * right);
 				pos = (pos+2) % wl;
 				bufptr = (bufptr+2) % buffer.length;
 			}		
@@ -614,13 +681,13 @@ class TableSynth implements SoftSynth
 				var pb = Math.max(0., pa - 1);
 				var pc = Math.min(wave.length-1, pa + 2);
 				var dist2 = (pb - pc)*0.33333333;
-				var l = wave[Std.int(pa)];
-				var r = wave[Std.int(pa) + 1];
-				var l2 = wave[Std.int(pb)];
-				var r2 = wave[Std.int(pc)];
+				var l = wave.get(Std.int(pa));
+				var r = wave.get(Std.int(pa) + 1);
+				var l2 = wave.get(Std.int(pb));
+				var r2 = wave.get(Std.int(pc));
 				var sum = peak * (l * (dist) + r * (1. - dist) + l2 * (dist2) + r2 * (1. - dist2)) * 0.5;
-				buffer[bufptr] += sum * left;
-				buffer[bufptr+1] += sum * right;
+				buffer.set(bufptr, buffer.get(bufptr)+ sum * left);
+				buffer.set(bufptr+1, buffer.get(bufptr+1) + sum * right);
 				pos = (pos+2) % wl;
 				bufptr = (bufptr+2) % buffer.length;
 			}		
@@ -638,11 +705,11 @@ class TableSynth implements SoftSynth
 				var pa = pos * adjust;
 				var spa = Std.int(pa);
 				var dist = pa - spa;
-				var l = wave[spa];
-				var r = wave[spa + 1];
+				var l = wave.get(spa);
+				var r = wave.get(spa + 1);
 				var sum = peak * (l * (dist) + r * (1. - dist));
-				buffer[bufptr] += sum * left;
-				buffer[bufptr+1] += sum * right;
+				buffer.set(bufptr, buffer.get(bufptr)+ sum * left);
+				buffer.set(bufptr+1, buffer.get(bufptr+1) + sum * right);
 				pos = (pos+2) % wl;
 				bufptr = (bufptr+2) % buffer.length;
 			}		

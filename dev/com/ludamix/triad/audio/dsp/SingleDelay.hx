@@ -10,6 +10,7 @@
 
 package com.ludamix.triad.audio.dsp;
 
+import com.ludamix.triad.tools.FastFloatBuffer;
 import nme.Vector;
 
 class SingleDelay
@@ -36,7 +37,7 @@ class SingleDelay
 
 	public function new(maxDelayInSamplesSize, delayInSamples, delayVolume) 
 	{
-	  this.delayBufferSamples = new Vector<Float>(maxDelayInSamplesSize); // The maximum size of delay
+	  this.delayBufferSamples = new FastFloatBuffer(maxDelayInSamplesSize); // The maximum size of delay
 	  this.delayInputPointer  = delayInSamples;
 	  this.delayOutputPointer = 0;
 	 
@@ -44,7 +45,7 @@ class SingleDelay
 	  this.delayVolume        = delayVolume;
 	}
 	
-	public var delayBufferSamples : Vector<Float>;
+	public var delayBufferSamples : FastFloatBuffer;
 	public var delayInputPointer : Int;
 	public var delayOutputPointer : Int;
 	public var delayInSamples : Int;
@@ -81,21 +82,21 @@ class SingleDelay
 	 *
 	 * @returns A new Float32Array interleaved or mono non-interleaved as was fed to this function.
 	 */
-	public function process(samples : Vector<Float>, ?outputSamples : Vector<Float>) {
+	public function process(samples : FastFloatBuffer, ?outputSamples : FastFloatBuffer) {
 	  // NB. Make a copy to put in the output samples to return.
 	  if (outputSamples==null)
-		outputSamples = new Vector<Float>(samples.length);
+		outputSamples = new FastFloatBuffer(samples.length);
 
 	  for (i in 0...samples.length) {
 
 		// Add audio data with the delay in the delay buffer
-		this.delayBufferSamples[this.delayInputPointer] = samples[i];
+		this.delayBufferSamples.set(this.delayInputPointer, samples.get(i));
 	   
 		// delayBufferSamples could contain initial NULL's, return silence in that case
-		var delaySample = this.delayBufferSamples[this.delayOutputPointer];
+		var delaySample = this.delayBufferSamples.get(this.delayOutputPointer);
 
 		// Return the audio with delay mix
-		outputSamples[i] = delaySample * this.delayVolume;
+		outputSamples.set(i, delaySample * this.delayVolume);
 
 		// Manage circulair delay buffer pointers
 		this.delayInputPointer++;

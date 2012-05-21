@@ -10,6 +10,7 @@
 
 package com.ludamix.triad.audio.dsp;
 
+import com.ludamix.triad.tools.FastFloatBuffer;
 import nme.Vector;
 import nme.Vector;
 
@@ -35,7 +36,7 @@ class MultiDelay
 	 * @constructor
 	 */
 	public function new(maxDelayInSamplesSize, delayInSamples, masterVolume, delayVolume) {
-	  this.delayBufferSamples   = new Vector<Float>(maxDelayInSamplesSize); // The maximum size of delay
+	  this.delayBufferSamples   = new FastFloatBuffer(maxDelayInSamplesSize); // The maximum size of delay
 	  this.delayInputPointer     = delayInSamples;
 	  this.delayOutputPointer   = 0;
 	 
@@ -44,7 +45,7 @@ class MultiDelay
 	  this.delayVolume     = delayVolume;
 	}
 	
-	public var delayBufferSamples : Vector<Float>;
+	public var delayBufferSamples : FastFloatBuffer;
 	public var delayInputPointer : Int;
 	public var delayOutputPointer : Int;
 	public var delayInSamples : Int;
@@ -91,25 +92,25 @@ class MultiDelay
 	 *
 	 * @returns A new Float32Array interleaved or mono non-interleaved as was fed to this function.
 	 */
-	public function process(samples : Vector<Float>, ?outputSamples : Vector<Float>) {
+	public function process(samples : FastFloatBuffer, ?outputSamples : FastFloatBuffer) {
 	  // NB. Make a copy to put in the output samples to return.
 	  if (outputSamples==null)
-		outputSamples = new Vector<Float>(samples.length);
+		outputSamples = new FastFloatBuffer(samples.length);
 
 	  for (i in 0...samples.length) {
 		// delayBufferSamples could contain initial NULL's, return silence in that case
 		//var delaySample = (this.delayBufferSamples[this.delayOutputPointer] == null ? 0.0 : this.delayBufferSamples[this.delayOutputPointer]);
 		// JH: typed array eliminates the nulls, it looks like
-		var delaySample = this.delayBufferSamples[this.delayOutputPointer];
+		var delaySample = this.delayBufferSamples.get(this.delayOutputPointer);
 	   
 		// Mix normal audio data with delayed audio
-		var sample = (delaySample * this.delayVolume) + samples[i];
+		var sample = (delaySample * this.delayVolume) + samples.get(i);
 	   
 		// Add audio data with the delay in the delay buffer
-		this.delayBufferSamples[this.delayInputPointer] = sample;
+		this.delayBufferSamples.set(this.delayInputPointer, sample);
 	   
 		// Return the audio with delay mix
-		outputSamples[i] = sample * this.masterVolume;
+		outputSamples.set(i, sample * this.masterVolume);
 	   
 		// Manage circulair delay buffer pointers
 		this.delayInputPointer++;

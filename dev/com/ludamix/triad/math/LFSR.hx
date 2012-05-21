@@ -1,4 +1,4 @@
-package microtone;
+package com.ludamix.triad.math;
 
 class LFSR
 {
@@ -118,6 +118,13 @@ class LFSR
 		return seed>=dt[2] ? 1 : 0;
 	}
 
+	public inline function noiseThresh(numBits : Int, pct : Float)
+	{
+		var dt = dataTable[numBits];
+		seed = lfsrAlgorithm(seed, numBits, dt[1],dt[0]);
+		return seed>=(dt[1] * pct) ? 1 : 0;
+	}
+	
 	public static function dispBinary(inp : Int)
 	{
 		var result = new StringBuf();
@@ -134,64 +141,4 @@ class LFSR
 		return result;
 	}
 	
-}
-
-class LFSRUnit implements MTLogicUnit
-{
-
-	public var id : String;
-
-	public var ready : Bool;
-	public var params : Array<String>;
-
-	public var inSamples : String;
-	public var outPCM : String;
-	public var bits : String;
-	public var chunkiness : String;
-	
-	public var ct : Int;
-	public var cur : Float;
-	public var noise : LFSR;
-	
-	public function new(inSamples,outPCM,bits,chunkiness)
-	{
-		ready = false;
-		this.inSamples = inSamples;
-		this.outPCM = outPCM;
-		this.bits = bits;
-		this.chunkiness = chunkiness;
-		noise = new LFSR();
-		params = [inSamples,bits,chunkiness];
-		ct = 0;
-		cur = 0.;
-	}
-	
-	public function onFrame(patchbay : MTPatchbay)
-	{
-		
-	}	
-
-	public function update(patchbay : MTPatchbay)
-	{
-		var outD : MT32 = patchbay.paramGet(outPCM);
-		var ins : Int = patchbay.paramGet(inSamples).data;
-		var bitc : Int = patchbay.paramGet(bits).data;
-		var chunkc : Int = patchbay.paramGet(chunkiness).data;
-		
-		outD.reset();
-
-		for (n in 0...ins)
-		{
-			if (ct%chunkc==0)
-			{
-				cur = noise.noiseGen(bitc);
-			}
-			outD.write(cur);
-			ct++;
-		}
-		
-		patchbay.paramSet(outPCM,outD);
-		
-	}	
-
 }

@@ -1,6 +1,6 @@
 package com.ludamix.triad.audio;
 
-import nme.Vector;
+import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.audio.Sequencer;
 
 interface SoftSynth
@@ -13,7 +13,7 @@ interface SoftSynth
 	//    can make a decision on how to assign voicing. However, the synth is free to change event population
 	//    at write() time.
 	
-	public var buffer : Vector<Float>;
+	public var buffer : FastFloatBuffer;
 	public var sequencer : Sequencer;
 	
 	public function init(sequencer : Sequencer):Void;

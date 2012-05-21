@@ -64,7 +64,7 @@ class Color
 
 	public static inline function HSVtoRGB(HSV:{h:Float,s:Float,v:Float},RGB:{r:Int,g:Int,b:Int})
 	{
-		var h : Float = HSV.h; var s : Float = HSV.s; var v : Float = HSV.v;
+		var h : Float = HSV.h % 1.0; var s : Float = HSV.s; var v : Float = HSV.v;
 
 		if (s == 0) {
 			RGB.r = Std.int(v * 255);

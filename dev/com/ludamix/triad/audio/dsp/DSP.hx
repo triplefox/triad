@@ -10,6 +10,7 @@
 
 package com.ludamix.triad.audio.dsp;
 
+import com.ludamix.triad.tools.FastFloatBuffer;
 import nme.Vector;
  
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,9 +68,9 @@ class DSP
 	 *
 	 * @returns The inverted sample buffer
 	 */
-	public static inline function invert(buffer : Vector<Float>) 
+	public static inline function invert(buffer : FastFloatBuffer) 
 	{
-	  for (i in 0...buffer.length) buffer[i] *= -1;
+	  for (i in 0...buffer.length) buffer.set(i, buffer.get(i) * -1);
 	  return buffer;
 	}
 
@@ -81,16 +82,16 @@ class DSP
 	 *
 	 * @returns The stereo interleaved buffer
 	 */
-	public static inline function interleave(left : Vector<Float>, right : Vector<Float>) 
+	public static inline function interleave(left : FastFloatBuffer, right : FastFloatBuffer) 
 	{
 	  if (left.length != right.length) throw "Can not interleave. Channel lengths differ.";
 	 
-	  var stereoInterleaved = new Vector<Float>(left.length * 2);
+	  var stereoInterleaved = new FastFloatBuffer(left.length * 2);
 	 
 	  for (i in 0...left.length) 
 	  {
-		stereoInterleaved[2*i]   = left[i];
-		stereoInterleaved[2*i+1] = right[i];
+		stereoInterleaved.set(2*i, left.get(i));
+		stereoInterleaved.set(2*i+1, right.get(i));
 	  }
 	 
 	  return stereoInterleaved;
@@ -103,7 +104,7 @@ class DSP
 	 *
 	 * @returns an Array containing left and right channels
 	 */
-	public static function deinterleave(buffer : Vector<Float>) 
+	public static function deinterleave(buffer : FastFloatBuffer) 
 	{
 		return [getChannel(LEFT, buffer), getChannel(RIGHT, buffer)];
 	}
@@ -116,17 +117,17 @@ class DSP
 	 *
 	 * @returns an Array containing a signal mono sample buffer
 	 */
-	public static function getChannel(channel : Int, buffer : Vector<Float>)
+	public static function getChannel(channel : Int, buffer : FastFloatBuffer)
 	{
-		var result = new Vector<Float>(Std.int(buffer.length/2));
+		var result = new FastFloatBuffer(Std.int(buffer.length/2));
 		switch(channel)
 		{
 			case MIX:
-				for (i in 0...Std.int(buffer.length / 2)) result[i] = (buffer[2 * i] + buffer[2 * i + 1]) / 2;
+				for (i in 0...Std.int(buffer.length / 2)) result.set(i, (buffer.get(2 * i) + buffer.get(2 * i + 1)) / 2);
 			case LEFT:
-				for (i in 0...Std.int(buffer.length / 2)) result[i]  = buffer[2*i];
+				for (i in 0...Std.int(buffer.length / 2)) result.set(i, buffer.get(2*i));
 			case RIGHT:
-				for (i in 0...Std.int(buffer.length / 2)) result[i]  = buffer[2*i+1];
+				for (i in 0...Std.int(buffer.length / 2)) result.set(i, buffer.get(2*i+1));
 		}
 		return result;
 	}
@@ -143,35 +144,36 @@ class DSP
 	 *
 	 * @returns A new Float32Array interleaved buffer.
 	 */
-	public static inline function mixSampleBuffers(sampleBuffer1 : Vector<Float>, sampleBuffer2 : Vector<Float>, 
+	public static inline function mixSampleBuffers(sampleBuffer1 : FastFloatBuffer, sampleBuffer2 : FastFloatBuffer, 
 		negate : Bool, volumeCorrection : Float)
 	{
-	  var outputSamples = new Vector<Float>(sampleBuffer1.length);
+	  var outputSamples = new FastFloatBuffer(sampleBuffer1.length);
 
 	  for(i in 0...sampleBuffer1.length)
-		outputSamples[i] += (sampleBuffer1[i] + (negate ? -sampleBuffer2[i] : sampleBuffer2[i])) / volumeCorrection;
+		outputSamples.set(i, outputSamples.get(i) + 
+			(sampleBuffer1.get(i) + (negate ? -sampleBuffer2.get(i) : sampleBuffer2.get(i))) / volumeCorrection);
 	 
 	  return outputSamples;
 	}
 
 	// Find RMS of signal
-	public static inline function RMS(buffer : Vector<Float>)
+	public static inline function RMS(buffer : FastFloatBuffer)
 	{
 	  var total = 0.;
 	  
 	  for (i in 0...buffer.length)
-		total += buffer[i] * buffer[i];
+		total += buffer.get(i) * buffer.get(i);
 	  
 	  return Math.sqrt(total / buffer.length);
 	}
 
 	// Find Peak of signal
-	public static inline function Peak(buffer : Vector<Float>) 
+	public static inline function Peak(buffer : FastFloatBuffer) 
 	{
 	  var peak = 0.;
 	  
 	  for (i in 0...buffer.length)
-		peak = (Math.abs(buffer[i]) > peak) ? Math.abs(buffer[i]) : peak; 
+		peak = (Math.abs(buffer.get(i)) > peak) ? Math.abs(buffer.get(i)) : peak; 
 	  
 	  return peak;
 	}
@@ -197,16 +199,16 @@ class DSP
 	 *  @returns the array in decibels
 	 *
 	 */
-	public static inline function mag2db(buffer : Vector<Float>) {
+	public static inline function mag2db(buffer : FastFloatBuffer) {
 	  var minDb = -120;
 	  var minMag = Math.pow(10.0, minDb / 20.0);
 
 	  var log = Math.log;
 	  var max = Math.max;
 	 
-	  var result = new Vector<Float>(buffer.length);
+	  var result = new FastFloatBuffer(buffer.length);
 	  for (i in 0...buffer.length)
-		result[i] = 20.0*log(max(buffer[i], minMag));
+		result.set(i, 20.0*log(max(buffer.get(i), minMag)));
 
 	  return result;
 	}
@@ -226,19 +228,19 @@ class DSP
 	 *  @returns the frequency response in magnitude
 	 *
 	 */
-	public static inline function freqz(b : Array<Float>, a : Array<Float>, w : Vector<Float>) : Vector<Float>
+	public static inline function freqz(b : Array<Float>, a : Array<Float>, w : FastFloatBuffer) : FastFloatBuffer
 	{
 	  var i : Float; 
 	  var j : Float;
 
 	  if (w==null) {
-		w = new Vector<Float>(200);
+		w = new FastFloatBuffer(200);
 		for (i in 0...w.length) {
-		  w[i] = DSP.TWO_PI/w.length * i - Math.PI;
+		  w.set(i, DSP.TWO_PI/w.length * i - Math.PI);
 		}
 	  }
 
-	  var result = new Vector<Float>(w.length);
+	  var result = new FastFloatBuffer(w.length);
 	 
 	  var sqrt = Math.sqrt;
 	  var cos = Math.cos;
@@ -247,17 +249,18 @@ class DSP
 	  for (i in 0...w.length) {
 		var numerator = {real:0.0, imag:0.0};
 		for (j in 0...b.length) {
-		  numerator.real += b[j] * cos(-j*w[i]);
-		  numerator.imag += b[j] * sin(-j*w[i]);
+		  numerator.real += b[j] * cos(-j*w.get(i));
+		  numerator.imag += b[j] * sin(-j*w.get(i));
 		}
 
 		var denominator = {real:0.0, imag:0.0};
 		for (j in 0...a.length) {
-		  denominator.real += a[j] * cos(-j*w[i]);
-		  denominator.imag += a[j] * sin(-j*w[i]);
+		  denominator.real += a[j] * cos(-j*w.get(i));
+		  denominator.imag += a[j] * sin(-j*w.get(i));
 		}
 	 
-		result[i] =  sqrt(numerator.real*numerator.real + numerator.imag*numerator.imag) / sqrt(denominator.real*denominator.real + denominator.imag*denominator.imag);
+		result.set(i, sqrt(numerator.real * numerator.real + numerator.imag * numerator.imag) / 
+			sqrt(denominator.real*denominator.real + denominator.imag*denominator.imag));
 	  }
 
 	  return result;

@@ -10,8 +10,7 @@
 
 package com.ludamix.triad.audio.dsp;
 
-import nme.Vector;
-import nme.Vector;
+import com.ludamix.triad.tools.FastFloatBuffer;
 
 class Reverb
 {
@@ -154,10 +153,10 @@ class Reverb
 	 *
 	 * @returns A new Float32Array interleaved buffer.
 	 */
-	public function process(interleavedSamples : Vector<Float>){ 
+	public function process(interleavedSamples : FastFloatBuffer){ 
 	  // NB. Make a copy to put in the output samples to return.
-	  var outputSamples = new Vector<Float>(interleavedSamples.length);
-	  var reusableBuffer = new Vector<Float>(interleavedSamples.length);
+	  var outputSamples = new FastFloatBuffer(interleavedSamples.length);
+	  var reusableBuffer = new FastFloatBuffer(interleavedSamples.length);
 	 
 	  // Perform low pass on the input samples to mimick damp
 	  var leftRightMix = DSP.deinterleave(interleavedSamples);
@@ -173,20 +172,20 @@ class Reverb
 		{
 			for (s in 0...filteredSamples.length)
 			{
-				outputSamples[s] = (outputSamples[s] - reusableBuffer[s]) / NR_OF_MULTIDELAYS;
+				outputSamples.set(s, (outputSamples.get(s) - reusableBuffer.get(s)) / NR_OF_MULTIDELAYS);
 			}
 		}
 		else
 		{
 			for (s in 0...filteredSamples.length)
 			{
-				outputSamples[s] = (outputSamples[s] + reusableBuffer[s]) / NR_OF_MULTIDELAYS;
+				outputSamples.set(s, (outputSamples.get(s) + reusableBuffer.get(s)) / NR_OF_MULTIDELAYS);
 			}
 		}
 	  }
 	 
 	  // Process SingleDelays in series
-	  var singleDelaySamples = new Vector<Float>(outputSamples.length);
+	  var singleDelaySamples = new FastFloatBuffer(outputSamples.length);
 	  for (i in 0...NR_OF_SINGLEDELAYS) {
 		// Invert the signal of every even singleDelay
 		var postDelaySamples = singleDelays[i].process(outputSamples, reusableBuffer);
@@ -194,21 +193,21 @@ class Reverb
 		{
 			for (s in 0...singleDelaySamples.length) 
 			{
-				singleDelaySamples[s] = singleDelaySamples[s] - postDelaySamples[s] * this.mixVolume;
+				singleDelaySamples.set(s, singleDelaySamples.get(s) - postDelaySamples.get(s) * this.mixVolume);
 			}
 		}
 		else
 		{
 			for (s in 0...singleDelaySamples.length) 
 			{
-				singleDelaySamples[s] = singleDelaySamples[s] + postDelaySamples[s] * this.mixVolume;
+				singleDelaySamples.set(s, singleDelaySamples.get(s) + postDelaySamples.get(s) * this.mixVolume);
 			}
 		}
 	  }
 	 
 	  // Mix the original signal with the reverb signal
 	  for (i in 0...outputSamples.length)
-		outputSamples[i] = singleDelaySamples[i] + interleavedSamples[i] * this.masterVolume;
+		outputSamples.set(i, singleDelaySamples.get(i) + interleavedSamples.get(i) * this.masterVolume);
 	   
 	  return outputSamples;
 	}	

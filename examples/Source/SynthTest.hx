@@ -94,12 +94,12 @@ class SynthTest
 		#if debug
 		  for (n in 0...4) // trying not to kill cpu!
 		#else
-		  for (n in 0...24)
+		  for (n in 0...32)
 		#end
 		{
 			var synth = new SamplerSynth();
 			//var synth = new TableSynth();
-			synth.master_volume = 2.0;
+			synth.master_volume = 1.8;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
@@ -107,6 +107,7 @@ class SynthTest
 		/*for (n in 0...8)
 		{
 			var synth = new SamplerSynth();
+			synth.master_volume = 1.8;
 			seq.addSynth(synth);
 			percussion_voices.push(synth);
 		}*/
@@ -117,6 +118,7 @@ class SynthTest
 				seq.addChannel(voices, percussion.getGenerator());
 			else
 				seq.addChannel(voices, melodic.getGenerator());
+			
 			
 			/*seq.addChannel(voices, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 			
@@ -282,7 +284,7 @@ class SynthTest
 		}
 		for (n in 0...wf.length)
 		{
-			spr.bitmapData.setPixel(Std.int(n), Std.int(wf[n] * 100 + Main.H/2), 0x00FF00);
+			spr.bitmapData.setPixel(Std.int(n), Std.int(wf.get(n) * 100 + Main.H/2), 0x00FF00);
 		}
 		spr.scaleX *= Main.W / spr.width;
 		spr.alpha = 0.5;
