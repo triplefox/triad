@@ -215,6 +215,9 @@ class Sequencer
 	public var bpm : Float;
 	public var cur_beat : Float;
 	
+	private var last_l : Float;
+	private var last_r : Float;
+	
 	public inline function sampleRate() { return RATE; }
 	public inline function monoSize() { return Std.int(FRAMESIZE/DIVISIONS); }
 	public inline function stereoSize() { return Std.int(FRAMESIZE*2/DIVISIONS); }
@@ -360,10 +363,14 @@ class Sequencer
 				for (i in 0 ... monoSize()) 
 				{
 					var i2 = i << 1;
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
+					var l = fx_buffer.get(i2);
+					var r = fx_buffer.get(i2+1);
+					event.data.writeFloat(l * 0.5 + last_l * 0.5);
+					event.data.writeFloat(r * 0.5 + last_r * 0.5);
+					event.data.writeFloat(l);
+					event.data.writeFloat(r);
+					last_l = l;
+					last_r = r;
 				}
 			}
 			else if (RATE_MULTIPLE == 3)
@@ -371,36 +378,44 @@ class Sequencer
 				for (i in 0 ... monoSize()) 
 				{
 					var i2 = i << 1;
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
-				}				
+					var l = fx_buffer.get(i2);
+					var r = fx_buffer.get(i2+1);
+					event.data.writeFloat(l * 0.33 + last_l * 0.66);
+					event.data.writeFloat(r * 0.33 + last_r * 0.66);
+					event.data.writeFloat(l * 0.66 + last_l * 0.33);
+					event.data.writeFloat(r * 0.66 + last_r * 0.33);
+					event.data.writeFloat(l);
+					event.data.writeFloat(r);
+					last_l = l;
+					last_r = r;
+				}
 			}
 			else if (RATE_MULTIPLE == 4)
 			{
 				for (i in 0 ... monoSize()) 
 				{
 					var i2 = i << 1;
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
-				}				
+					var l = fx_buffer.get(i2);
+					var r = fx_buffer.get(i2+1);
+					event.data.writeFloat(l * 0.25 + last_l * 0.75);
+					event.data.writeFloat(r * 0.25 + last_r * 0.75);
+					event.data.writeFloat(l * 0.5 + last_l * 0.5);
+					event.data.writeFloat(r * 0.5 + last_r * 0.5);
+					event.data.writeFloat(l * 0.75 + last_l * 0.25);
+					event.data.writeFloat(r * 0.75 + last_r * 0.25);
+					event.data.writeFloat(l);
+					event.data.writeFloat(r);
+					last_l = l;
+					last_r = r;
+				}
 			}
 			else if (RATE_MULTIPLE == 0.5)
 			{
 				for (i in 0 ... monoSize()>>1) 
 				{
 					var i2 = i << 2;
-					event.data.writeFloat(fx_buffer.get(i2));
-					event.data.writeFloat(fx_buffer.get(i2+1));
+					event.data.writeFloat((fx_buffer.get(i2) * 0.5 + fx_buffer.get(i2+2) * 0.5));
+					event.data.writeFloat(fx_buffer.get(i2+1) * 0.5 + fx_buffer.get(i2+3) * 0.5);
 				}
 			}
 			
@@ -412,6 +427,8 @@ class Sequencer
 	public function new(?rate : Int = 22050, ?framesize : Int = 4096, ?divisions : Int = 4, 
 		?tuning : MIDITuning = null, ?reverb : Reverb = null)
 	{
+		last_l = 0.;
+		last_r = 0.;
 		this.RATE = rate;
 		if (this.RATE == NATURAL_RATE)
 			RATE_MULTIPLE = 1;

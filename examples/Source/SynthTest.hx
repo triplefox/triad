@@ -84,13 +84,9 @@ class SynthTest
 	var melodic : SFZBank;
 	var percussion : SFZBank;
 	
-	public function hardReset()
+	private function resetSamplerSynth()
 	{
-		seq.synths = new Array();
-		seq.channels = new Array();
-		seq.events = new Array();
 		var voices = new Array<SoftSynth>();
-		var percussion_voices = new Array<SoftSynth>();
 		// set up melodic voices
 		#if debug
 		  for (n in 0...4) // trying not to kill cpu!
@@ -99,19 +95,10 @@ class SynthTest
 		#end
 		{
 			var synth = new SamplerSynth();
-			//var synth = new TableSynth();
-			synth.master_volume = 1.5;
+			synth.master_volume = 1.3;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
-		// dedicated percussion for when testing tablesynth
-		/*for (n in 0...8)
-		{
-			var synth = new SamplerSynth();
-			synth.master_volume = 1.5;
-			seq.addSynth(synth);
-			percussion_voices.push(synth);
-		}*/
 		// setup channels
 		for (n in 0...16)
 		{
@@ -123,12 +110,51 @@ class SynthTest
 			
 			/*seq.addChannel(voices, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 			
-			/*if (n == 9)
+		}				
+	}
+	
+	private function resetTableSynth()
+	{
+		var voices = new Array<SoftSynth>();
+		var percussion_voices = new Array<SoftSynth>();
+		// set up melodic voices
+		#if debug
+		  for (n in 0...4) // trying not to kill cpu!
+		#else
+		  for (n in 0...32)
+		#end
+		{
+			var synth = new TableSynth();
+			synth.master_volume = 1.3;
+			seq.addSynth(synth);
+			voices.push(synth);
+		}
+		// dedicated percussion for when testing tablesynth
+		for (n in 0...8)
+		{
+			var synth = new SamplerSynth();
+			synth.master_volume = 1.3;
+			seq.addSynth(synth);
+			percussion_voices.push(synth);
+		}
+		// setup channels
+		for (n in 0...16)
+		{
+			if (n == 9)
 				seq.addChannel(percussion_voices, percussion.getGenerator());
 			else
 				seq.addChannel(voices, TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
-			*/
+			
 		}		
+	}
+	
+	public function hardReset()
+	{
+		seq.synths = new Array();
+		seq.channels = new Array();
+		seq.events = new Array();
+		resetSamplerSynth();
+		//resetTableSynth();
 	}
 	
 	public function queueFunction(func : Dynamic)
@@ -167,8 +193,8 @@ class SynthTest
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 128);
 		#end
-		seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		//seq = new Sequencer(Std.int(44100/2), 2048);
+		seq = new Sequencer(Std.int(44100), 4096,8 ,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
+		//seq = new Sequencer(Std.int(44100*2), 8192);
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 
@@ -325,18 +351,9 @@ class SynthTest
 	
 	public function loadSong()
 	{
-		events = SMFParser.load(seq, SMF.read(Assets.getBytes(songs[song_count][1])).toByteArray());
-		
-		// for debugging certain channels
-		/*var ec = new Array<SequencerEvent>();
-		for (n in events)
-		{
-			if (n.channel == 13)
-			{
-				ec.push(n);
-			}
-		}
-		events = ec;*/
+		// output of toByteArray isn't rhythm-exact yet...
+		//events = SMFParser.load(seq, SMF.read(Assets.getBytes(songs[song_count][1])).toByteArray());
+		events = SMFParser.load(seq, Assets.getBytes(songs[song_count][1]));
 		
 		seq.pushEvents(events.copy());
 		infos.text = "playing " + songs[song_count][1];

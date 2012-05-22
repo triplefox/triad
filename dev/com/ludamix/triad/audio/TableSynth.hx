@@ -669,7 +669,7 @@ class TableSynth implements SoftSynth
 		}
 		else if (di > DOUBLE_INTERPOLATE)
 		{
-			// run with a 2x linear implementation to make the wavetable part more filtered
+			// 2x linear
 			var pwi = Std.int(hw / wl * TABLE_MODULATIONS);
 			if (pwi < 0) pwi = Std.int(Math.abs(pwi)); 
 			if (pwi >= TABLE_MODULATIONS) pwi = TABLE_MODULATIONS - 1;
@@ -680,17 +680,17 @@ class TableSynth implements SoftSynth
 			{
 				var pa = pos * adjust;
 				var dist = pa - Std.int(pa);
-				var pb = Math.max(0., pa - 1);
-				var pc = Math.min(wave.length-1, pa + 2);
-				var dist2 = (pb - pc)*0.33333333;
+				pos = (pos + 1) % wl;
+				var pb = pos * adjust;
+				var dist2 = pb - Std.int(pb);
 				var l = wave.get(Std.int(pa));
 				var r = wave.get(Std.int(pa) + 1);
 				var l2 = wave.get(Std.int(pb));
-				var r2 = wave.get(Std.int(pc));
+				var r2 = wave.get(Std.int(pb + 1));
 				var sum = peak * (l * (dist) + r * (1. - dist) + l2 * (dist2) + r2 * (1. - dist2)) * 0.5;
 				buffer.set(bufptr, buffer.get(bufptr)+ sum * left);
 				buffer.set(bufptr+1, buffer.get(bufptr+1) + sum * right);
-				pos = (pos+2) % wl;
+				pos = (pos + 1) % wl;
 				bufptr = (bufptr+2) % buffer.length;
 			}		
 		}
