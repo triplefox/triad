@@ -478,7 +478,7 @@ class TableSynth implements SoftSynth
 				right *= 0.3;
 				for (i in 0 ... buffer.length >> 1) 
 				{
-					var sum = peak * Math.sin(pos * adjust);
+					var sum = Math.sin(pos * adjust);
 					buffer.set(bufptr, buffer.get(bufptr)+sum * left);
 					buffer.set(bufptr+1, buffer.get(bufptr+1)+sum * right);
 					pos = (pos+2) % wl;

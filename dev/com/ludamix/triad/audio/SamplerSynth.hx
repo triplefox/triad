@@ -339,9 +339,32 @@ class SamplerSynth implements SoftSynth
 				var RESAMPLE_LIN = 1;
 				var RESAMPLE_LIN2 = 2;
 				var RESAMPLE_OPT = 3;
+				var RESAMPLE_LIN_MONO = 4;
+				var RESAMPLE_LIN2_MONO = 5;
+				var RESAMPLE_LIN4 = 6;
+				var RESAMPLE_LIN4_MONO = 7;
 				var resample_type = RESAMPLE_DROP;
-				if (inc > (interpolation_tolerance*2)) resample_type = RESAMPLE_LIN2;
-				else if (inc != 1) resample_type = RESAMPLE_LIN2;
+				if (inc > (interpolation_tolerance * 4)) 
+				{
+					if (sample_left == sample_right) 
+						resample_type = RESAMPLE_LIN4_MONO;
+					else 
+						resample_type = RESAMPLE_LIN4;
+				}
+				else if (inc > (interpolation_tolerance * 2)) 
+				{
+					if (sample_left == sample_right) 
+						resample_type = RESAMPLE_LIN2_MONO;
+					else 
+						resample_type = RESAMPLE_LIN2;
+				}
+				else if (inc != 1) 
+				{
+					if (sample_left == sample_right) 
+						resample_type = RESAMPLE_LIN_MONO;
+					else 
+						resample_type = RESAMPLE_LIN;
+				}
 				switch(patch.loop_mode)
 				{
 					// LOOP - repeat loop until envelope reaches OFF
@@ -352,9 +375,17 @@ class SamplerSynth implements SoftSynth
 								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_LIN: loopForward(copy_samples_lin, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN_MONO: loopForward(copy_samples_lin_mono, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_LIN2: loopForward(copy_samples_lin2, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN2_MONO: loopForward(copy_samples_lin2_mono, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_OPT: loopForward(copy_samples_opt2, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN4: loopForward(copy_samples_lin4, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN4_MONO: loopForward(copy_samples_lin4_mono, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
 						}
 					// SUSTAIN - loop until release, then play to the first of envelope OFF or sample endpoint
@@ -365,9 +396,17 @@ class SamplerSynth implements SoftSynth
 								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_LIN: loopSustain(copy_samples_lin, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN_MONO: loopSustain(copy_samples_lin_mono, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_LIN2: loopSustain(copy_samples_lin2, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN2_MONO: loopSustain(copy_samples_lin2_mono, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_OPT: loopSustain(copy_samples_opt2, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN4: loopSustain(copy_samples_lin4, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN4_MONO: loopSustain(copy_samples_lin4_mono, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
 						}
 					// ONE_SHOT - play until the sample endpoint, do not respect note off
@@ -379,9 +418,17 @@ class SamplerSynth implements SoftSynth
 								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_LIN: runUnlooped(copy_samples_lin, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN_MONO: runUnlooped(copy_samples_lin_mono, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_LIN2: runUnlooped(copy_samples_lin2, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN2_MONO: runUnlooped(copy_samples_lin2_mono, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_OPT: runUnlooped(copy_samples_opt2, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN4: runUnlooped(copy_samples_lin4, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_LIN4_MONO: runUnlooped(copy_samples_lin4_mono, cur_follower, loop_idx, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
 						}
 				}		
@@ -552,6 +599,23 @@ class SamplerSynth implements SoftSynth
 				sample_right.get(b) * interpolation_factor));
 	}
 
+	public inline function copy_samples_lin_mono(buffer : FastFloatBuffer, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float,
+								loop_start : Float, loop_idx : Float, loop_len : Float)
+	{
+		// linear interpolator(mono sample)
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var interpolation_factor : Float = pos - a;
+		var sd = (sample_left.get(a) * (1. -interpolation_factor) + 
+				sample_left.get(b) * interpolation_factor);
+		buffer.set(bufptr, buffer.get(bufptr) + left * sd);	
+		buffer.set(bufptr + 1, buffer.get(bufptr + 1) + right * sd);
+	}
+	
 	public inline function copy_samples_lin2(buffer : FastFloatBuffer, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
@@ -580,6 +644,128 @@ class SamplerSynth implements SoftSynth
 														sample_right.get(b) * ifactor) +
 														(sample_right.get(c) * inv_ifactor2 + 
 														sample_right.get(d) * ifactor2)) * 0.5);	
+	}
+	
+	public inline function copy_samples_lin2_mono(buffer : FastFloatBuffer, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float,
+								loop_start : Float, loop_idx : Float, loop_len : Float)
+	{
+		// 2x linear (mono sample)
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor : Float = (pos - a);
+		var inv_ifactor : Float = 1. - ifactor;
+		pos = pos + inc * 0.5;
+		if (pos > loop_idx)
+			pos = ((pos - loop_start) % loop_len) + loop_start;
+		var c : Int = Std.int(Math.min(pos, sample_left.length - 1));
+		var d : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor2 : Float = (pos - c);
+		var inv_ifactor2 : Float = 1. - ifactor2;
+		var sd = ((sample_left.get(a) * inv_ifactor + 	sample_left.get(b) * ifactor) +
+														(sample_left.get(c) * inv_ifactor2 + 
+														sample_left.get(d) * ifactor2)) * 0.5;
+		buffer.set(bufptr, buffer.get(bufptr) + left * sd);
+		buffer.set(bufptr + 1, buffer.get(bufptr + 1) + right * sd);
+	}
+	
+	public inline function copy_samples_lin4(buffer : FastFloatBuffer, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float,
+								loop_start : Float, loop_idx : Float, loop_len : Float)
+	{
+		// 4x linear
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor : Float = (pos - a);
+		var inv_ifactor : Float = 1. - ifactor;
+		pos = pos + inc * 0.25;
+		if (pos > loop_idx)
+			pos = ((pos - loop_start) % loop_len) + loop_start;
+		var c : Int = Std.int(Math.min(pos, sample_left.length - 1));
+		var d : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor2 : Float = (pos - c);
+		var inv_ifactor2 : Float = 1. - ifactor2;
+		pos = pos + inc * 0.25;
+		if (pos > loop_idx)
+			pos = ((pos - loop_start) % loop_len) + loop_start;
+		var e : Int = Std.int(Math.min(pos, sample_left.length - 1));
+		var f : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor3 : Float = (pos - c);
+		var inv_ifactor3 : Float = 1. - ifactor3;
+		pos = pos + inc * 0.5;
+		if (pos > loop_idx)
+			pos = ((pos - loop_start) % loop_len) + loop_start;
+		var g : Int = Std.int(Math.min(pos, sample_left.length - 1));
+		var h : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor4 : Float = (pos - c);
+		var inv_ifactor4 : Float = 1. - ifactor4;
+		buffer.set(bufptr, buffer.get(bufptr) + left * ((sample_left.get(a) * inv_ifactor + 
+														sample_left.get(b) * ifactor) +
+														(sample_left.get(c) * inv_ifactor2 + 
+														sample_left.get(d) * ifactor2) +
+														(sample_left.get(e) * inv_ifactor3 + 
+														sample_left.get(f) * ifactor3) +
+														(sample_left.get(g) * inv_ifactor4 + 
+														sample_left.get(h) * ifactor4)) * 0.25);
+		buffer.set(bufptr + 1, buffer.get(bufptr + 1) + 
+												right * ((sample_right.get(a) * inv_ifactor + 
+														sample_right.get(b) * ifactor) +
+														(sample_right.get(c) * inv_ifactor2 + 
+														sample_right.get(d) * ifactor2) +
+														(sample_right.get(e) * inv_ifactor3 + 
+														sample_right.get(f) * ifactor3) +
+														(sample_right.get(g) * inv_ifactor4 + 
+														sample_right.get(h) * ifactor4)) * 0.25);	
+	}
+	
+	public inline function copy_samples_lin4_mono(buffer : FastFloatBuffer, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float,
+								loop_start : Float, loop_idx : Float, loop_len : Float)
+	{
+		// 4x linear (mono sample)
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor : Float = (pos - a);
+		var inv_ifactor : Float = 1. - ifactor;
+		pos = pos + inc * 0.25;
+		if (pos > loop_idx)
+			pos = ((pos - loop_start) % loop_len) + loop_start;
+		var c : Int = Std.int(Math.min(pos, sample_left.length - 1));
+		var d : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor2 : Float = (pos - c);
+		var inv_ifactor2 : Float = 1. - ifactor2;
+		pos = pos + inc * 0.25;
+		if (pos > loop_idx)
+			pos = ((pos - loop_start) % loop_len) + loop_start;
+		var e : Int = Std.int(Math.min(pos, sample_left.length - 1));
+		var f : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor3 : Float = (pos - c);
+		var inv_ifactor3 : Float = 1. - ifactor3;
+		pos = pos + inc * 0.25;
+		if (pos > loop_idx)
+			pos = ((pos - loop_start) % loop_len) + loop_start;
+		var g : Int = Std.int(Math.min(pos, sample_left.length - 1));
+		var h : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var ifactor4 : Float = (pos - c);
+		var inv_ifactor4 : Float = 1. - ifactor4;
+		var sd = ((sample_left.get(a) * inv_ifactor + 	sample_left.get(b) * ifactor) +
+														(sample_left.get(c) * inv_ifactor2 + 
+														sample_left.get(d) * ifactor2) + 
+														(sample_left.get(e) * inv_ifactor3 + 
+														sample_left.get(f) * ifactor3) +
+														(sample_left.get(g) * inv_ifactor4 + 
+														sample_left.get(h) * ifactor4)) * 0.25;
+		buffer.set(bufptr, buffer.get(bufptr) + left * sd);
+		buffer.set(bufptr + 1, buffer.get(bufptr + 1) + right * sd);
 	}
 	
 	public inline function copy_samples_opt2(buffer : FastFloatBuffer, bufptr : Int, 
