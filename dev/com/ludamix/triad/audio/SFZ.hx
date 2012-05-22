@@ -65,7 +65,7 @@ class SFZGroup
 					midinote = directives.get("pitch_keycenter");
 				if (directives.exists("tune")) { midinote -= (directives.get("tune")/100); }
 				if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
-				sampler_patch.sample.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
+				sampler_patch.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
 				
 				if (directives.exists("ampeg_delay")) { env_vals[0] = directives.get("ampeg_delay"); }
 				if (directives.exists("ampeg_start")) { env_vals[1] = directives.get("ampeg_start"); }
