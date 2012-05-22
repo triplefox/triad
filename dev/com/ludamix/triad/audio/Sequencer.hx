@@ -206,7 +206,9 @@ class Sequencer
 	public var reverb : Reverb;
 	
 	private static inline var DC_OFFSET = -0.00001;
-	private static inline var RATE = 44100;
+	private static inline var NATURAL_RATE = 44100;
+	private var RATE : Int;
+	public var RATE_MULTIPLE : Float;
 	private var FRAMESIZE : Int; // buffer size of mono frame
 	private var DIVISIONS : Int; // to increase the framerate we slice the buffer by this number of divisions
 	
@@ -344,11 +346,62 @@ class Sequencer
 			
 			// vector -> bytearray
 			
-			for (i in 0 ... monoSize()) 
+			if (RATE_MULTIPLE == 1)
 			{
-				var i2 = i << 1;
-				event.data.writeFloat(fx_buffer.get(i2));
-				event.data.writeFloat(fx_buffer.get(i2+1));
+				for (i in 0 ... monoSize()) 
+				{
+					var i2 = i << 1;
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+				}
+			}
+			else if (RATE_MULTIPLE == 2)
+			{
+				for (i in 0 ... monoSize()) 
+				{
+					var i2 = i << 1;
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+				}
+			}
+			else if (RATE_MULTIPLE == 3)
+			{
+				for (i in 0 ... monoSize()) 
+				{
+					var i2 = i << 1;
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+				}				
+			}
+			else if (RATE_MULTIPLE == 4)
+			{
+				for (i in 0 ... monoSize()) 
+				{
+					var i2 = i << 1;
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+				}				
+			}
+			else if (RATE_MULTIPLE == 0.5)
+			{
+				for (i in 0 ... monoSize()>>1) 
+				{
+					var i2 = i << 2;
+					event.data.writeFloat(fx_buffer.get(i2));
+					event.data.writeFloat(fx_buffer.get(i2+1));
+				}
 			}
 			
 			frame++;
@@ -356,9 +409,22 @@ class Sequencer
 		
 	}
 	
-	public function new(?framesize : Int = 4096, ?divisions : Int = 4, ?tuning : MIDITuning = null,
-		?reverb : Reverb = null)
+	public function new(?rate : Int = 22050, ?framesize : Int = 4096, ?divisions : Int = 4, 
+		?tuning : MIDITuning = null, ?reverb : Reverb = null)
 	{
+		this.RATE = rate;
+		if (this.RATE == NATURAL_RATE)
+			RATE_MULTIPLE = 1;
+		else if (this.RATE == NATURAL_RATE/2)
+			RATE_MULTIPLE = 2;
+		else if (this.RATE == NATURAL_RATE/3)
+			RATE_MULTIPLE = 3;
+		else if (this.RATE == NATURAL_RATE/4)
+			RATE_MULTIPLE = 4;
+		else if (this.RATE == NATURAL_RATE * 2)
+			RATE_MULTIPLE = 0.5;
+		else
+			throw "rate should be equal to, 1/2, 1/3, or 1/4 the natural rate (" + Std.string(NATURAL_RATE) + ")";
 		setBPM(120.0);
 		this.FRAMESIZE = framesize;
 		this.DIVISIONS = divisions;
@@ -374,6 +440,7 @@ class Sequencer
 	
 	public function play(soundname : String, mixgroup : String) 
 	{ 
+		// if you get "invalid parameters" you may have made your frames too large relative to the samplerate.
 		channel = sound.play(); 
 		Audio.channels.set(soundname, 
 			{vol:1.0,snd:soundname,mixgroup:mixgroup,instance:channel,timestamp:Timer.stamp()});

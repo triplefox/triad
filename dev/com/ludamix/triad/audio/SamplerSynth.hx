@@ -76,7 +76,6 @@ class SamplerSynth implements SoftSynth
 		master_volume = 0.1;
 		velocity = 1.0;
 		arpeggio = 0.;
-		interpolation_tolerance = 1.02;
 	}
 	
 	public static inline var LOOP_FORWARD = 0;
@@ -185,6 +184,7 @@ class SamplerSynth implements SoftSynth
 		this.sequencer = sequencer;
 		this.buffer = sequencer.buffer;
 		this.followers = new Array();		
+		interpolation_tolerance = 1.02 / sequencer.RATE_MULTIPLE;
 	}
 	
 	public inline function pipeAdjustment(qty : Float, assigns : Array<Int>)
@@ -461,25 +461,32 @@ class SamplerSynth implements SoftSynth
 	private inline function loopForward(copy_samples : CopySamples, cur_follower : EventFollower , loop_idx:Int, loop_len, buffer, bufptr, inc, left, right,
 		sample_left, sample_right, freq,total_length, sample_length)
 	{
-		while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
+		var loop_start = loop_idx - loop_len;
+		if (cur_follower.pos>loop_idx)
+			cur_follower.pos = ((cur_follower.pos - loop_start) % loop_len)+loop_start;
 		for (n in 0...total_length)
 		{
 			copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
-			cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
+			cur_follower.pos += inc; if (cur_follower.pos >= loop_idx) 
+				cur_follower.pos = ((cur_follower.pos - loop_start) % loop_len)+loop_start;
 			bufptr = (bufptr + 2) % buffer.length;
 		}		
 	}
 	
-	private inline function loopSustain(copy_samples : CopySamples, cur_follower: EventFollower, loop_idx:Int, loop_len, buffer, bufptr, inc, left, right,
+	private inline function loopSustain(copy_samples : CopySamples, cur_follower: EventFollower, loop_idx:Int, 
+		loop_len, buffer, bufptr, inc, left, right,
 		sample_left, sample_right, freq,total_length, sample_length)
 	{
+		var loop_start = loop_idx - loop_len;
 		if (cur_follower.env[0].state < RELEASE) 
 		{
-			while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
+			if (cur_follower.pos>loop_idx)
+				cur_follower.pos = ((cur_follower.pos - loop_start) % loop_len)+loop_start;
 			for (n in 0...total_length)
 			{
 				copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
-				cur_follower.pos += inc; while (cur_follower.pos >= loop_idx) cur_follower.pos -= loop_len;
+				cur_follower.pos += inc; if (cur_follower.pos >= loop_idx) 
+					cur_follower.pos = ((cur_follower.pos - loop_start) % loop_len)+loop_start;
 				bufptr = (bufptr + 2) % buffer.length;
 			}
 		}
@@ -491,7 +498,7 @@ class SamplerSynth implements SoftSynth
 				cur_follower.pos += inc;
 				bufptr = (bufptr + 2) % buffer.length;
 			}
-		}		
+		}
 	}
 	
 	private inline function runUnlooped(copy_samples : CopySamples, cur_follower: EventFollower, loop_idx:Int, loop_len, buffer, bufptr, inc, left, right,

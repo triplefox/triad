@@ -129,6 +129,7 @@ class TableSynth implements SoftSynth
 	public function init(sequencer)
 	{
 		this.sequencer = sequencer;
+		this.DOUBLE_INTERPOLATE = 2 / sequencer.RATE_MULTIPLE;
 		this.buffer = sequencer.buffer;
 		this.followers = new Array();
 		this.lfsr = new LFSR();
@@ -228,7 +229,8 @@ class TableSynth implements SoftSynth
 		// but hurts accuracy after the table end.
 	public static inline var SINE_START = 10; // replace table with sinewave
     public static inline var MAX_OCTAVES = 128; // essentially, how many passes per sample
-    public static inline var DOUBLE_INTERPOLATE = 2; // start using 2x interpolation at this ratio of frequency diff
+    
+	public var DOUBLE_INTERPOLATE : Float; // start using 2x interpolation at this ratio of frequency diff
 	
 	public static var pulseWavetable : Array<Array<FastFloatBuffer>>;
 	public static var sawWavetable : Array<Array<FastFloatBuffer>>;
