@@ -341,9 +341,9 @@ class SamplerSynth implements SoftSynth
 				var RESAMPLE_LIN3 = 3;
 				var RESAMPLE_LIN4 = 4;
 				var resample_type = RESAMPLE_DROP;
-				if (inc > interpolation_tolerance*4 || inc < 1. / (interpolation_tolerance*4)) resample_type = RESAMPLE_LIN4;
-				else if (inc > (interpolation_tolerance*3) || inc < 1. / (interpolation_tolerance*3)) resample_type = RESAMPLE_LIN3;
-				else if (inc > (interpolation_tolerance*2) || inc < 1. / (interpolation_tolerance*2)) resample_type = RESAMPLE_LIN2;
+				if (inc > interpolation_tolerance*4) resample_type = RESAMPLE_LIN4;
+				else if (inc > (interpolation_tolerance*3)) resample_type = RESAMPLE_LIN3;
+				else if (inc > (interpolation_tolerance*2)) resample_type = RESAMPLE_LIN2;
 				else if (inc != 1) resample_type = RESAMPLE_LIN;
 				switch(patch.loop_mode)
 				{
@@ -463,7 +463,7 @@ class SamplerSynth implements SoftSynth
 	{
 		var loop_start = loop_idx - loop_len;
 		if (cur_follower.pos>loop_idx)
-			cur_follower.pos = ((cur_follower.pos - loop_start) % loop_len)+loop_start;
+			cur_follower.pos = ((cur_follower.pos - loop_start) % loop_len) + loop_start;
 		for (n in 0...total_length)
 		{
 			copy_samples(buffer, bufptr, cur_follower.pos, inc, left, right, sample_left, sample_right, freq);
@@ -516,7 +516,7 @@ class SamplerSynth implements SoftSynth
 	// A possible future strategy for the linear interpolators:
 	// Each octave of distance from the base note, use one more level of interpolation.
 	
-	public inline function copy_samples_drop(buffer : FastFloatBuffer, bufptr : Int, 
+	/*public inline function copy_samples_drop(buffer : FastFloatBuffer, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
 								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float)
@@ -525,18 +525,18 @@ class SamplerSynth implements SoftSynth
 		var a : Int = Std.int(Math.min(pos, sample_left.length - 1));
 		buffer.set(bufptr, buffer.get(bufptr) + left * (sample_left.get(a)));
 		buffer.set(bufptr + 1, buffer.get(bufptr+1) +  right * (sample_right.get(a)));
-	}
+	}*/
 	
-	/*public inline function copy_samples_nearest(buffer : Vector<Float>, bufptr : Int, 
+	public inline function copy_samples_drop(buffer : FastFloatBuffer, bufptr : Int, 
 								pos : Float, inc : Float, 
 								left : Float, right : Float, 
-								sample_left : Vector<Float>, sample_right : Vector<Float>, freq : Float)
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float)
 	{
 		// Nearest
 		var a : Int = Math.round(Math.min(pos + inc*0.5, sample_left.length - 1));
-		buffer[bufptr] += left * (sample_left[a]);
-		buffer[bufptr + 1] += right * (sample_right[a]);
-	}*/
+		buffer.set(bufptr, buffer.get(bufptr) + left * (sample_left.get(a)));
+		buffer.set(bufptr + 1, buffer.get(bufptr + 1) + right * (sample_right.get(a)));
+	}
 	
 	public inline function copy_samples_lin(buffer : FastFloatBuffer, bufptr : Int, 
 								pos : Float, inc : Float, 
