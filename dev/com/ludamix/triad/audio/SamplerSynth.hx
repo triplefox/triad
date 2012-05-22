@@ -310,8 +310,8 @@ class SamplerSynth implements SoftSynth
 			
 			// get sample and volume data
 			var pan_sum = MathTools.limit(0., 1., pan + 2 * (patch.pan - 0.5));
-			var left = curval * pan_sum * 2;
-			var right = curval * (1. - pan_sum) * 2;
+			var left = curval * Math.sin(pan_sum * 2);
+			var right = curval * Math.cos(1. - pan_sum) * 2;
 			var sample : RawSample = patch.sample;
 			var sample_left : FastFloatBuffer = sample.sample_left;
 			var sample_right : FastFloatBuffer = sample.sample_right;

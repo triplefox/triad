@@ -418,12 +418,13 @@ class TableSynth implements SoftSynth
 			hw = Std.int(wl * (1.0 - (frame_pulsewidth%1.0)));
 		else
 			hw = Std.int(wl * frame_pulsewidth);
+			
+		var left = curval * Math.sin(pan * 2);
+		var right = curval * Math.cos(1. - pan) * 2;
 		
 		switch(patch.oscillator)
 		{
 			case PULSE: // naive, run at half rate
-				var left = curval * pan * 2;
-				var right = curval * (1.-pan) * 2;
 				for (i in 0 ... buffer.length >> 2) {
 					if (pos % wl < hw)
 					{
@@ -445,8 +446,6 @@ class TableSynth implements SoftSynth
 			case SAW: // naive, run at half rate
 				var peak = curval * 2;
 				var one_over_wl = peak / wl;
-				var left = pan * 2;
-				var right = (1.-pan) * 2;
 				for (i in 0 ... buffer.length >> 2) 
 				{
 					var sum = ((wl-(pos<<1)) % wl) * one_over_wl;
@@ -460,8 +459,6 @@ class TableSynth implements SoftSynth
 			case TRI: // naive, run at full rate
 				var peak = curval;
 				var one_over_wl = 2. / wl;
-				var left = pan * peak;
-				var right = (1. -pan) * peak;
 				var h = wl >> 1;
 				for (i in 0 ... buffer.length >> 1) 
 				{
@@ -476,10 +473,9 @@ class TableSynth implements SoftSynth
 					bufptr = (bufptr+2) % buffer.length;
 				}
 			case SIN: // using Math.sin()
-				var peak = curval * 0.3;
 				var adjust = 2 * Math.PI / wl;
-				var left = pan * 2;
-				var right = (1.-pan) * 2;
+				left *= 0.3;
+				right *= 0.3;
 				for (i in 0 ... buffer.length >> 1) 
 				{
 					var sum = peak * Math.sin(pos * adjust);
@@ -507,8 +503,6 @@ class TableSynth implements SoftSynth
 				var inner_c = 0.1 + frame_pulsewidth;
 				
 				var peak = curval * 2;
-				var left = pan * peak;
-				var right = (1. -pan) * peak;
 				
 				for (i in 0 ... buffer.length >> 1) 
 				{
@@ -523,8 +517,6 @@ class TableSynth implements SoftSynth
 				
 				var peak = curval * 2;
 				var adjust = 2 * Math.PI / wl;
-				var left = pan * peak;
-				var right = (1. -pan) * peak;
 				for (i in 0 ... buffer.length >> 1) 
 				{
 					var pa = pos * adjust;
@@ -534,24 +526,24 @@ class TableSynth implements SoftSynth
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
-			case LFSR_2: runLfsr(curval, pan, wl, hw, 2);
-			case LFSR_3: runLfsr(curval, pan, wl, hw, 3);
-			case LFSR_4: runLfsr(curval, pan, wl, hw, 4);
-			case LFSR_5: runLfsr(curval, pan, wl, hw, 5);
-			case LFSR_6: runLfsr(curval, pan, wl, hw, 6);
-			case LFSR_7: runLfsr(curval, pan, wl, hw, 7);
-			case LFSR_8: runLfsr(curval, pan, wl, hw, 8);
-			case LFSR_9: runLfsr(curval, pan, wl, hw, 9);
-			case LFSR_10: runLfsr(curval, pan, wl, hw, 10);
-			case LFSR_11: runLfsr(curval, pan, wl, hw, 11);
-			case LFSR_12: runLfsr(curval, pan, wl, hw, 12);
-			case LFSR_13: runLfsr(curval, pan, wl, hw, 13);
-			case LFSR_14: runLfsr(curval, pan, wl, hw, 14);
-			case LFSR_15: runLfsr(curval, pan, wl, hw, 15);
-			case LFSR_16: runLfsr(curval, pan, wl, hw, 16);
-			case LFSR_17: runLfsr(curval, pan, wl, hw, 17);
-			case LFSR_18: runLfsr(curval, pan, wl, hw, 18);
-			case LFSR_19: runLfsr(curval, pan, wl, hw, 19);
+			case LFSR_2: runLfsr(left, right, wl, hw, 2);
+			case LFSR_3: runLfsr(left, right, wl, hw, 3);
+			case LFSR_4: runLfsr(left, right, wl, hw, 4);
+			case LFSR_5: runLfsr(left, right, wl, hw, 5);
+			case LFSR_6: runLfsr(left, right, wl, hw, 6);
+			case LFSR_7: runLfsr(left, right, wl, hw, 7);
+			case LFSR_8: runLfsr(left, right, wl, hw, 8);
+			case LFSR_9: runLfsr(left, right, wl, hw, 9);
+			case LFSR_10: runLfsr(left, right, wl, hw, 10);
+			case LFSR_11: runLfsr(left, right, wl, hw, 11);
+			case LFSR_12: runLfsr(left, right, wl, hw, 12);
+			case LFSR_13: runLfsr(left, right, wl, hw, 13);
+			case LFSR_14: runLfsr(left, right, wl, hw, 14);
+			case LFSR_15: runLfsr(left, right, wl, hw, 15);
+			case LFSR_16: runLfsr(left, right, wl, hw, 16);
+			case LFSR_17: runLfsr(left, right, wl, hw, 17);
+			case LFSR_18: runLfsr(left, right, wl, hw, 18);
+			case LFSR_19: runLfsr(left, right, wl, hw, 19);
 		}
 		
 		for (ev in followers)
@@ -595,11 +587,8 @@ class TableSynth implements SoftSynth
 		return true;
 	}
 	
-	public inline function runLfsr(curval : Float, pan : Float, wl : Int, hw : Int, taps : Int)
+	public inline function runLfsr(left : Float, right : Float, wl : Int, hw : Int, taps : Int)
 	{
-		var peak = curval * 0.3;
-		var left = pan * 2;
-		var right = (1. -pan) * 2;
 		var pw = hw / wl;
 		hw = Std.int(wl * 0.5);
 		var gen_level = 1. - (pw * 0.5);

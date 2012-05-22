@@ -95,7 +95,7 @@ class SynthTest
 		#end
 		{
 			var synth = new SamplerSynth();
-			synth.master_volume = 1.3;
+			synth.master_volume = 1.0;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
@@ -125,7 +125,7 @@ class SynthTest
 		#end
 		{
 			var synth = new TableSynth();
-			synth.master_volume = 1.3;
+			synth.master_volume = 1.0;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
