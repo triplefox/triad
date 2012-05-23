@@ -3,6 +3,7 @@ package com.ludamix.triad.audio;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.math.LFSR;
+import com.ludamix.triad.tools.FloatPlayhead;
 
 typedef TSAssign = Int;
 
@@ -23,7 +24,7 @@ class TableSynth implements SoftSynth
 	public var sequencer : Sequencer;
 	
 	public var freq : Float;
-	public var playhead : LoopingPlayhead;
+	public var playhead : FloatPlayhead;
 	public var bufptr : Int;
 	
 	public var master_volume : Float;
@@ -94,7 +95,7 @@ class TableSynth implements SoftSynth
 	public function new()
 	{
 		freq = 440.;
-		playhead = new LoopingPlayhead();
+		playhead = new FloatPlayhead();
 		bufptr = 0;
 		master_volume = 0.1;
 		velocity = 1.0;

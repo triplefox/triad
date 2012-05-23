@@ -1,6 +1,6 @@
-package com.ludamix.triad.audio;
+package com.ludamix.triad.tools;
 
-class LoopingPlayhead
+class FloatPlayhead
 {
 	
 	public var pos : Float;
