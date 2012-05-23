@@ -24,20 +24,7 @@ typedef RawSample = {
 };
 
 typedef SamplerPatch = {
-	sample : RawSample,
-	mip_2 : RawSample,
-	mip_4 : RawSample,
-	mip_8 : RawSample,
-	mip_16 : RawSample,
-	mip_32 : RawSample,
-	mip_64 : RawSample,
-	mip_128 : RawSample,
-	mip_256 : RawSample,
-	mip_512 : RawSample,
-	mip_1024 : RawSample,
-	mip_2048 : RawSample,
-	mip_4096 : RawSample,
-	mip_8192 : RawSample,
+	mips : Array<RawSample>,
 	sample_rate : Int, // mono rate
 	base_frequency : Float, // hz
 	stereo : Bool,
@@ -216,20 +203,7 @@ class SamplerSynth implements SoftSynth
 			mips.push(mipMap(mips[mips.length-1],2));
 		return new PatchGenerator(
 			{
-			sample: mips[0],
-			mip_2: mips[1],
-			mip_4: mips[2],
-			mip_8: mips[3],
-			mip_16: mips[4],
-			mip_32: mips[5],
-			mip_64: mips[6],
-			mip_128: mips[7],
-			mip_256: mips[8],
-			mip_512: mips[9],
-			mip_1024: mips[10],
-			mip_2048: mips[11],
-			mip_4096: mips[12],
-			mip_8192: mips[13],
+			mips: mips,
 			stereo:false,
 			pan:0.5,
 			loop_mode:loop_type,
@@ -263,20 +237,7 @@ class SamplerSynth implements SoftSynth
 		for (n in 0...13)
 			mips.push(mipMap(mips[mips.length-1],2));
 		return { 
-				sample: mips[0],
-				mip_2: mips[1],
-				mip_4: mips[2],
-				mip_8: mips[3],
-				mip_16: mips[4],
-				mip_32: mips[5],
-				mip_64: mips[6],
-				mip_128: mips[7],
-				mip_256: mips[8],
-				mip_512: mips[9],
-				mip_1024: mips[10],
-				mip_2048: mips[11],
-				mip_4096: mips[12],
-				mip_8192: mips[13],
+				mips: mips,
 				stereo:false,
 				pan:0.5,
 				volume:1.0,
@@ -427,117 +388,23 @@ class SamplerSynth implements SoftSynth
 			var left = curval * Math.sin(pan_sum * 2);
 			var right = curval * Math.cos(1. - pan_sum) * 2;
 			
-			var sample : RawSample = patch.sample;
+			var sample : RawSample = patch.mips[0];
 			var loop_start = patch.loop_start;
 			var loop_end = patch.loop_end;
 			var sample_rate = patch.sample_rate;
 			var base_frequency = patch.base_frequency;
 			
-			if (freq >= sample_rate * 8192)
-			{
-				sample = patch.mip_8192;
-				loop_start *= 8192;
-				loop_end *= 8192;
-				sample_rate *= 8192;
-				base_frequency *= 8192;
-			}
-			else if (freq >= sample_rate * 4096)
-			{
-				sample = patch.mip_4096;
-				loop_start *= 4096;
-				loop_end *= 4096;
-				sample_rate *= 4096;
-				base_frequency *= 4096;
-			}
-			else if (freq >= sample_rate * 2048)
-			{
-				sample = patch.mip_2048;
-				loop_start *= 2048;
-				loop_end *= 2048;
-				sample_rate *= 2048;
-				base_frequency *= 2048;
-			}
-			else if (freq >= sample_rate * 1024)
-			{
-				sample = patch.mip_1024;
-				loop_start *= 1024;
-				loop_end *= 1024;
-				sample_rate *= 1024;
-				base_frequency *= 1024;
-			}
-			else if (freq >= sample_rate * 512)
-			{
-				sample = patch.mip_512;
-				loop_start *= 512;
-				loop_end *= 512;
-				sample_rate *= 512;
-				base_frequency *= 512;
-			}
-			else if (freq >= sample_rate * 256)
-			{
-				sample = patch.mip_256;
-				loop_start *= 256;
-				loop_end *= 256;
-				sample_rate *= 256;
-				base_frequency *= 256;
-			}
-			else if (freq >= sample_rate * 128)
-			{
-				sample = patch.mip_128;
-				loop_start *= 128;
-				loop_end *= 128;
-				sample_rate *= 128;
-				base_frequency *= 128;
-			}
-			else if (freq >= sample_rate * 64)
-			{
-				sample = patch.mip_64;
-				loop_start *= 64;
-				loop_end *= 64;
-				sample_rate *= 64;
-				base_frequency *= 64;
-			}
-			else if (freq >= sample_rate * 32)
-			{
-				sample = patch.mip_32;
-				loop_start *= 32;
-				loop_end *= 32;
-				sample_rate *= 32;
-				base_frequency *= 32;
-			}
-			else if (freq >= sample_rate * 16)
-			{
-				sample = patch.mip_16;
-				loop_start *= 16;
-				loop_end *= 16;
-				sample_rate *= 16;
-				base_frequency *= 16;
-			}
-			else if (freq >= sample_rate * 8)
-			{
-				sample = patch.mip_8;
-				loop_start *= 8;
-				loop_end *= 8;
-				sample_rate *= 8;
-				base_frequency *= 8;
-			}
-			else if (freq >= sample_rate * 4)
-			{
-				sample = patch.mip_4;
-				loop_start *= 4;
-				loop_end *= 4;
-				sample_rate *= 4;
-				base_frequency *= 4;
-			}
-			else if (freq >= sample_rate * 2)
-			{
-				sample = patch.mip_2;
-				loop_start *= 2;
-				loop_end *= 2;
-				sample_rate *= 2;
-				base_frequency *= 2;
-			}
+			var ptr = 0;
+			var freq_mult = 1;
+			while (ptr < patch.mips.length - 1 && freq > sample_rate*freq_mult)
+				{ freq_mult *= 2; ptr++; }
 			
+			sample = patch.mips[ptr];
+			loop_start *= freq_mult;
+			loop_end *= freq_mult;
+			sample_rate *= freq_mult;
+			base_frequency *= freq_mult;
+				
 			var sample_left : FastFloatBuffer = sample.sample_left;
 			var sample_right : FastFloatBuffer = sample.sample_right;
 			if (!patch.stereo) sample_right = sample_left;

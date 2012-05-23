@@ -153,8 +153,8 @@ class SynthTest
 		seq.synths = new Array();
 		seq.channels = new Array();
 		seq.events = new Array();
-		//resetSamplerSynth();
-		resetTableSynth();
+		resetSamplerSynth();
+		//resetTableSynth();
 	}
 	
 	public function queueFunction(func : Dynamic)
