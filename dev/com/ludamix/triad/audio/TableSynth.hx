@@ -23,7 +23,7 @@ class TableSynth implements SoftSynth
 	public var sequencer : Sequencer;
 	
 	public var freq : Float;
-	public var pos : Int;
+	public var playhead : LoopingPlayhead;
 	public var bufptr : Int;
 	
 	public var master_volume : Float;
@@ -94,7 +94,7 @@ class TableSynth implements SoftSynth
 	public function new()
 	{
 		freq = 440.;
-		pos = 0;
+		playhead = new LoopingPlayhead();
 		bufptr = 0;
 		master_volume = 0.1;
 		velocity = 1.0;
@@ -129,7 +129,6 @@ class TableSynth implements SoftSynth
 	public function init(sequencer)
 	{
 		this.sequencer = sequencer;
-		this.DOUBLE_INTERPOLATE = 2 / sequencer.RATE_MULTIPLE;
 		this.buffer = sequencer.buffer;
 		this.followers = new Array();
 		this.lfsr = new LFSR();
@@ -229,8 +228,6 @@ class TableSynth implements SoftSynth
 		// but hurts accuracy after the table end.
 	public static inline var SINE_START = 10; // replace table with sinewave
     public static inline var MAX_OCTAVES = 128; // essentially, how many passes per sample
-    
-	public var DOUBLE_INTERPOLATE : Float; // start using 2x interpolation at this ratio of frequency diff
 	
 	public static var pulseWavetable : Array<Array<FastFloatBuffer>>;
 	public static var sawWavetable : Array<Array<FastFloatBuffer>>;
@@ -373,7 +370,7 @@ class TableSynth implements SoftSynth
 	public function write()
 	{	
 		while (followers.length > 0 && followers[followers.length - 1].isOff()) followers.pop();
-		if (followers.length < 1) { pos = 0; return false; }
+		if (followers.length < 1) { return false; }
 		
 		var cur_follower : EventFollower = followers[followers.length - 1];		
 		var cur_channel = sequencer.channels[cur_follower.patch_event.sequencer_event.channel];
@@ -405,6 +402,8 @@ class TableSynth implements SoftSynth
 					pitch_bend + Std.int(frame_pitch_adjust * 8192 / sequencer.tuning.bend_semitones)));
 		if (wl < 1) wl = 1;
 		
+		playhead.wl = wl;
+		
 		velocity = seq_event.data.velocity / 128;
 		
 		if (cur_follower.env[0].state == RELEASE) // apply the release envelope on top of the release level
@@ -421,6 +420,8 @@ class TableSynth implements SoftSynth
 			
 		var left = curval * Math.sin(pan * 2);
 		var right = curval * Math.cos(1. - pan) * 2;
+		
+		var pos = playhead.getSamplePos();
 		
 		switch(patch.oscillator)
 		{
@@ -484,9 +485,9 @@ class TableSynth implements SoftSynth
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
-			case PULSE_WT: runWavetable(pulseWavetable, curval, wl, hw, pan);
-			case SAW_WT: runWavetable(sawWavetable, curval, wl, hw, pan);
-			case TRI_WT: runWavetable(triWavetable, curval, wl, hw, pan);
+			case PULSE_WT: pos = runWavetable(pulseWavetable, curval, wl, hw, pos, pan);
+			case SAW_WT: pos = runWavetable(sawWavetable, curval, wl, hw, pos, pan);
+			case TRI_WT: pos = runWavetable(triWavetable, curval, wl, hw, pos, pan);
 			case PD_WINDOW_WINDOW:
 				/*
 				 * 	
@@ -526,25 +527,27 @@ class TableSynth implements SoftSynth
 					pos = (pos+2) % wl;
 					bufptr = (bufptr+2) % buffer.length;
 				}
-			case LFSR_2: runLfsr(left, right, wl, hw, 2);
-			case LFSR_3: runLfsr(left, right, wl, hw, 3);
-			case LFSR_4: runLfsr(left, right, wl, hw, 4);
-			case LFSR_5: runLfsr(left, right, wl, hw, 5);
-			case LFSR_6: runLfsr(left, right, wl, hw, 6);
-			case LFSR_7: runLfsr(left, right, wl, hw, 7);
-			case LFSR_8: runLfsr(left, right, wl, hw, 8);
-			case LFSR_9: runLfsr(left, right, wl, hw, 9);
-			case LFSR_10: runLfsr(left, right, wl, hw, 10);
-			case LFSR_11: runLfsr(left, right, wl, hw, 11);
-			case LFSR_12: runLfsr(left, right, wl, hw, 12);
-			case LFSR_13: runLfsr(left, right, wl, hw, 13);
-			case LFSR_14: runLfsr(left, right, wl, hw, 14);
-			case LFSR_15: runLfsr(left, right, wl, hw, 15);
-			case LFSR_16: runLfsr(left, right, wl, hw, 16);
-			case LFSR_17: runLfsr(left, right, wl, hw, 17);
-			case LFSR_18: runLfsr(left, right, wl, hw, 18);
-			case LFSR_19: runLfsr(left, right, wl, hw, 19);
+			case LFSR_2: pos = runLfsr(left, right, pos, wl, hw, 2);
+			case LFSR_3: pos = runLfsr(left, right, pos, wl, hw, 3);
+			case LFSR_4: pos = runLfsr(left, right, pos, wl, hw, 4);
+			case LFSR_5: pos = runLfsr(left, right, pos, wl, hw, 5);
+			case LFSR_6: pos = runLfsr(left, right, pos, wl, hw, 6);
+			case LFSR_7: pos = runLfsr(left, right, pos, wl, hw, 7);
+			case LFSR_8: pos = runLfsr(left, right, pos, wl, hw, 8);
+			case LFSR_9: pos = runLfsr(left, right, pos, wl, hw, 9);
+			case LFSR_10: pos = runLfsr(left, right, pos, wl, hw, 10);
+			case LFSR_11: pos = runLfsr(left, right, pos, wl, hw, 11);
+			case LFSR_12: pos = runLfsr(left, right, pos, wl, hw, 12);
+			case LFSR_13: pos = runLfsr(left, right, pos, wl, hw, 13);
+			case LFSR_14: pos = runLfsr(left, right, pos, wl, hw, 14);
+			case LFSR_15: pos = runLfsr(left, right, pos, wl, hw, 15);
+			case LFSR_16: pos = runLfsr(left, right, pos, wl, hw, 16);
+			case LFSR_17: pos = runLfsr(left, right, pos, wl, hw, 17);
+			case LFSR_18: pos = runLfsr(left, right, pos, wl, hw, 18);
+			case LFSR_19: pos = runLfsr(left, right, pos, wl, hw, 19);
 		}
+		
+		playhead.setSamplePos(pos);
 		
 		for (ev in followers)
 		{
@@ -587,7 +590,7 @@ class TableSynth implements SoftSynth
 		return true;
 	}
 	
-	public inline function runLfsr(left : Float, right : Float, wl : Int, hw : Int, taps : Int)
+	public inline function runLfsr(left : Float, right : Float, pos : Int, wl : Int, hw : Int, taps : Int)
 	{
 		var pw = hw / wl;
 		hw = Std.int(wl * 0.5);
@@ -620,10 +623,11 @@ class TableSynth implements SoftSynth
 				gr = gen * right;
 			}
 		}
-		
+		return pos;
 	}
 	
 	public inline function runWavetable(table : Array<Array<FastFloatBuffer>>, curval : Float, wl : Int, hw : Float,
+		pos : Int, 
 		pan : Float)
 	{
 		var peak = curval * 0.3;
@@ -656,33 +660,6 @@ class TableSynth implements SoftSynth
 				bufptr = (bufptr+2) % buffer.length;
 			}		
 		}
-		else if (di > DOUBLE_INTERPOLATE)
-		{
-			// 2x linear
-			var pwi = Std.int(hw / wl * TABLE_MODULATIONS);
-			if (pwi < 0) pwi = Std.int(Math.abs(pwi)); 
-			if (pwi >= TABLE_MODULATIONS) pwi = TABLE_MODULATIONS - 1;
-			var wave = table[oct][pwi];
-			var adjust = base_wl / wl;
-			pos = pos % wl;
-			for (i in 0 ... buffer.length >> 1) 
-			{
-				var pa = pos * adjust;
-				var dist = pa - Std.int(pa);
-				pos = (pos + 1) % wl;
-				var pb = pos * adjust;
-				var dist2 = pb - Std.int(pb);
-				var l = wave.get(Std.int(pa));
-				var r = wave.get(Std.int(pa) + 1);
-				var l2 = wave.get(Std.int(pb));
-				var r2 = wave.get(Std.int(pb + 1));
-				var sum = peak * (l * (dist) + r * (1. - dist) + l2 * (dist2) + r2 * (1. - dist2)) * 0.5;
-				buffer.set(bufptr, buffer.get(bufptr)+ sum * left);
-				buffer.set(bufptr+1, buffer.get(bufptr+1) + sum * right);
-				pos = (pos + 1) % wl;
-				bufptr = (bufptr+2) % buffer.length;
-			}		
-		}
 		else // regular linear
 		{
 			var pwi = Std.int(hw / wl * TABLE_MODULATIONS);
@@ -690,21 +667,26 @@ class TableSynth implements SoftSynth
 			if (pwi >= TABLE_MODULATIONS) pwi = TABLE_MODULATIONS - 1;
 			var wave = table[oct][pwi];
 			var adjust = base_wl / wl;
-			pos = pos % wl;
+			
+			buffer.playhead = 0;
+			wave.playhead = pos;
+			wave.playback_rate = 1;
+			
 			for (i in 0 ... buffer.length >> 1) 
 			{
 				var pa = pos * adjust;
 				var spa = Std.int(pa);
 				var dist = pa - spa;
-				var l = wave.get(spa);
-				var r = wave.get(spa + 1);
+				wave.playhead = spa;
+				var l = wave.read();
+				var r = wave.read();
 				var sum = peak * (l * (dist) + r * (1. - dist));
-				buffer.set(bufptr, buffer.get(bufptr)+ sum * left);
-				buffer.set(bufptr+1, buffer.get(bufptr+1) + sum * right);
-				pos = (pos+2) % wl;
-				bufptr = (bufptr+2) % buffer.length;
+				buffer.addUnbounded(sum * left);
+				buffer.addUnbounded(sum * right);
+				pos = (pos + 2) % wl;
 			}		
 		}
+		return pos;
 	}
 	
 	public function event(patch_ev : PatchEvent, channel : SequencerChannel)
@@ -721,7 +703,6 @@ class TableSynth implements SoftSynth
 				{
 					patch_ev.sequencer_event.priority = Std.int((patch_ev.sequencer_event.priority * PRIORITY_VOICE));
 				}
-				pos = 0;
 			case SequencerEvent.NOTE_OFF: 
 				for (n in followers) 
 				{ 
