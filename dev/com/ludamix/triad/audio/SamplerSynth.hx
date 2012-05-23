@@ -112,15 +112,51 @@ class SamplerSynth implements SoftSynth
 	// and ramp down priority this much each time a new voice is added to the channel
 	public static inline var PRIORITY_VOICE = 0.95;
 
-	// TODO: replace these silly handwritten mips with a macro, then generate all octaves
-	//			(this will allow the lowest outputrates to be useful)
-	
-	private static function _mip2(sample : FastFloatBuffer) : FastFloatBuffer
+	private static function _mip2_linear(sample : FastFloatBuffer) : FastFloatBuffer
 	{
 		var out = new FastFloatBuffer(sample.length >> 1);
 		for (i in 0...sample.length >> 1)
 		{
 			out.set(i, (sample.get(i << 1) + sample.get((i << 1) + 1))*0.5);
+		}
+		return out;
+	}
+	
+	private static function _mip2_cubic(sample : FastFloatBuffer) : FastFloatBuffer
+	{
+		var out = new FastFloatBuffer(sample.length >> 1);
+		for (i in 2...(sample.length >> 1)+2)
+		{
+			var y0 = sample.get((i << 1) % sample.length);
+			var y1 = sample.get(((i << 1) + 1) % sample.length);
+			var y2 = sample.get(((i << 1) + 2) % sample.length);
+			var y3 = sample.get(((i << 1) + 3) % sample.length);
+			var mu2 = 0.25;
+			var a0 = y3 - y2 - y0 + y1;
+			var a1 = y0 - y1 - a0;
+			var a2 = y2 - y0;
+			var a3 = y1;
+			out.set(i-2, a0*0.5*mu2+a1*mu2+a2*0.5+a3);
+		}
+		return out;
+	}
+	
+	private static function _mip2_catmull(sample : FastFloatBuffer) : FastFloatBuffer
+	{
+		var out = new FastFloatBuffer(sample.length >> 1);
+		for (i in 2...(sample.length >> 1)+2)
+		{
+			var y0 = sample.get((i << 1) % sample.length);
+			var y1 = sample.get(((i << 1) + 1) % sample.length);
+			var y2 = sample.get(((i << 1) + 2) % sample.length);
+			var y3 = sample.get(((i << 1) + 3) % sample.length);
+			var mu2 = 0.25;
+			// catmull-rom coefficients
+			var a0 = -0.5*y0 + 1.5*y1 - 1.5*y2 + 0.5*y3;
+			var a1 = y0 - 2.5*y1 + 2*y2 - 0.5*y3;
+			var a2 = -0.5*y0 + 0.5*y2;
+			var a3 = y1;
+			out.set(i-2, a0*0.5*mu2+a1*mu2+a2*0.5+a3);
 		}
 		return out;
 	}
@@ -133,10 +169,10 @@ class SamplerSynth implements SoftSynth
 		var count = 1;
 		while (count < times)
 		{
-			result_l = _mip2(result_l);
+			result_l = _mip2_catmull(result_l);
 			if (raw.sample_left == raw.sample_right)
 				result_r = result_l;
-			else result_r = _mip2(result_r);
+			else result_r = _mip2_catmull(result_r);
 			count *= 2;
 		}
 		
@@ -173,23 +209,27 @@ class SamplerSynth implements SoftSynth
 		}
 		var sample_left = FastFloatBuffer.fromVector(wav_data[0]);
 		var sample_right = FastFloatBuffer.fromVector(wav_data[1]);
-		var raw = { sample_left:sample_left, sample_right:sample_right};
+		var raw = { sample_left:sample_left, sample_right:sample_right };
+		var mips = new Array<RawSample>();
+		mips.push(raw);
+		for (n in 0...13)
+			mips.push(mipMap(mips[mips.length-1],2));
 		return new PatchGenerator(
 			{
-			sample: raw,
-			mip_2: mipMap(raw, 2),
-			mip_4: mipMap(raw, 4),
-			mip_8: mipMap(raw, 8),
-			mip_16: mipMap(raw, 16),
-			mip_32: mipMap(raw, 32),
-			mip_64: mipMap(raw, 64),
-			mip_128: mipMap(raw, 128),
-			mip_256: mipMap(raw, 256),
-			mip_512: mipMap(raw, 512),
-			mip_1024: mipMap(raw, 1024),
-			mip_2048: mipMap(raw, 2048),
-			mip_4096: mipMap(raw, 4096),
-			mip_8192: mipMap(raw, 8192),
+			sample: mips[0],
+			mip_2: mips[1],
+			mip_4: mips[2],
+			mip_8: mips[3],
+			mip_16: mips[4],
+			mip_32: mips[5],
+			mip_64: mips[6],
+			mip_128: mips[7],
+			mip_256: mips[8],
+			mip_512: mips[9],
+			mip_1024: mips[10],
+			mip_2048: mips[11],
+			mip_4096: mips[12],
+			mip_8192: mips[13],
 			stereo:false,
 			pan:0.5,
 			loop_mode:loop_type,
@@ -218,21 +258,25 @@ class SamplerSynth implements SoftSynth
 		var loop_start = 0;
 		var loop_end = samples.length-1;
 		var raw = { sample_left:samples, sample_right:samples};
+		var mips = new Array<RawSample>();
+		mips.push(raw);
+		for (n in 0...13)
+			mips.push(mipMap(mips[mips.length-1],2));
 		return { 
-				sample: raw,
-				mip_2: mipMap(raw, 2),
-				mip_4: mipMap(raw, 4),
-				mip_8: mipMap(raw, 8),
-				mip_16: mipMap(raw, 16),
-				mip_32: mipMap(raw, 32),
-				mip_64: mipMap(raw, 64),
-				mip_128: mipMap(raw, 128),
-				mip_256: mipMap(raw, 256),
-				mip_512: mipMap(raw, 512),
-				mip_1024: mipMap(raw, 1024),
-				mip_2048: mipMap(raw, 2048),
-				mip_4096: mipMap(raw, 4096),
-				mip_8192: mipMap(raw, 8192),
+				sample: mips[0],
+				mip_2: mips[1],
+				mip_4: mips[2],
+				mip_8: mips[3],
+				mip_16: mips[4],
+				mip_32: mips[5],
+				mip_64: mips[6],
+				mip_128: mips[7],
+				mip_256: mips[8],
+				mip_512: mips[9],
+				mip_1024: mips[10],
+				mip_2048: mips[11],
+				mip_4096: mips[12],
+				mip_8192: mips[13],
 				stereo:false,
 				pan:0.5,
 				volume:1.0,
@@ -516,8 +560,10 @@ class SamplerSynth implements SoftSynth
 				
 				var RESAMPLE_DROP = 0;
 				var RESAMPLE_LIN = 1;
+				var RESAMPLE_LIN_MONO = 2;
+				var RESAMPLE_COS = 3;
+				var RESAMPLE_COS_MONO = 4;
 				var RESAMPLE_OPT = 3;
-				var RESAMPLE_LIN_MONO = 4;
 				var resample_type = RESAMPLE_DROP;
 				if (inc != 1) 
 				{
@@ -538,6 +584,10 @@ class SamplerSynth implements SoftSynth
 								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_LIN_MONO: loopForward(copy_samples_lin_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_COS: loopForward(copy_samples_cos, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_COS_MONO: loopForward(copy_samples_cos_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_OPT: loopForward(copy_samples_opt2, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
 						}
@@ -550,6 +600,10 @@ class SamplerSynth implements SoftSynth
 							case RESAMPLE_LIN: loopSustain(copy_samples_lin, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_LIN_MONO: loopSustain(copy_samples_lin_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_COS: loopSustain(copy_samples_cos, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_COS_MONO: loopSustain(copy_samples_cos_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_OPT: loopSustain(copy_samples_opt2, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
@@ -564,6 +618,10 @@ class SamplerSynth implements SoftSynth
 							case RESAMPLE_LIN: runUnlooped(copy_samples_lin, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_LIN_MONO: runUnlooped(copy_samples_lin_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_COS: runUnlooped(copy_samples_cos, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
+								sample_left, sample_right, freq, total_length, sample_length);
+							case RESAMPLE_COS_MONO: runUnlooped(copy_samples_cos_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
 							case RESAMPLE_OPT: runUnlooped(copy_samples_opt2, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
 								sample_left, sample_right, freq, total_length, sample_length);
@@ -747,6 +805,42 @@ class SamplerSynth implements SoftSynth
 		var a : Int = Std.int(ideal);
 		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
 		var interpolation_factor : Float = pos - a;
+		var sd = (sample_left.get(a) * (1. -interpolation_factor) + 
+				sample_left.get(b) * interpolation_factor);
+		buffer.set(bufptr, buffer.get(bufptr) + left * sd);	
+		buffer.set(bufptr + 1, buffer.get(bufptr + 1) + right * sd);
+	}
+	
+	public inline function copy_samples_cos(buffer : FastFloatBuffer, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float,
+								loop_start : Float, loop_end : Float, loop_len : Float)
+	{
+		// cosine interpolator
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var interpolation_factor : Float = (1 - Math.cos((pos - a) * Math.PI)) * 0.5;
+		buffer.set(bufptr, 
+			buffer.get(bufptr) + left * (sample_left.get(a) * (1. -interpolation_factor) + 
+				sample_left.get(b) * interpolation_factor));	
+		buffer.set(bufptr + 1, 
+			buffer.get(bufptr + 1) + right * (sample_right.get(a) * (1. -interpolation_factor) + 
+				sample_right.get(b) * interpolation_factor));
+	}
+	
+	public inline function copy_samples_cos_mono(buffer : FastFloatBuffer, bufptr : Int, 
+								pos : Float, inc : Float, 
+								left : Float, right : Float, 
+								sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, freq : Float,
+								loop_start : Float, loop_end : Float, loop_len : Float)
+	{
+		// cosine interpolator(mono sample)
+		var ideal = Math.min(pos, sample_left.length - 1);
+		var a : Int = Std.int(ideal);
+		var b : Int = Std.int(Math.min(pos + 1, sample_left.length - 1));
+		var interpolation_factor : Float = (1 - Math.cos((pos - a) * Math.PI)) * 0.5;
 		var sd = (sample_left.get(a) * (1. -interpolation_factor) + 
 				sample_left.get(b) * interpolation_factor);
 		buffer.set(bufptr, buffer.get(bufptr) + left * sd);	
