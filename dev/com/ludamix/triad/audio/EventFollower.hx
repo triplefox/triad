@@ -42,7 +42,6 @@ class EventFollower
 		else if (env[0].state != TableSynth.RELEASE)
 		{
 			for (e in env) { e.state = TableSynth.RELEASE; e.ptr = 0; 
-				if (loop_state != LOOP_POST) { loop_state = LOOP_POST; loop_pos = 0.; }
 			}
 		}
 	}

@@ -3,6 +3,7 @@ package com.ludamix.triad.audio;
 import com.ludamix.triad.format.WAV;
 import haxe.Json;
 import nme.Assets;
+import nme.utils.ByteArray;
 
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.Sequencer;
@@ -205,10 +206,10 @@ class SFZ
 		return value;		
 	}
 	
-	public static function load(seq : Sequencer, file : Bytes) : Array<SFZGroup>
+	public static function load(seq : Sequencer, file : ByteArray) : Array<SFZGroup>
 	{
-		var i = new BytesInput(file);
-		var str = i.readString(file.length);
+		file.position = 0;
+		var str = file.readUTFBytes(file.length);
 		var lines = str.split("\n");
 		
 		var HEAD = 0;
@@ -271,7 +272,7 @@ class SFZBank
 		sfz_programs = new IntHash();
 	}
 	
-	public function assignSFZ(sfz : SFZGroup, program : Int, ?recache : Bool=true)
+	public function assignSFZ(sfz : SFZGroup, programs : Array<Int>, ?recache : Bool=true)
 	{
 		var req_samples = sfz.getSamples();
 		for (n in req_samples)
@@ -283,7 +284,8 @@ class SFZBank
 				samples.set(n, content.settings);
 			}
 		}
-		sfz_programs.set(program, sfz);
+		for (program in programs)
+			sfz_programs.set(program, sfz);
 		if (recache)
 			sfz.cacheRegions(seq, samples);
 	}

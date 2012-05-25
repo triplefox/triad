@@ -256,9 +256,9 @@ class SamplerSynth implements SoftSynth
 		var loop_start = 0;
 		var loop_end = wav_data.length - 1;
 		
-		var raw_pre_loop : RawSample = null;
-		var raw_loop : RawSample = null;
-		var raw_post_loop : RawSample = null;
+		var m_pre_loop : Array<RawSample> = null;
+		var m_loop : Array<RawSample> = null;
+		var m_post_loop : Array<RawSample> = null;
 		
 		if (wav.header.smpl != null)
 		{
@@ -271,30 +271,42 @@ class SamplerSynth implements SoftSynth
 				switch(wav.header.smpl.loop_data[0].type)
 				{
 					case 0: loop_type = SamplerSynth.LOOP_FORWARD; 
-						raw_loop = genRaw(wav_data,loopForward,loop_start,loop_end);
+						m_loop = genMips(genRaw(wav_data,loopForward,loop_start,loop_end));
 					case 1: loop_type = SamplerSynth.LOOP_PINGPONG;
-						raw_loop = genRaw(wav_data,loopPingpong,loop_start,loop_end);
+						m_loop = genMips(genRaw(wav_data,loopPingpong,loop_start,loop_end));
 					case 2: loop_type = SamplerSynth.LOOP_BACKWARD;
-						raw_loop = genRaw(wav_data,loopBackward,loop_start,loop_end);
+						m_loop = genMips(genRaw(wav_data,loopBackward,loop_start,loop_end));
 				}
-				raw_pre_loop = genRaw(wav_data,loopForward,0,loop_start);
-				raw_post_loop = genRaw(wav_data,loopForward,loop_end,wav_data[0].length);
+				if (loop_start>0)
+					m_pre_loop = genMips(genRaw(wav_data, loopForward, 0, loop_start));
+				else
+					m_pre_loop = m_loop;
+				if (loop_end<Std.int(wav_data[0].length))
+					m_post_loop = genMips(genRaw(wav_data, loopForward, loop_end, wav_data[0].length));
+				else
+					m_post_loop = m_loop;
 			}
 			else
-				raw_pre_loop = genRaw(wav_data,loopForward,0,wav_data[0].length);
+			{
+				m_post_loop = genMips(genRaw(wav_data, loopForward, 0, wav_data[0].length));
+				m_pre_loop = m_post_loop;
+				m_loop = m_post_loop;
+			}
 			
 			midi_unity_note = wav.header.smpl.midi_unity_note;
 			midi_pitch_fraction = wav.header.smpl.midi_pitch_fraction;
 		}
 		else
 		{
-			raw_pre_loop = genRaw(wav_data,loopForward,0,wav_data[0].length);
+			m_post_loop = genMips(genRaw(wav_data,loopForward,0,wav_data[0].length));
+			m_pre_loop = m_post_loop;
+			m_loop = m_post_loop;
 		}
 		return new PatchGenerator(
 			{
-			mips_pre_loop: genMips(raw_pre_loop),
-			mips_loop: genMips(raw_loop),
-			mips_post_loop: genMips(raw_post_loop),
+			mips_pre_loop: m_pre_loop,
+			mips_loop: m_loop,
+			mips_post_loop: m_post_loop,
 			stereo:false,
 			pan:0.5,
 			loop_mode:loop_type,
@@ -322,11 +334,11 @@ class SamplerSynth implements SoftSynth
 		
 		var loop_start = 0;
 		var loop_end = samples.length-1;
-		var raw = { sample_left:samples, sample_right:samples };
+		var mips = genMips({ sample_left:samples, sample_right:samples });
 		return { 
-				mips_pre_loop: null,
-				mips_loop: genMips(raw),
-				mips_post_loop: null,
+				mips_pre_loop: mips,
+				mips_loop: mips,
+				mips_post_loop: mips,
 				stereo:false,
 				pan:0.5,
 				volume:1.0,
@@ -502,27 +514,20 @@ class SamplerSynth implements SoftSynth
 			var sample_left_loop : FastFloatBuffer = null;
 			var sample_right_loop : FastFloatBuffer = null;
 			
-			if (patch.mips_pre_loop != null)
-			{
-				var sample_pre = patch.mips_pre_loop[ptr];
-				sample_left_pre = sample_pre.sample_left;
-				sample_right_pre = sample_pre.sample_right;
-				if (!patch.stereo) sample_right_pre = sample_left_pre;
-			}
-			if (patch.mips_loop != null)
-			{
-				var sample_loop = patch.mips_loop[ptr];
-				sample_left_loop = sample_loop.sample_left;
-				sample_right_loop = sample_loop.sample_right;
-				if (!patch.stereo) sample_right_loop = sample_left_loop;
-			}
-			if (patch.mips_post_loop != null)
-			{
-				var sample_post = patch.mips_post_loop[ptr];
-				sample_left_post = sample_post.sample_left;
-				sample_right_post = sample_post.sample_right;
-				if (!patch.stereo) sample_right_post = sample_left_post;
-			}
+			var sample_pre = patch.mips_pre_loop[ptr];
+			sample_left_pre = sample_pre.sample_left;
+			sample_right_pre = sample_pre.sample_right;
+			if (!patch.stereo) sample_right_pre = sample_left_pre;
+			
+			var sample_loop = patch.mips_loop[ptr];
+			sample_left_loop = sample_loop.sample_left;
+			sample_right_loop = sample_loop.sample_right;
+			if (!patch.stereo) sample_right_loop = sample_left_loop;
+			
+			var sample_post = patch.mips_post_loop[ptr];
+			sample_left_post = sample_post.sample_left;
+			sample_right_post = sample_post.sample_right;
+			if (!patch.stereo) sample_right_post = sample_left_post;
 			
 			// we are assuming the sample rate is the mono rate.
 			
@@ -533,25 +538,24 @@ class SamplerSynth implements SoftSynth
 			switch(patch.loop_mode)
 			{
 				case LOOP_FORWARD, LOOP_BACKWARD, LOOP_PINGPONG: 
-					runLoop(cur_follower, buffer, inc_samples, left, right, 
+					runLoop(cur_follower, buffer, inc_samples, left, right,
 							sample_left_pre, sample_right_pre, sample_left_loop, sample_right_loop,
 							write);
+				// FIXME: Find samples that test sustain so that it can be implemented properly
 				case SUSTAIN_FORWARD, SUSTAIN_BACKWARD, SUSTAIN_PINGPONG:
-					runSustain(cur_follower, buffer, inc_samples, 
+					runLoop(cur_follower, buffer, inc_samples, 
 							left, right, sample_left_pre, sample_right_pre, 
 							sample_left_loop, sample_right_loop,
-							sample_left_post, sample_right_post,
 							write);
 				case ONE_SHOT, NO_LOOP:
 					runUnlooped(cur_follower, buffer, inc_samples, 
-							left, right, sample_left_pre, sample_right_pre,
+							left, right, sample_left_post, sample_right_post,
 							write);
 			}
 			
 			if (cur_follower.loop_pos > 1. && (patch.loop_mode == ONE_SHOT || cur_follower.env[0].state == RELEASE))
 			{
 				cur_follower.env[0].state = OFF;
-				cur_follower.loop_pos = 0.;
 			}
 			
 			// Envelope advancement. We judge the length of the note based on the master envelope.
@@ -620,66 +624,35 @@ class SamplerSynth implements SoftSynth
 	{
 		// LOOP - repeat loop until envelope reaches OFF
 		buffer.playhead = 0;
-		if (cur_follower.loop_state == EventFollower.LOOP_PRE)
-		{
-			var inc = sample_inc / sample_left_pre.length;
-			var ll = getLoopLen(cur_follower, buffer, inc, sample_left_pre);
-			if (write) cur_follower.loop_pos = 
-				runSegment(cur_follower, buffer, inc, left, right, sample_left_pre, sample_right_pre, ll);
-			else cur_follower.loop_pos = 
-				fakeSegment(cur_follower, inc, ll);
-			if (buffer.playhead < buffer.length) cur_follower.loop_state = EventFollower.LOOP;
-		}
 		while (buffer.playhead < buffer.length)
 		{
-			var inc = sample_inc / sample_left_loop.length;
-			if (write) cur_follower.loop_pos = 
-				runSegment(cur_follower, buffer, inc, left, right, sample_left_loop, sample_right_loop,
-				getLoopLen(cur_follower, buffer, inc, sample_left_loop));
-			else cur_follower.loop_pos = 
-				fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_loop));
-		}
-	}
-	
-	private inline function runSustain(cur_follower : EventFollower, buffer : FastFloatBuffer, sample_inc : Float, 
-		left : Float, right : Float, 
-		sample_left_pre : FastFloatBuffer, sample_right_pre : FastFloatBuffer,
-		sample_left_loop : FastFloatBuffer, sample_right_loop : FastFloatBuffer,
-		sample_left_post : FastFloatBuffer, sample_right_post : FastFloatBuffer,
-		write : Bool
-		)
-	{
-		// SUSTAIN - loop until release, then play to the first of envelope OFF or sample endpoint
-		buffer.playhead = 0;
-		if (cur_follower.loop_state == EventFollower.LOOP_PRE)
-		{
-			var inc = sample_inc / sample_left_pre.length;
-			var ll = getLoopLen(cur_follower, buffer, inc, sample_left_pre);
-			if (write) cur_follower.loop_pos = 
-				runSegment(cur_follower, buffer, inc, left, right, sample_left_pre, sample_right_pre, ll);
-			else cur_follower.loop_pos = 
-				fakeSegment(cur_follower, inc, ll);
-			if (buffer.playhead < buffer.length) cur_follower.loop_state = EventFollower.LOOP;
-		}
-		else if (cur_follower.loop_state == EventFollower.LOOP_POST)
-		{
-			var inc = sample_inc / sample_left_post.length;
-			if (write) cur_follower.loop_pos = 
-				runSegment(cur_follower, buffer, inc, left, right, sample_left_post, sample_right_post,
-				getLoopLen(cur_follower, buffer, inc, sample_left_post));
-			else cur_follower.loop_pos = 
-				fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_post));
-		}
-		else
-		{
-			var inc = sample_inc / sample_left_loop.length;
-			while (buffer.playhead < buffer.length)
+			if (cur_follower.loop_state == EventFollower.LOOP_PRE)
 			{
+				var inc = sample_inc / sample_left_pre.length;
+				var ll = getLoopLen(cur_follower, buffer, inc, sample_left_pre);
+				var next_pos = 0.;
+				if (write) next_pos = runSegment(cur_follower, buffer, inc, left, right, 
+					sample_left_pre, sample_right_pre, ll,false);
+				else next_pos = fakeSegment(cur_follower, inc, ll,false);
+				if (next_pos > 1.) 
+				{
+					next_pos = next_pos % 1.;
+					cur_follower.loop_state = EventFollower.LOOP;
+					var sample_pos = next_pos * sample_left_pre.length;
+					cur_follower.loop_pos = MathTools.rescale(0, sample_left_loop.length, 0, 1.,
+						sample_pos);
+				}
+				else
+					cur_follower.loop_pos = next_pos;
+			}
+			else
+			{
+				var inc = sample_inc / sample_left_loop.length;
 				if (write) cur_follower.loop_pos = 
 					runSegment(cur_follower, buffer, inc, left, right, sample_left_loop, sample_right_loop,
-					getLoopLen(cur_follower, buffer, inc, sample_left_loop));
+					getLoopLen(cur_follower, buffer, inc, sample_left_loop),true);
 				else cur_follower.loop_pos = 
-					fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_loop));
+					fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_loop),true);
 			}
 		}
 	}
@@ -693,14 +666,23 @@ class SamplerSynth implements SoftSynth
 		// ONE_SHOT - play until the sample endpoint, do not respect note off
 		// NO_LOOP - play until the sample endpoint, cut on note off
 		buffer.playhead = 0;
+		cur_follower.loop_state = EventFollower.LOOP_POST;
 		var inc = sample_inc / sample_left_pre.length;
-		if (cur_follower.loop_pos < 1.)
+		while (buffer.playhead < buffer.length)
 		{
-			if (write) cur_follower.loop_pos = 
-				runSegment(cur_follower, buffer, inc, left, right, sample_left_pre, sample_right_pre,
-				getLoopLen(cur_follower, buffer, inc, sample_left_pre));
-			else cur_follower.loop_pos = 
-				fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_pre));
+			if (cur_follower.loop_pos >= 1.)
+			{
+				buffer.playhead = buffer.length;
+				cur_follower.loop_pos = cur_follower.loop_pos + inc;
+			}
+			else
+			{
+				if (write) cur_follower.loop_pos = 
+					runSegment(cur_follower, buffer, inc, left, right, sample_left_pre, sample_right_pre,
+					getLoopLen(cur_follower, buffer, inc, sample_left_pre), false);
+				else cur_follower.loop_pos = 
+					fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_pre), false);
+			}
 		}
 	}
 	
@@ -724,22 +706,23 @@ class SamplerSynth implements SoftSynth
 		while ((samples) * inc + cur_follower.loop_pos >= 1.) samples--;
 		if (samples < 1) samples = 1;
 		
-		samples = 1;
-		
 		// Hooray! We know how much to copy.
 		return samples;
 		
 	}
 	
-	private inline function fakeSegment(cur_follower : EventFollower, inc : Float, samples_requested : Int)
+	private inline function fakeSegment(cur_follower : EventFollower, inc : Float, samples_requested : Int, looped : Bool)
 	{
 		buffer.playhead += samples_requested;
-		return (cur_follower.loop_pos + (inc * samples_requested)) % 1.;
+		if (looped)
+			return (cur_follower.loop_pos % 1.) + (inc * samples_requested);
+		else
+			return (cur_follower.loop_pos) + (inc * samples_requested);
 	}
 	
 	private inline function runSegment(cur_follower : EventFollower, 
 		buffer : FastFloatBuffer, inc : Float, left, right, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
-		samples_requested : Int)
+		samples_requested : Int, looped : Bool)
 	{
 		// Copy exactly the number of samples requested for the buffer.
 		// Callee has to figure out how to fill buffer correctly.
@@ -758,10 +741,17 @@ class SamplerSynth implements SoftSynth
 		sample_left.playback_rate = 1;
 		sample_right.playback_rate = 1;
 		
-		var pos = cur_follower.loop_pos % 1.;
+		var pos = cur_follower.loop_pos;
+		if (looped)
+			pos = pos % 1.;
 		var len = sample_left.length;
 		
-		if (sample_left == sample_right)
+		if (pos > 1.)
+		{
+			buffer.playhead += samples_requested;
+			pos += inc * samples_requested;
+		}
+		else if (sample_left == sample_right)
 		{
 			for (n in 0...samples_requested)
 			{

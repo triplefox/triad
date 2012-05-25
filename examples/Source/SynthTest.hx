@@ -191,7 +191,7 @@ class SynthTest
 		
 		Audio.init({Volume:{vol:1.0,on:true}},true);
 		#if alchemy
-			FastFloatBuffer.init(1024 * 1024 * 128);
+			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
 		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
 		seq = new Sequencer(Std.int(44100), 4096,8);
@@ -208,12 +208,8 @@ class SynthTest
 		for (n in 0...128)
 		{
 			queueFunction(function(){
-				#if flash
-				  var sfz_loadable = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz")));
-				#else
-				  var sfz_loadable = SFZ.load(seq, Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz"));
-				#end
-				melodic.assignSFZ(sfz_loadable[0], n);
+				var sfz_loadable = SFZ.load(seq, Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz"));
+				melodic.assignSFZ(sfz_loadable[0], [n]);
 				loader_gui.keys.infos.text = "Loaded instrument " + Std.string(n + 1);
 				loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 			});
@@ -222,15 +218,11 @@ class SynthTest
 		
 		queueFunction(function(){
 			percussion = new SFZBank(seq, "sfz/");
-			#if flash
-			  var sfz_data = SFZ.load(seq, Bytes.ofData(Assets.getBytes("sfz/kit-standard.sfz")));
-			#else
-			  var sfz_data = SFZ.load(seq, Assets.getBytes("sfz/kit-standard.sfz"));
-			#end
+			var sfz_data = SFZ.load(seq, Assets.getBytes("sfz/kit-standard.sfz"));
+			var assign = new Array<Int>();
 			for (n in 0...128)
-			{
-				percussion.assignSFZ(sfz_data[0], n);
-			}
+				assign.push(n);
+			percussion.assignSFZ(sfz_data[0], assign);
 			loader_gui.keys.infos.text = "Loaded percussion";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});
