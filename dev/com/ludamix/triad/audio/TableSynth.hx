@@ -134,9 +134,9 @@ class TableSynth implements SoftSynth
 		this.followers = new Array();
 		this.lfsr = new LFSR();
 		
-		if (pulseWavetable == null) genPulseWT();
-		if (sawWavetable == null) genSawWT();
-		if (triWavetable == null) genTriWT();
+		//if (pulseWavetable == null) genPulseWT();
+		//if (sawWavetable == null) genSawWT();
+		//if (triWavetable == null) genTriWT();
 		
 	}
 	
@@ -682,8 +682,10 @@ class TableSynth implements SoftSynth
 				var l = wave.read();
 				var r = wave.read();
 				var sum = peak * (l * (dist) + r * (1. - dist));
-				buffer.addUnbounded(sum * left);
-				buffer.addUnbounded(sum * right);
+				buffer.add(sum * left);
+				buffer.advancePlayheadUnbounded();
+				buffer.add(sum * right);
+				buffer.advancePlayheadUnbounded();
 				pos = (pos + 2) % wl;
 			}		
 		}
