@@ -25,7 +25,7 @@ class EventFollower
 		for (n in 0...num_envelopes)
 			env.push(new EnvelopeState());
 		this.lfo_pos = 0;
-		loop_pos = 0.; loop_state = 0; release_level = 1.;
+		loop_pos = 0.; loop_state = LOOP_PRE; release_level = 1.;
 	}
 	
 	public inline function isOff()

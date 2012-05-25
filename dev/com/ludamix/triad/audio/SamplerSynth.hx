@@ -271,24 +271,24 @@ class SamplerSynth implements SoftSynth
 				switch(wav.header.smpl.loop_data[0].type)
 				{
 					case 0: loop_type = SamplerSynth.LOOP_FORWARD; 
-						raw_loop = genRaw(wav_data,loopForward,0,wav_data[0].length);
+						raw_loop = genRaw(wav_data,loopForward,loop_start,loop_end);
 					case 1: loop_type = SamplerSynth.LOOP_PINGPONG;
-						raw_loop = genRaw(wav_data,loopPingpong,0,wav_data[0].length);
+						raw_loop = genRaw(wav_data,loopPingpong,loop_start,loop_end);
 					case 2: loop_type = SamplerSynth.LOOP_BACKWARD;
-						raw_loop = genRaw(wav_data,loopBackward,0,wav_data[0].length);
+						raw_loop = genRaw(wav_data,loopBackward,loop_start,loop_end);
 				}
-				raw_pre_loop = genRaw(wav_data,loopForward,0,wav_data[0].length);
-				raw_post_loop = genRaw(wav_data,loopForward,0,wav_data[0].length);
+				raw_pre_loop = genRaw(wav_data,loopForward,0,loop_start);
+				raw_post_loop = genRaw(wav_data,loopForward,loop_end,wav_data[0].length);
 			}
 			else
-				raw_post_loop = genRaw(wav_data,loopForward,0,wav_data[0].length);
+				raw_pre_loop = genRaw(wav_data,loopForward,0,wav_data[0].length);
 			
 			midi_unity_note = wav.header.smpl.midi_unity_note;
 			midi_pitch_fraction = wav.header.smpl.midi_pitch_fraction;
 		}
 		else
 		{
-			raw_post_loop = genRaw(wav_data,loopForward,0,wav_data[0].length);
+			raw_pre_loop = genRaw(wav_data,loopForward,0,wav_data[0].length);
 		}
 		return new PatchGenerator(
 			{
@@ -487,114 +487,71 @@ class SamplerSynth implements SoftSynth
 			var sample_rate = patch.sample_rate;
 			var base_frequency = patch.base_frequency;
 			
-			var sample : RawSample = sampleset[0];
-			
 			var ptr = 0;
 			var freq_mult = 1;
 			while (ptr < sampleset.length - 1 && freq > sample_rate*freq_mult)
 				{ freq_mult *= 2; ptr++; }
 			
-			sample = sampleset[ptr];
 			sample_rate *= freq_mult;
 			base_frequency *= freq_mult;
-				
-			var sample_left : FastFloatBuffer = sample.sample_left;
-			var sample_right : FastFloatBuffer = sample.sample_right;
-			if (!patch.stereo) sample_right = sample_left;
+			
+			var sample_left_pre : FastFloatBuffer = null;
+			var sample_right_pre : FastFloatBuffer = null;
+			var sample_left_post : FastFloatBuffer = null;
+			var sample_right_post : FastFloatBuffer = null;
+			var sample_left_loop : FastFloatBuffer = null;
+			var sample_right_loop : FastFloatBuffer = null;
+			
+			if (patch.mips_pre_loop != null)
+			{
+				var sample_pre = patch.mips_pre_loop[ptr];
+				sample_left_pre = sample_pre.sample_left;
+				sample_right_pre = sample_pre.sample_right;
+				if (!patch.stereo) sample_right_pre = sample_left_pre;
+			}
+			if (patch.mips_loop != null)
+			{
+				var sample_loop = patch.mips_loop[ptr];
+				sample_left_loop = sample_loop.sample_left;
+				sample_right_loop = sample_loop.sample_right;
+				if (!patch.stereo) sample_right_loop = sample_left_loop;
+			}
+			if (patch.mips_post_loop != null)
+			{
+				var sample_post = patch.mips_post_loop[ptr];
+				sample_left_post = sample_post.sample_left;
+				sample_right_post = sample_post.sample_right;
+				if (!patch.stereo) sample_right_post = sample_left_post;
+			}
 			
 			// we are assuming the sample rate is the mono rate.
 			
 			var base_wl = sample_rate / base_frequency;
 			if (wl < 1) wl = 1;
 			var inc_samples : Float = base_wl / wl;
-			var inc : Float = inc_samples / sample.sample_left.length;
-			var inc_total : Float = inc * (buffer.length >> 1);
 			
-			if (write)
+			switch(patch.loop_mode)
 			{
-				
-				var RESAMPLE_DROP = 0;
-				var RESAMPLE_LIN = 1;
-				var RESAMPLE_LIN_MONO = 2;
-				var RESAMPLE_COS = 3;
-				var RESAMPLE_COS_MONO = 4;
-				var RESAMPLE_OPT = 3;
-				var resample_type = RESAMPLE_DROP;
-				/*if (inc != 1) 
-				{
-					if (patch.stereo) 
-						resample_type = RESAMPLE_LIN;
-					else 
-						resample_type = RESAMPLE_LIN_MONO;
-				}*/
-				switch(patch.loop_mode)
-				{
-					// LOOP - repeat loop until envelope reaches OFF
-					case LOOP_FORWARD, LOOP_BACKWARD, LOOP_PINGPONG: 
-						switch(resample_type)
-						{
-							case RESAMPLE_DROP: runLoop(copy_samples_drop, cur_follower, buffer, inc, left, right,
-								sample_left, sample_right);
-							/*case RESAMPLE_LIN: loopForward(copy_samples_lin, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_LIN_MONO: loopForward(copy_samples_lin_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_COS: loopForward(copy_samples_cos, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_COS_MONO: loopForward(copy_samples_cos_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_OPT: loopForward(copy_samples_opt2, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);*/
-						}
-					// SUSTAIN - loop until release, then play to the first of envelope OFF or sample endpoint
-					case SUSTAIN_FORWARD, SUSTAIN_BACKWARD, SUSTAIN_PINGPONG:
-						switch(resample_type)
-						{
-							case RESAMPLE_DROP: runLoop(copy_samples_drop, cur_follower, buffer, inc, left, right,
-								sample_left, sample_right);
-							/*case RESAMPLE_DROP: loopSustain(copy_samples_drop, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);*/
-							/*case RESAMPLE_LIN: loopSustain(copy_samples_lin, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_LIN_MONO: loopSustain(copy_samples_lin_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_COS: loopSustain(copy_samples_cos, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_COS_MONO: loopSustain(copy_samples_cos_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_OPT: loopSustain(copy_samples_opt2, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);*/
-						}
-					// ONE_SHOT - play until the sample endpoint, do not respect note off
-					// NO_LOOP - play until the sample endpoint, cut on note off
-					case ONE_SHOT, NO_LOOP:
-						switch(resample_type)
-						{
-							case RESAMPLE_DROP: runLoop(copy_samples_drop, cur_follower, buffer, inc, left, right,
-								sample_left, sample_right);
-							/*case RESAMPLE_DROP: runUnlooped(copy_samples_drop, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);*/
-							/*case RESAMPLE_LIN: runUnlooped(copy_samples_lin, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_LIN_MONO: runUnlooped(copy_samples_lin_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_COS: runUnlooped(copy_samples_cos, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_COS_MONO: runUnlooped(copy_samples_cos_mono, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);
-							case RESAMPLE_OPT: runUnlooped(copy_samples_opt2, cur_follower, loop_end, loop_len, buffer, bufptr, inc, left, right,
-								sample_left, sample_right, freq, total_length, sample_length);*/
-						}
-				}		
+				case LOOP_FORWARD, LOOP_BACKWARD, LOOP_PINGPONG: 
+					runLoop(cur_follower, buffer, inc_samples, left, right, 
+							sample_left_pre, sample_right_pre, sample_left_loop, sample_right_loop,
+							write);
+				case SUSTAIN_FORWARD, SUSTAIN_BACKWARD, SUSTAIN_PINGPONG:
+					runSustain(cur_follower, buffer, inc_samples, 
+							left, right, sample_left_pre, sample_right_pre, 
+							sample_left_loop, sample_right_loop,
+							sample_left_post, sample_right_post,
+							write);
+				case ONE_SHOT, NO_LOOP:
+					runUnlooped(cur_follower, buffer, inc_samples, 
+							left, right, sample_left_pre, sample_right_pre,
+							write);
 			}
-			else
+			
+			if (cur_follower.loop_pos > 1. && (patch.loop_mode == ONE_SHOT || cur_follower.env[0].state == RELEASE))
 			{
-				cur_follower.loop_pos += inc_total;
-				if (cur_follower.loop_pos > 1. && (patch.loop_mode == ONE_SHOT || cur_follower.env[0].state == RELEASE))
-				{
-					cur_follower.env[0].state = OFF;
-					cur_follower.loop_pos = 0.;
-				}
+				cur_follower.env[0].state = OFF;
+				cur_follower.loop_pos = 0.;
 			}
 			
 			// Envelope advancement. We judge the length of the note based on the master envelope.
@@ -654,42 +611,147 @@ class SamplerSynth implements SoftSynth
 			
 	}
 	
-	private inline function runLoop(copy_samples : CopySamples, cur_follower : EventFollower, 
-		buffer : FastFloatBuffer, inc : Float, left, right, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer)
+	private inline function runLoop(cur_follower : EventFollower, buffer : FastFloatBuffer, sample_inc : Float, 
+		left : Float, right : Float, 
+		sample_left_pre : FastFloatBuffer, sample_right_pre : FastFloatBuffer,
+		sample_left_loop : FastFloatBuffer, sample_right_loop : FastFloatBuffer,
+		write : Bool
+		)
+	{
+		// LOOP - repeat loop until envelope reaches OFF
+		buffer.playhead = 0;
+		if (cur_follower.loop_state == EventFollower.LOOP_PRE)
+		{
+			var inc = sample_inc / sample_left_pre.length;
+			var ll = getLoopLen(cur_follower, buffer, inc, sample_left_pre);
+			if (write) cur_follower.loop_pos = 
+				runSegment(cur_follower, buffer, inc, left, right, sample_left_pre, sample_right_pre, ll);
+			else cur_follower.loop_pos = 
+				fakeSegment(cur_follower, inc, ll);
+			if (buffer.playhead < buffer.length) cur_follower.loop_state = EventFollower.LOOP;
+		}
+		while (buffer.playhead < buffer.length)
+		{
+			var inc = sample_inc / sample_left_loop.length;
+			if (write) cur_follower.loop_pos = 
+				runSegment(cur_follower, buffer, inc, left, right, sample_left_loop, sample_right_loop,
+				getLoopLen(cur_follower, buffer, inc, sample_left_loop));
+			else cur_follower.loop_pos = 
+				fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_loop));
+		}
+	}
+	
+	private inline function runSustain(cur_follower : EventFollower, buffer : FastFloatBuffer, sample_inc : Float, 
+		left : Float, right : Float, 
+		sample_left_pre : FastFloatBuffer, sample_right_pre : FastFloatBuffer,
+		sample_left_loop : FastFloatBuffer, sample_right_loop : FastFloatBuffer,
+		sample_left_post : FastFloatBuffer, sample_right_post : FastFloatBuffer,
+		write : Bool
+		)
+	{
+		// SUSTAIN - loop until release, then play to the first of envelope OFF or sample endpoint
+		buffer.playhead = 0;
+		if (cur_follower.loop_state == EventFollower.LOOP_PRE)
+		{
+			var inc = sample_inc / sample_left_pre.length;
+			var ll = getLoopLen(cur_follower, buffer, inc, sample_left_pre);
+			if (write) cur_follower.loop_pos = 
+				runSegment(cur_follower, buffer, inc, left, right, sample_left_pre, sample_right_pre, ll);
+			else cur_follower.loop_pos = 
+				fakeSegment(cur_follower, inc, ll);
+			if (buffer.playhead < buffer.length) cur_follower.loop_state = EventFollower.LOOP;
+		}
+		else if (cur_follower.loop_state == EventFollower.LOOP_POST)
+		{
+			var inc = sample_inc / sample_left_post.length;
+			if (write) cur_follower.loop_pos = 
+				runSegment(cur_follower, buffer, inc, left, right, sample_left_post, sample_right_post,
+				getLoopLen(cur_follower, buffer, inc, sample_left_post));
+			else cur_follower.loop_pos = 
+				fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_post));
+		}
+		else
+		{
+			var inc = sample_inc / sample_left_loop.length;
+			while (buffer.playhead < buffer.length)
+			{
+				if (write) cur_follower.loop_pos = 
+					runSegment(cur_follower, buffer, inc, left, right, sample_left_loop, sample_right_loop,
+					getLoopLen(cur_follower, buffer, inc, sample_left_loop));
+				else cur_follower.loop_pos = 
+					fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_loop));
+			}
+		}
+	}
+	
+	private inline function runUnlooped(cur_follower : EventFollower, buffer : FastFloatBuffer, sample_inc : Float, 
+		left : Float, right : Float, 
+		sample_left_pre : FastFloatBuffer, sample_right_pre : FastFloatBuffer,
+		write : Bool
+		)
+	{
+		// ONE_SHOT - play until the sample endpoint, do not respect note off
+		// NO_LOOP - play until the sample endpoint, cut on note off
+		buffer.playhead = 0;
+		var inc = sample_inc / sample_left_pre.length;
+		if (cur_follower.loop_pos < 1.)
+		{
+			if (write) cur_follower.loop_pos = 
+				runSegment(cur_follower, buffer, inc, left, right, sample_left_pre, sample_right_pre,
+				getLoopLen(cur_follower, buffer, inc, sample_left_pre));
+			else cur_follower.loop_pos = 
+				fakeSegment(cur_follower, inc, getLoopLen(cur_follower, buffer, inc, sample_left_pre));
+		}
+	}
+	
+	private inline function getLoopLen(cur_follower : EventFollower, buffer : FastFloatBuffer, 
+		inc : Float, loop_sample : FastFloatBuffer) : Int
 	{
 		
-		buffer.playhead = 0;
-		var len = buffer.length;
+		// Calculates a single loop, starting from the buffer's playhead
 		
-		var buffer_sample_in_loop_samples = MathTools.rescale(0, buffer.length, 0, sample_left.length, 1);
-		var loop_sample_in_buffer_samples = MathTools.rescale(0, sample_left.length, 0, buffer.length, 1);
+		var len = buffer.length - buffer.playhead;
 		
-		while(len>0)
-		{
-			// Find the lower of (remaining buffer samples, remaining loop samples)
-			var samples = len;
-			var buffers_in_loop = (sample_left.length) * buffer_sample_in_loop_samples * (1. - cur_follower.loop_pos);
-			
-			// Cut samples in half to account for stereo. Then do some corrections.
-			samples >>= 1;			
-			while ((samples) * inc + cur_follower.loop_pos >= 1.) samples--;
-			if (samples < 1) samples = 1;
-			
-			// Hooray! We know how much to copy.
-			runSegment(copy_samples, cur_follower, buffer, inc, left, right, sample_left, sample_right, samples);
-			
-			// Reduce the amount needed to finish the frame and continue.
-			len -= (samples << 1);
-		}
+		var buffer_sample_in_loop_samples = MathTools.rescale(0, buffer.length, 0, loop_sample.length, 1);
+		var loop_sample_in_buffer_samples = MathTools.rescale(0, loop_sample.length, 0, buffer.length, 1);
+		
+		// Find the lower of (remaining buffer samples, remaining loop samples)
+		var samples = len;
+		var buffers_in_loop = (loop_sample.length) * buffer_sample_in_loop_samples * (1. - cur_follower.loop_pos);
+		
+		// Cut samples in half to account for stereo. Then do some corrections.
+		samples >>= 1;			
+		while ((samples) * inc + cur_follower.loop_pos >= 1.) samples--;
+		if (samples < 1) samples = 1;
+		
+		samples = 1;
+		
+		// Hooray! We know how much to copy.
+		return samples;
 		
 	}
 	
-	private inline function runSegment(copy_samples : CopySamples, cur_follower : EventFollower, 
+	private inline function fakeSegment(cur_follower : EventFollower, inc : Float, samples_requested : Int)
+	{
+		buffer.playhead += samples_requested;
+		return (cur_follower.loop_pos + (inc * samples_requested)) % 1.;
+	}
+	
+	private inline function runSegment(cur_follower : EventFollower, 
 		buffer : FastFloatBuffer, inc : Float, left, right, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
 		samples_requested : Int)
 	{
 		// Copy exactly the number of samples requested for the buffer.
 		// Callee has to figure out how to fill buffer correctly.
+		
+		var resample_type = copy_samples_drop;
+		/*if (inc != 1)
+		{
+			if (sample_left == sample_right) 
+				resample_type = copy_samples_lin;
+			else 
+				resample_type = copy_samples_lin_mono;
+		}*/		
 		
 		var total_inc = inc * (samples_requested);
 		
@@ -704,9 +766,9 @@ class SamplerSynth implements SoftSynth
 			for (n in 0...samples_requested)
 			{
 				sample_left.playhead = Std.int(pos * len);
-				copy_samples(buffer, left, sample_left);
+				resample_type(buffer, left, sample_left);
 				buffer.advancePlayheadUnbounded();
-				copy_samples(buffer, right, sample_left);
+				resample_type(buffer, right, sample_left);
 				buffer.advancePlayheadUnbounded();
 				pos += inc;
 			}
@@ -717,14 +779,14 @@ class SamplerSynth implements SoftSynth
 			{
 				sample_left.playhead = Std.int(pos * len);
 				sample_right.playhead = sample_left.playhead;
-				copy_samples(buffer, left, sample_left);
+				resample_type(buffer, left, sample_left);
 				buffer.advancePlayheadUnbounded();
-				copy_samples(buffer, right, sample_right);
+				resample_type(buffer, right, sample_right);
 				buffer.advancePlayheadUnbounded();
 				pos += inc;
 			}
 		}
-		cur_follower.loop_pos = pos;
+		return pos;
 	}
 	
 	/*private inline function loopSustain(copy_samples : CopySamples, cur_follower: EventFollower, loop_end:Int, 
