@@ -29,16 +29,16 @@ class SequencerEvent
 	
 	public static inline var CHANNEL_EVENT = -102;
 	
+	public static inline var SET_PATCH = 0;
 	public static inline var NOTE_ON = 1;
 	public static inline var NOTE_OFF = 2;
 	public static inline var PITCH_BEND = 3; // normalized around 0
 	public static inline var VOLUME = 4;
 	public static inline var MODULATION = 5;
 	public static inline var PAN = 6;
-	public static inline var SET_PATCH = 7;
-	public static inline var SUSTAIN_PEDAL = 8;
-	public static inline var ALL_NOTES_OFF = 9;
-	public static inline var SET_BPM = 10;
+	public static inline var SUSTAIN_PEDAL = 7;
+	public static inline var ALL_NOTES_OFF = 8;
+	public static inline var SET_BPM = 9;
 	
 }
 
@@ -104,14 +104,18 @@ class SequencerChannel
 	
 	public function priority(synth : SoftSynth) : Int
 	{
+		// this is fairly horrible at this point, and could probably stand a custom optimized version.
 		return MathTools.bestOf(synth.getEvents(), 
 			function(inp) { return inp; }, 
-			function(a, b) { return a.priority > b.priority; }, {priority:-1} ).priority;
+			function(a, b) 
+			{ return a.sequencer_event.priority > b.sequencer_event.priority; }, 
+				{sequencer_event:{priority:-1}} ).sequencer_event.priority;
 	}
 	
-	public function hasEvent(synth : SoftSynth, id : Int)
+	public function hasEvent(synth : SoftSynth, patchevent : PatchEvent)
 	{
-		return Lambda.exists(synth.getEvents(), function(ev) { return ev.id == id; } );
+		return Lambda.exists(synth.getEvents(), function(ev : PatchEvent) { 
+			return ev.patch == patchevent.patch && ev.sequencer_event.id == patchevent.sequencer_event.id ; } );
 	}
 	
 	public function pipe(ev : SequencerEvent, seq : Sequencer)
@@ -150,31 +154,46 @@ class SequencerChannel
 			
 			var patched_events = patch_generator.generator(patch_generator.settings, seq, ev);
 			if (patched_events == null) return;
-			for (patched_ev in patched_events)
+			
+			if (ev.type == SequencerEvent.NOTE_OFF)
 			{
-				var usable = outputs;
-				if (allocated.length >= polyphony)
-					usable = allocated;
-				// overlapping behavior
-				for (synth in usable)
+				for (patched_ev in patched_events)
 				{
-					if (hasEvent(synth, patched_ev.sequencer_event.id))
+					for (synth in outputs)
 					{
-						allocated.remove(synth);
-						if (synth.event(patched_ev, this))
-							allocated.push(synth);
-						return;
+						if (hasEvent(synth, patched_ev))
+							synth.event(patched_ev, this);
 					}
 				}
-				// stealing behavior
-				var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(usable, 
-					function(synth : SoftSynth) { return {synth:synth, priority:priority(synth) }; } ,
-					function(a, b) { return a.priority < b.priority; }, usable[0] );
-				if (best.priority <= ev.priority)
+			}
+			else
+			{
+				for (patched_ev in patched_events)
 				{
-					allocated.remove(best.synth);
-					if (best.synth.event(patched_ev, this))
-						allocated.push(best.synth);
+					var usable = outputs;
+					if (allocated.length >= polyphony)
+						usable = allocated;
+					// overlapping behavior
+					for (synth in usable)
+					{
+						if (hasEvent(synth, patched_ev))
+						{
+							allocated.remove(synth);
+							if (synth.event(patched_ev, this))
+								allocated.push(synth);
+							return;
+						}
+					}
+					// stealing behavior
+					var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(usable, 
+						function(synth : SoftSynth) { return {synth:synth, priority:priority(synth) }; } ,
+						function(a, b) { return a.priority < b.priority; }, usable[0] );
+					if (best.priority <= ev.priority)
+					{
+						allocated.remove(best.synth);
+						if (best.synth.event(patched_ev, this))
+							allocated.push(best.synth);
+					}
 				}
 			}
 		}

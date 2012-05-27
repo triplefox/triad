@@ -10,7 +10,7 @@
 	<set name="SWF_VERSION" value="11.0" />
 	
 	<haxedef name="fdb" if="target_flash" />
-	<haxedef name="alchemy" if="target_flash" />
+	<!-- <haxedef name="alchemy" if="target_flash" /> !-->
 	<!--<haxedef name="layout_debug" if="target_flash" /> !-->
 	
 	<classpath name="Source" />

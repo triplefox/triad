@@ -91,11 +91,11 @@ class SynthTest
 		#if debug
 		  for (n in 0...4) // trying not to kill cpu!
 		#else
-		  for (n in 0...32)
+		  for (n in 0...128)
 		#end
 		{
 			var synth = new SamplerSynth();
-			synth.master_volume = 0.8;
+			synth.master_volume = 0.5;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
@@ -125,7 +125,7 @@ class SynthTest
 		#end
 		{
 			var synth = new TableSynth();
-			synth.master_volume = 0.8;
+			synth.master_volume = 0.5;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
@@ -133,7 +133,7 @@ class SynthTest
 		for (n in 0...8)
 		{
 			var synth = new SamplerSynth();
-			synth.master_volume = 0.8;
+			synth.master_volume = 0.5;
 			seq.addSynth(synth);
 			percussion_voices.push(synth);
 		}
@@ -193,8 +193,8 @@ class SynthTest
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
-		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		seq = new Sequencer(Std.int(44100), 4096,8);
+		seq = new Sequencer(Std.int(44100), 4096,16,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
+		//seq = new Sequencer(Std.int(44100), 4096,8);
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 
@@ -271,6 +271,8 @@ class SynthTest
 			for (n in songs)
 			{
 				if (n[1] == "assets/smf/doom_1_and_2/D_E1M1 - Hanger.mid")
+				//if (n[1] == "assets/smf/little_big_adventure/LBA1-01.MID")
+				//if (n[1] == "assets/smf/wing_commander_1/WC1MID36.MID")
 				{
 					break;
 				}
@@ -346,6 +348,12 @@ class SynthTest
 		// output of toByteArray isn't rhythm-exact yet...
 		//events = SMFParser.load(seq, SMF.read(Assets.getBytes(songs[song_count][1])).toByteArray());
 		events = SMFParser.load(seq, Assets.getBytes(songs[song_count][1]));
+		
+		/*for (e in events)
+		{
+			if (e.type == SequencerEvent.SET_PATCH)
+				e.data = 60;
+		}*/
 		
 		seq.pushEvents(events.copy());
 		infos.text = "playing " + songs[song_count][1];

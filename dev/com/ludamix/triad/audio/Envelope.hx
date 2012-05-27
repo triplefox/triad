@@ -31,4 +31,15 @@ class EnvelopeState
 		}
 	}
 	
+	public inline function length(env : Envelope) : Int
+	{
+		switch(state)
+		{
+			case 0: return env.attack.length;
+			case 1: return env.sustain.length;
+			case 2: return env.release.length;
+			default: return 0;
+		}
+	}
+	
 }

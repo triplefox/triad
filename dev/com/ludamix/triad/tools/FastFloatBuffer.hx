@@ -9,15 +9,13 @@ import nme.utils.ByteArray;
 class FastFloatBuffer
 {
 	
-	// TODO test the new read and write methods. 
-	// once they work, test using calcRuns to create speedy loops.
-	
 	public var length : Int;
 	public var length_inv : Float;
 	
 	public static function fromVector(i : Vector<Float>)
 	{
-		return new FastFloatBuffer(i.length, i);
+		var ffb = new FastFloatBuffer(i.length, i);
+		return ffb;
 	}
 	
 #if alchemy
@@ -68,12 +66,24 @@ class FastFloatBuffer
 		}
 		else
 		{
-			for (n in 0...size)
+			if (basis.length == size) // faster copy when size matches
 			{
-				Memory.setFloat(ptr, basis[n]);
-				ptr += SIZE_FLOAT;
-				if (ptr >= Std.int(mem.length)) throw "alchemy buffer overrun";
-			}			
+				for (n in 0...size)
+				{
+					Memory.setFloat(ptr, basis[n]);
+					ptr += SIZE_FLOAT;
+					if (ptr >= Std.int(mem.length)) throw "alchemy buffer overrun";
+				}			
+			}
+			else
+			{
+				for (n in 0...size)
+				{
+					Memory.setFloat(ptr, basis[n % basis.length]); // loop basis when size greater
+					ptr += SIZE_FLOAT;
+					if (ptr >= Std.int(mem.length)) throw "alchemy buffer overrun";
+				}			
+			}
 		}
 		length = size;
 		length_inv = 1. / size;
@@ -116,12 +126,19 @@ class FastFloatBuffer
 	
 	public function new(size : Int, ?basis : Vector<Float>)
 	{
-		if (basis == null)
+		if (basis == null || Std.int(basis.length) != size )
+		{
 		#if flash
 			data = new Vector<Float>(size);
 		#else
 			data = new Vector<Float>();
 		#end
+			if (basis != null)
+			{
+				for (d in 0...data.length)
+					data[d] = basis[d % basis.length]; // loop basis when size greater
+			}
+		}
 		else
 			data = basis;
 		length = size;

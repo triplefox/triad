@@ -37,12 +37,11 @@ class EventFollower
 	{
 		if (patch_event.patch.envelopes[0].release.length == 0)
 		{
-			for (e in env) { e.state = TableSynth.OFF; }
+			for (e in env) { e.state = TableSynth.OFF; release_level = 0.; }
 		}
 		else if (env[0].state != TableSynth.RELEASE)
 		{
-			for (e in env) { e.state = TableSynth.RELEASE; e.ptr = 0; 
-			}
+			for (e in env) { e.state = TableSynth.RELEASE; e.ptr = 0; }
 		}
 	}
 	

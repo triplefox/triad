@@ -724,12 +724,12 @@ class TableSynth implements SoftSynth
 		return false;
 	}
 	
-	public function getEvents()
+	public function getEvents() : Array<PatchEvent>
 	{
-		var result = new Array<SequencerEvent>();
+		var result = new Array<PatchEvent>();
 		for ( n in followers )
 		{
-			result.push(n.patch_event.sequencer_event);
+			result.push(n.patch_event);
 		}
 		return result;
 	}
