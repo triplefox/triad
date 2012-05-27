@@ -352,7 +352,7 @@ class SynthTest
 		/*for (e in events)
 		{
 			if (e.type == SequencerEvent.SET_PATCH)
-				e.data = 60;
+				e.data = 47;
 		}*/
 		
 		seq.pushEvents(events.copy());

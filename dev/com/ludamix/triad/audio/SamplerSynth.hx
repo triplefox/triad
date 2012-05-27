@@ -129,7 +129,7 @@ class SamplerSynth implements SoftSynth
 
 	private static function _mip2_linear(sample : Vector<Float>) : Vector<Float>
 	{
-		var true_len = (sample.length) >> 1 - PAD_INTERP;
+		var true_len = (sample.length - PAD_INTERP) >> 1;
 		var out = new Vector<Float>();
 		for (i in 0...true_len)
 			out.push(sample[i << 1] + sample[(i << 1) + 1] * 0.5);
@@ -140,7 +140,7 @@ class SamplerSynth implements SoftSynth
 	
 	private static function _mip2_cubic(sample : Vector<Float>) : Vector<Float>
 	{
-		var true_len = (sample.length) >> 1 - PAD_INTERP;
+		var true_len = (sample.length - PAD_INTERP) >> 1;
 		var out = new Vector<Float>();
 		for (i in 0...true_len)
 		{
@@ -162,7 +162,7 @@ class SamplerSynth implements SoftSynth
 	
 	private static function _mip2_catmull(sample : Vector<Float>) : Vector<Float>
 	{
-		var true_len = (sample.length) >> 1 - PAD_INTERP;
+		var true_len = (sample.length - PAD_INTERP) >> 1;
 		var out = new Vector<Float>();
 		for (i in 0...true_len)
 		{
