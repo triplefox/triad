@@ -127,19 +127,9 @@ class SamplerSynth implements SoftSynth
 	// and ramp down priority this much each time a new voice is added to the channel
 	public static inline var PRIORITY_VOICE = 0.95;
 
-	private static function _mip2_linear(sample : Vector<Float>) : Vector<Float>
+	private static function _mip2_spline(sample : Vector<Float>) : Vector<Float>
 	{
-		var true_len = (sample.length - PAD_INTERP) >> 1;
-		var out = new Vector<Float>();
-		for (i in 0...true_len)
-			out.push(sample[i << 1] + sample[(i << 1) + 1] * 0.5);
-		for (i in 0...PAD_INTERP)
-			out.push(0.);
-		return out;
-	}
-	
-	private static function _mip2_cubic(sample : Vector<Float>) : Vector<Float>
-	{
+		// four point spline interpolator
 		var true_len = (sample.length - PAD_INTERP) >> 1;
 		var out = new Vector<Float>();
 		for (i in 0...true_len)
@@ -148,35 +138,16 @@ class SamplerSynth implements SoftSynth
 			var y1 = sample[((i << 1) + 1) % sample.length];
 			var y2 = sample[((i << 1) + 2) % sample.length];
 			var y3 = sample[((i << 1) + 3) % sample.length];
-			var mu2 = 0.25;
-			var a0 = y3 - y2 - y0 + y1;
-			var a1 = y0 - y1 - a0;
-			var a2 = y2 - y0;
-			var a3 = y1;
-			out.push(a0 * 0.5 * mu2 + a1 * mu2 + a2 * 0.5 + a3);
-		}
-		for (i in 0...PAD_INTERP)
-			out.push(0.);
-		return out;
-	}
-	
-	private static function _mip2_catmull(sample : Vector<Float>) : Vector<Float>
-	{
-		var true_len = (sample.length - PAD_INTERP) >> 1;
-		var out = new Vector<Float>();
-		for (i in 0...true_len)
-		{
-			var y0 = sample[(i << 1) % sample.length];
-			var y1 = sample[((i << 1) + 1) % sample.length];
-			var y2 = sample[((i << 1) + 2) % sample.length];
-			var y3 = sample[((i << 1) + 3) % sample.length];
-			var mu2 = 0.25;
-			// catmull-rom coefficients
-			var a0 = -0.5*y0 + 1.5*y1 - 1.5*y2 + 0.5*y3;
-			var a1 = y0 - 2.5*y1 + 2*y2 - 0.5*y3;
-			var a2 = -0.5*y0 + 0.5*y2;
-			var a3 = y1;
-			out.push(a0*0.5*mu2+a1*mu2+a2*0.5+a3);
+			var x = 0.5;
+			// lifted from OpenMPT
+			var Xo = y1;
+			var Xa = y0 - Xo;
+			var Xb = y2 - Xo;
+	        var Ux = (Xb-Xa)/2;
+	        var Vx = (y3 - Xo)/2;
+	        var a = Vx+Ux-2*Xb;
+	        var b = 3 * Xb - 2 * Ux - Vx;
+			out.push((((a * x + b) * x) + Ux) * x + Xo);
 		}
 		for (i in 0...PAD_INTERP)
 			out.push(0.);
@@ -188,10 +159,10 @@ class SamplerSynth implements SoftSynth
 		var result_l = mip_in.left;
 		var result_r = mip_in.right;
 		
-		result_l = _mip2_catmull(result_l);
+		result_l = _mip2_spline(result_l);
 		if (mip_in.left == mip_in.right)
 			result_r = result_l;
-		else result_r = _mip2_catmull(result_r);
+		else result_r = _mip2_spline(result_r);
 		
 		return { left:result_l, right:result_r, multiplier:mip_in.multiplier*2 };
 	}
