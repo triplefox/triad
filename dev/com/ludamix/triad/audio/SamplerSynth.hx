@@ -46,26 +46,6 @@ typedef SamplerPatch = {
 	arpeggiation_rate : Float, // 0 = off, hz value
 };
 
-/*
- * Rewrites in progress:
- * 
- * done:
- * 		generate discrete mipmapped sample objects for pre-loop, loop, post-loop
- * 		reduced capability to only the looping part of the sample for now(ignoring other stages)
- * 		alchemy memory supported(minus effects)
- * todo:
- * 			introduce loop transitions
- * 				the "buffer size" written should not be the entire buffer...we have three possibilities:
- * 					1. pre-loop + any amount of the loop
- * 					2. loop only
- * 					3. post-loop + any amount of 0
- * 			allow sample length padding to accomodate interpolators (up to 4 samples out) - subtract from FFB length value
- * 			integrate the interpolators again
- * 			use more playheads?
- * 			effects are alchemy-safe - have them steal some oversized, reusable temp buffers
- * 
- * */
-
 class SamplerSynth implements SoftSynth
 {
 	
@@ -153,15 +133,46 @@ class SamplerSynth implements SoftSynth
 		return out;
 	}
 	
+	private static function _mip2_hermite6(sample : Vector<Float>) : Vector<Float>
+	{
+		// six point point hermite spline interpolator
+		var true_len = (sample.length - PAD_INTERP) >> 1;
+		var out = new Vector<Float>();
+		for (i in 0...true_len)
+		{
+			var y0 = sample[(i << 1) % sample.length];
+			var y1 = sample[((i << 1) + 1) % sample.length];
+			var y2 = sample[((i << 1) + 2) % sample.length];
+			var y3 = sample[((i << 1) + 3) % sample.length];
+			var y4 = sample[((i << 1) + 4) % sample.length];
+			var y5 = sample[((i << 1) + 5) % sample.length];
+			var x = 0.;
+			var z = x - 0.5;
+			var even1 = y0 + y5; var odd1 = y0 - y5;
+			var even2 = y1 + y4; var odd2 = y1 - y4;
+			var even3 = y2 + y1; var odd3 = y2 - y3;
+			var c0 = 3/256.0*even1 - 25/256.0*even2 + 75/128.0*even3;
+			var c1 = -3/128.0*odd1 + 61/384.0*odd2 - 87/64.0*odd3;
+			var c2 = -5/96.0*even1 + 13/32.0*even2 - 17/48.0*even3;
+			var c3 = 5/48.0*odd1 - 11/16.0*odd2 + 37/24.0*odd3;
+			var c4 = 1/48.0*even1 - 1/16.0*even2 + 1/24.0*even3;
+			var c5 = -1/24.0*odd1 + 5/24.0*odd2 - 5/12.0*odd3;
+			out.push(((((c5 * z + c4) * z + c3) * z + c2) * z + c1) * z + c0);
+		}
+		for (i in 0...PAD_INTERP)
+			out.push(0.);
+		return out;
+	}
+	
 	public static function mipx2(mip_in : MipData): MipData
 	{
 		var result_l = mip_in.left;
 		var result_r = mip_in.right;
 		
-		result_l = _mip2_spline(result_l);
+		result_l = _mip2_hermite6(result_l);
 		if (mip_in.left == mip_in.right)
 			result_r = result_l;
-		else result_r = _mip2_spline(result_r);
+		else result_r = _mip2_hermite6(result_r);
 		
 		return { left:result_l, right:result_r, multiplier:mip_in.multiplier*2 };
 	}
@@ -175,7 +186,7 @@ class SamplerSynth implements SoftSynth
 			{ left.push(0.); right.push(0.); }
 		for (n in 0...13)
 		{
-			//mips.push(mipx2(mips[mips.length - 1]));
+			mips.push(mipx2(mips[mips.length - 1]));
 		}
 		return mips;
 	}
@@ -505,25 +516,27 @@ class SamplerSynth implements SoftSynth
 		// LOOP - repeat loop until envelope reaches OFF
 		buffer.playhead = 0;
 		
-		// now we reintroduce the loop points, bringing it back to where it "used" to be but a little faster
 		// then we add backwards and forwards runs, and then bidi.
 		// lastly, we turn this stuff into macros to get the line count down a little more and make the concept generic.
 		
 		var temp_pos = cur_follower.loop_pos * sample_left.length;
-		var loop_end = sample_left.length - 1 - PAD_INTERP;
+		var loop_start : Int = cur_follower.patch_event.patch.loop_start;
+		var loop_end : Int = Std.int(Math.min(sample_left.length - 1 - PAD_INTERP, cur_follower.patch_event.patch.loop_end));
+		var loop_len : Int = (loop_end - loop_start) + 1;
+		
 		while (buffer.playhead < buffer.length)
 		{
 			if (cur_follower.loop_state == EventFollower.LOOP_PRE)
 			{
-				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
+				var ll = getLoopLen(temp_pos, buffer, inc, loop_start);
 				var next_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, write);
-				if (next_pos > loop_end) // we crossed the threshold into the loop
+				if (next_pos >= loop_start) // we crossed the threshold into the loop
 					cur_follower.loop_state = EventFollower.LOOP;
 				temp_pos = next_pos;
 			}
 			else
 			{
-				temp_pos = divisorModulo(temp_pos, loop_end);
+				temp_pos = divisorModulo(temp_pos - loop_start, loop_len) + loop_start;
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
 				temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, write);
 			}
@@ -540,7 +553,7 @@ class SamplerSynth implements SoftSynth
 		buffer.playhead = 0;
 		cur_follower.loop_state = EventFollower.LOOP_POST;
 		var temp_pos = cur_follower.loop_pos * sample_left.length;
-		var loop_end = sample_left.length - 1 - PAD_INTERP;
+		var loop_end : Int = sample_left.length - 1 - PAD_INTERP;
 		while (buffer.playhead < buffer.length)
 		{
 			if (temp_pos >= loop_end)
@@ -552,7 +565,7 @@ class SamplerSynth implements SoftSynth
 			{
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
 				temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, write);
-				if (ll == 0)
+				if (ll < 1)
 					buffer.playhead = buffer.length;
 			}
 		}
@@ -570,7 +583,7 @@ class SamplerSynth implements SoftSynth
 		// Cut samples in half to account for stereo. Then do some corrections.
 		samples >>= 1;
 		while ((samples) * inc + loop_pos > loop_end + inc) samples--;
-		if (samples == 0 ) samples = 1;
+		if (samples < 1 ) samples = 1;
 		
 		return samples;
 		
