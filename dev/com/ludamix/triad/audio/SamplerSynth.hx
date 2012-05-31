@@ -15,19 +15,17 @@ import nme.utils.ByteArray;
 import nme.utils.CompressionAlgorithm;
 import com.ludamix.triad.audio.Sequencer;
 import nme.Vector;
-import nme.Vector;
-import nme.Vector;
 
 typedef RawSample = {
 	sample_left : FastFloatBuffer, // only this side is used for mono
 	sample_right : FastFloatBuffer,
-	multiplier : Float
+	rate_multiplier : Float
 };
 
 typedef MipData = {
 	left:Vector<Float>,
 	right:Vector<Float>,
-	multiplier: Float
+	rate_multiplier: Float
 };
 
 typedef SamplerPatch = {
@@ -106,36 +104,9 @@ class SamplerSynth implements SoftSynth
 	// and ramp down priority this much each time a new voice is added to the channel
 	public static inline var PRIORITY_VOICE = 0.95;
 
-	private static function _mip2_spline(sample : Vector<Float>) : Vector<Float>
-	{
-		// four point spline interpolator
-		var true_len = (sample.length - PAD_INTERP) >> 1;
-		var out = new Vector<Float>();
-		for (i in 0...true_len)
-		{
-			var y0 = sample[(i << 1) % sample.length];
-			var y1 = sample[((i << 1) + 1) % sample.length];
-			var y2 = sample[((i << 1) + 2) % sample.length];
-			var y3 = sample[((i << 1) + 3) % sample.length];
-			var x = 0.5;
-			// lifted from OpenMPT
-			var Xo = y1;
-			var Xa = y0 - Xo;
-			var Xb = y2 - Xo;
-	        var Ux = (Xb-Xa)/2;
-	        var Vx = (y3 - Xo)/2;
-	        var a = Vx+Ux-2*Xb;
-	        var b = 3 * Xb - 2 * Ux - Vx;
-			out.push((((a * x + b) * x) + Ux) * x + Xo);
-		}
-		for (i in 0...PAD_INTERP)
-			out.push(0.);
-		return out;
-	}
-	
 	private static function _mip2_hermite6(sample : Vector<Float>) : Vector<Float>
 	{
-		// six point point hermite spline interpolator
+		// six point hermite spline interpolator
 		var true_len = (sample.length - PAD_INTERP) >> 1;
 		var out = new Vector<Float>();
 		for (i in 0...true_len)
@@ -146,8 +117,7 @@ class SamplerSynth implements SoftSynth
 			var y3 = sample[((i << 1) + 3) % sample.length];
 			var y4 = sample[((i << 1) + 4) % sample.length];
 			var y5 = sample[((i << 1) + 5) % sample.length];
-			var x = 0.;
-			var z = x - 0.5;
+			var z = 0. - 0.5;
 			var even1 = y0 + y5; var odd1 = y0 - y5;
 			var even2 = y1 + y4; var odd2 = y1 - y4;
 			var even3 = y2 + y1; var odd3 = y2 - y3;
@@ -157,6 +127,38 @@ class SamplerSynth implements SoftSynth
 			var c3 = 5/48.0*odd1 - 11/16.0*odd2 + 37/24.0*odd3;
 			var c4 = 1/48.0*even1 - 1/16.0*even2 + 1/24.0*even3;
 			var c5 = -1/24.0*odd1 + 5/24.0*odd2 - 5/12.0*odd3;
+			out.push(((((c5 * z + c4) * z + c3) * z + c2) * z + c1) * z + c0);
+		}
+		for (i in 0...PAD_INTERP)
+			out.push(0.);
+		return out;
+	}
+	
+	private static function _mip2_hermite6_2(sample : Vector<Float>) : Vector<Float>
+	{
+		// six point hermite spline interpolator (half-rate)
+		var true_len = (sample.length - PAD_INTERP);
+		var out = new Vector<Float>();
+		for (i in 0...true_len)
+		{
+			var y0 = sample[(i ) % sample.length];
+			var y1 = sample[((i + 1)) % sample.length];
+			var y2 = sample[((i) + 2) % sample.length];
+			var y3 = sample[((i) + 3) % sample.length];
+			var y4 = sample[((i) + 4) % sample.length];
+			var y5 = sample[((i) + 5) % sample.length];
+			var z = 0. - 0.5;
+			var even1 = y0 + y5; var odd1 = y0 - y5;
+			var even2 = y1 + y4; var odd2 = y1 - y4;
+			var even3 = y2 + y1; var odd3 = y2 - y3;
+			var c0 = 3/256.0*even1 - 25/256.0*even2 + 75/128.0*even3;
+			var c1 = -3/128.0*odd1 + 61/384.0*odd2 - 87/64.0*odd3;
+			var c2 = -5/96.0*even1 + 13/32.0*even2 - 17/48.0*even3;
+			var c3 = 5/48.0*odd1 - 11/16.0*odd2 + 37/24.0*odd3;
+			var c4 = 1/48.0*even1 - 1/16.0*even2 + 1/24.0*even3;
+			var c5 = -1/24.0*odd1 + 5/24.0*odd2 - 5/12.0*odd3;
+			out.push(((((c5 * z + c4) * z + c3) * z + c2) * z + c1) * z + c0);
+			z = 0.5 - 0.5;
 			out.push(((((c5 * z + c4) * z + c3) * z + c2) * z + c1) * z + c0);
 		}
 		for (i in 0...PAD_INTERP)
@@ -174,20 +176,36 @@ class SamplerSynth implements SoftSynth
 			result_r = result_l;
 		else result_r = _mip2_hermite6(result_r);
 		
-		return { left:result_l, right:result_r, multiplier:mip_in.multiplier*2 };
+		return { left:result_l, right:result_r, rate_multiplier:mip_in.rate_multiplier/2};
+	}
+	
+	public static function miph2(mip_in : MipData): MipData
+	{
+		var result_l = mip_in.left;
+		var result_r = mip_in.right;
+		
+		result_l = _mip2_hermite6_2(result_l);
+		if (mip_in.left == mip_in.right)
+			result_r = result_l;
+		else result_r = _mip2_hermite6_2(result_r);
+		
+		return { left:result_l, right:result_r, rate_multiplier:mip_in.rate_multiplier*2};
 	}
 	
 	public static function genMips(left : Vector<Float>, right : Vector<Float>) : 
-			Array<{left:Vector<Float>,right:Vector<Float>,multiplier:Float}>
+			Array<MipData>
 	{
-		var mips = new Array<{left:Vector<Float>,right:Vector<Float>,multiplier:Float}>();
-		mips.push( { left:left, right:right, multiplier:1. } );
+		var mips = new Array<MipData>();
+		mips.push( { left:left, right:right, rate_multiplier:1. } );
 		for (n in 0...PAD_INTERP)
 			{ left.push(0.); right.push(0.); }
-		for (n in 0...13)
-		{
+		for (n in 0...4)
 			mips.push(mipx2(mips[mips.length - 1]));
-		}
+		// FIXME: Trying to make a downsampled mip actually sounds worse in some material. 
+		// It could be the interpolation, the mipmapping, or loop setting at fault...or just the general concept :p
+		// for testing I recommend removing all other mips(including original)
+		//for (n in 0...1)
+		//	mips.insert(0, miph2(mips[0]));
 		return mips;
 	}
 	
@@ -199,13 +217,13 @@ class SamplerSynth implements SoftSynth
 			if (m.left == m.right)
 			{
 				var buf = FastFloatBuffer.fromVector(m.left);
-				result.push({sample_left:buf,sample_right:buf,multiplier:m.multiplier});
+				result.push( { sample_left:buf, sample_right:buf,rate_multiplier:m.rate_multiplier});
 			}
 			else
 			{
 				var buf_l = FastFloatBuffer.fromVector(m.left);
 				var buf_r = FastFloatBuffer.fromVector(m.right);
-				result.push({sample_left:buf_l,sample_right:buf_r,multiplier:m.multiplier});
+				result.push( { sample_left:buf_l, sample_right:buf_r, rate_multiplier:m.rate_multiplier});
 			}
 		}
 		return result;
@@ -418,13 +436,21 @@ class SamplerSynth implements SoftSynth
 			var sample_rate = patch.sample_rate;
 			var base_frequency = patch.base_frequency;
 			
+			// select an appropriate mipmap
 			var ptr = 0;
-			var freq_mult = 1;
-			while (ptr < sampleset.length - 1 && freq > sample_rate*freq_mult)
-				{ freq_mult *= 2; ptr++; }
+			var best_dist = 99999999999.;
+			for (n in 0...sampleset.length)
+			{
+				var dist = Math.abs(wl - (sample_rate / base_frequency) * sampleset[n].rate_multiplier);
+				if (dist < best_dist)
+					{ best_dist = dist; ptr = n; }
+			}
+			//ptr = sampleset.length - 1;
+			ptr = 0;
 			
-			sample_rate *= freq_mult;
-			base_frequency *= freq_mult;
+			var rate_mult = sampleset[ptr].rate_multiplier;
+			
+			sample_rate = Std.int(sample_rate * rate_mult);
 			
 			var sample_left : FastFloatBuffer = sampleset[ptr].sample_left;
 			var sample_right : FastFloatBuffer = sampleset[ptr].sample_right;
@@ -439,14 +465,15 @@ class SamplerSynth implements SoftSynth
 			switch(patch.loop_mode)
 			{
 				case LOOP_FORWARD, LOOP_BACKWARD, LOOP_PINGPONG: 
-					runLoop(cur_follower, buffer, inc_samples, left, right, sample_left, sample_right, write);
+					runLoop(cur_follower, buffer, inc_samples, left, right, sample_left, sample_right, rate_mult, write);
 				// FIXME: Find samples that test sustain so that it can be implemented properly
 				case SUSTAIN_FORWARD, SUSTAIN_BACKWARD, SUSTAIN_PINGPONG:
-					runLoop(cur_follower, buffer, inc_samples, left, right, sample_left, sample_right, write);
+					runLoop(cur_follower, buffer, inc_samples, left, right, sample_left, sample_right, rate_mult, write);
 				case ONE_SHOT, NO_LOOP:
 					runUnlooped(cur_follower, buffer, inc_samples, left, right, sample_left, sample_right, write);
 			}
 			
+			// kill the voice quickly when the settings allow it
 			if (cur_follower.loop_pos >= sample_left.length && 
 				(patch.loop_mode == ONE_SHOT || cur_follower.env[0].state == RELEASE))
 			{
@@ -511,7 +538,8 @@ class SamplerSynth implements SoftSynth
 	}
 	
 	private inline function runLoop(cur_follower : EventFollower, buffer : FastFloatBuffer, inc : Float, 
-		left : Float, right : Float, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, write : Bool)
+		left : Float, right : Float, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, rate_mult : Float, 
+		write : Bool)
 	{
 		// LOOP - repeat loop until envelope reaches OFF
 		buffer.playhead = 0;
@@ -520,9 +548,10 @@ class SamplerSynth implements SoftSynth
 		// lastly, we turn this stuff into macros to get the line count down a little more and make the concept generic.
 		
 		var temp_pos = cur_follower.loop_pos * sample_left.length;
-		var loop_start : Int = cur_follower.patch_event.patch.loop_start;
-		var loop_end : Int = Std.int(Math.min(sample_left.length - 1 - PAD_INTERP, cur_follower.patch_event.patch.loop_end));
-		var loop_len : Int = (loop_end - loop_start) + 1;
+		var loop_start : Float = (cur_follower.patch_event.patch.loop_start * rate_mult);
+		var loop_end : Float = (Math.min(sample_left.length - 1 - PAD_INTERP, 
+										cur_follower.patch_event.patch.loop_end * rate_mult));
+		var loop_len : Float = (loop_end - loop_start) + 1;
 		
 		while (buffer.playhead < buffer.length)
 		{
@@ -545,7 +574,8 @@ class SamplerSynth implements SoftSynth
 	}
 	
 	private inline function runUnlooped(cur_follower : EventFollower, buffer : FastFloatBuffer, inc : Float, 
-		left : Float, right : Float, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, write : Bool)
+		left : Float, right : Float, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, 
+		write : Bool)
 	{
 		// ONE_SHOT - play until the sample endpoint, do not respect note off
 		// NO_LOOP - play until the sample endpoint, cut on note off
@@ -572,7 +602,7 @@ class SamplerSynth implements SoftSynth
 		cur_follower.loop_pos = temp_pos / sample_left.length;
 	}
 	
-	private inline function getLoopLen(loop_pos : Float, buffer : FastFloatBuffer, inc : Float, loop_end : Int) : Int
+	private inline function getLoopLen(loop_pos : Float, buffer : FastFloatBuffer, inc : Float, loop_end : Float) : Int
 	{
 		
 		// Calculates a single loop, starting from the buffer's playhead
