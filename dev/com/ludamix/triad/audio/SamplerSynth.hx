@@ -560,7 +560,8 @@ class SamplerSynth implements SoftSynth
 			if (cur_follower.loop_state == EventFollower.LOOP_PRE)
 			{
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_start);
-				var next_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, write);
+				var next_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, 
+					sample_right, ll, loop_end, loop_len, write);
 				if (next_pos >= loop_start) // we crossed the threshold into the loop
 					cur_follower.loop_state = EventFollower.LOOP;
 				temp_pos = next_pos;
@@ -569,7 +570,8 @@ class SamplerSynth implements SoftSynth
 			{
 				temp_pos = divisorModulo(temp_pos - loop_start, loop_len) + loop_start;
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
-				temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, write);
+				temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, 
+					sample_right, ll, loop_end, loop_len, write);
 			}
 		}
 		cur_follower.loop_pos = temp_pos / sample_left.length;
@@ -596,7 +598,8 @@ class SamplerSynth implements SoftSynth
 			else
 			{
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
-				temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, write);
+				temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, 
+					loop_end, sample_left.length, write);
 				if (ll < 1)
 					buffer.playhead = buffer.length;
 			}
@@ -608,7 +611,6 @@ class SamplerSynth implements SoftSynth
 	{
 		
 		// Calculates a single loop, starting from the buffer's playhead
-		// FIXME: We don't reconcile interpolation at this point - we should be doing some kind of special step at the crossover.
 		
 		var len = buffer.length - buffer.playhead;
 		var samples = Std.int(Math.min(len, (loop_end - loop_pos) / inc));
@@ -629,7 +631,7 @@ class SamplerSynth implements SoftSynth
 	
 	private inline function runSegment(buffer : FastFloatBuffer, 
 		pos : Float, inc : Float, left, right, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
-		samples_requested : Int, write : Bool)
+		samples_requested : Int, loop_end : Float, loop_len : Float, write : Bool)
 	{
 		// Copy exactly the number of samples requested for the buffer.
 		// Callee has to figure out how to fill buffer correctly.
@@ -665,7 +667,7 @@ class SamplerSynth implements SoftSynth
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
 				{
-					for (n in 0...samples_requested)
+					for (n in 0...samples_requested-1)
 					{
 						sample_left.playhead = Std.int(pos);
 						var x = pos - sample_left.playhead;
@@ -678,11 +680,25 @@ class SamplerSynth implements SoftSynth
 						copy_samples_cubic(buffer, a, b, c, d, x, right);
 						buffer.advancePlayheadUnbounded();
 						pos += inc;
-					}				
+					}
+					sample_left.playhead = Std.int(pos);
+					var x = pos - sample_left.playhead;
+					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
+					var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
+					var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
+					var d = sample_left.read();
+					copy_samples_cubic(buffer, a, b, c, d, x, left);
+					buffer.advancePlayheadUnbounded();
+					copy_samples_cubic(buffer, a, b, c, d, x, right);
+					buffer.advancePlayheadUnbounded();
+					pos += inc;
 				}
 				else // linear mono
 				{
-					for (n in 0...samples_requested)
+					for (n in 0...samples_requested-1)
 					{
 						sample_left.playhead = Std.int(pos);
 						var x = pos - sample_left.playhead;
@@ -693,7 +709,17 @@ class SamplerSynth implements SoftSynth
 						copy_samples_lin(buffer, a, b, x, right);
 						buffer.advancePlayheadUnbounded();
 						pos += inc;
-					}				
+					}
+					sample_left.playhead = Std.int(pos);
+					var x = pos - sample_left.playhead;
+					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
+					var b = sample_left.read();
+					copy_samples_lin(buffer, a, b, x, left);
+					buffer.advancePlayheadUnbounded();
+					copy_samples_lin(buffer, a, b, x, right);
+					buffer.advancePlayheadUnbounded();
+					pos += inc;
 				}
 			}
 			else
@@ -713,7 +739,7 @@ class SamplerSynth implements SoftSynth
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
 				{
-					for (n in 0...samples_requested)
+					for (n in 0...samples_requested-1)
 					{
 						sample_left.playhead = Std.int(pos);
 						var x = pos - sample_left.playhead;
@@ -731,10 +757,31 @@ class SamplerSynth implements SoftSynth
 						buffer.advancePlayheadUnbounded();
 						pos += inc;
 					}				
+					sample_left.playhead = Std.int(pos);
+					var x = pos - sample_left.playhead;
+					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
+					var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
+					var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
+					var d = sample_left.read();
+					copy_samples_cubic(buffer, a, b, c, d, x, left);
+					buffer.advancePlayheadUnbounded();
+					a = sample_right.read(); sample_right.advancePlayheadUnbounded();
+					if (sample_right.playhead > loop_end) sample_left.playhead = Std.int(sample_right.playhead - loop_len);
+					b = sample_right.read(); sample_right.advancePlayheadUnbounded();
+					if (sample_right.playhead > loop_end) sample_left.playhead = Std.int(sample_right.playhead - loop_len);
+					c = sample_right.read(); sample_right.advancePlayheadUnbounded();
+					if (sample_right.playhead > loop_end) sample_left.playhead = Std.int(sample_right.playhead - loop_len);
+					d = sample_right.read();
+					copy_samples_cubic(buffer, a, b, c, d, x, right);
+					buffer.advancePlayheadUnbounded();
+					pos += inc;
 				}
 				else // linear stereo
 				{
-					for (n in 0...samples_requested)
+					for (n in 0...samples_requested-1)
 					{
 						sample_left.playhead = Std.int(pos);
 						var x = pos - sample_left.playhead;
@@ -748,6 +795,19 @@ class SamplerSynth implements SoftSynth
 						buffer.advancePlayheadUnbounded();
 						pos += inc;
 					}				
+					sample_left.playhead = Std.int(pos);
+					var x = pos - sample_left.playhead;
+					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
+					var b = sample_left.read();
+					copy_samples_lin(buffer, a, b, x, left);
+					buffer.advancePlayheadUnbounded();
+					a = sample_right.read(); sample_right.advancePlayheadUnbounded();
+					if (sample_right.playhead > loop_end) sample_left.playhead = Std.int(sample_right.playhead - loop_len);
+					b = sample_right.read();
+					copy_samples_lin(buffer, a, b, x, right);
+					buffer.advancePlayheadUnbounded();
+					pos += inc;
 				}
 			}
 			return pos;
