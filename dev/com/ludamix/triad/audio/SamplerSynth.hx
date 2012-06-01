@@ -62,10 +62,11 @@ class SamplerSynth implements SoftSynth
 	
 	public var arpeggio : Float;
 	
-	// # of octaves before increasing the interpolation factor; ideal is 1.
-	// below 1 it will start filtering the percieved results
-	// above 1 cpu usage will be lower but more pitch artifacts may occur
-	public var interpolation_tolerance : Float; 
+	public var resample_method : Int;
+	
+	public static inline var RESAMPLE_DROP = 0;
+	public static inline var RESAMPLE_LINEAR = 1;
+	public static inline var RESAMPLE_CUBIC = 2;
 	
 	public static inline var ATTACK = 0;
 	public static inline var SUSTAIN = 1;
@@ -79,9 +80,11 @@ class SamplerSynth implements SoftSynth
 		master_volume = 0.1;
 		velocity = 1.0;
 		arpeggio = 0.;
+		resample_method = RESAMPLE_LINEAR;
 	}
 	
-	public static inline var PAD_INTERP = 1; // pad each sample for interpolation purposes
+	public static inline var PAD_INTERP = 3; // pad each sample for interpolation purposes
+											 // use 1 for linear, 3 for cubic
 	
 	public static inline var LOOP_FORWARD = 0;
 	public static inline var LOOP_BACKWARD = 1;
@@ -199,7 +202,7 @@ class SamplerSynth implements SoftSynth
 		mips.push( { left:left, right:right, rate_multiplier:1. } );
 		for (n in 0...PAD_INTERP)
 			{ left.push(0.); right.push(0.); }
-		for (n in 0...4)
+		for (n in 0...6)
 			mips.push(mipx2(mips[mips.length - 1]));
 		// FIXME: Trying to make a downsampled mip actually sounds worse in some material. 
 		// It could be the interpolation, the mipmapping, or loop setting at fault...or just the general concept :p
@@ -308,7 +311,6 @@ class SamplerSynth implements SoftSynth
 		this.sequencer = sequencer;
 		this.buffer = sequencer.buffer;
 		this.followers = new Array();		
-		interpolation_tolerance = 1.02 / sequencer.RATE_MULTIPLE;
 	}
 	
 	public inline function pipeAdjustment(qty : Float, assigns : Array<Int>)
@@ -606,6 +608,7 @@ class SamplerSynth implements SoftSynth
 	{
 		
 		// Calculates a single loop, starting from the buffer's playhead
+		// FIXME: We don't reconcile interpolation at this point - we should be doing some kind of special step at the crossover.
 		
 		var len = buffer.length - buffer.playhead;
 		var samples = Std.int(Math.min(len, (loop_end - loop_pos) / inc));
@@ -647,7 +650,7 @@ class SamplerSynth implements SoftSynth
 			
 			if (sample_left == sample_right)
 			{
-				if (inc == 1.) // drop mono
+				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop mono
 				{
 					for (n in 0...samples_requested)
 					{
@@ -659,6 +662,23 @@ class SamplerSynth implements SoftSynth
 						buffer.advancePlayheadUnbounded();
 						pos += inc;
 					}
+				}
+				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
+				{
+					for (n in 0...samples_requested)
+					{
+						sample_left.playhead = Std.int(pos);
+						var x = pos - sample_left.playhead;
+						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var d = sample_left.read();
+						copy_samples_cubic(buffer, a, b, c, d, x, left);
+						buffer.advancePlayheadUnbounded();
+						copy_samples_cubic(buffer, a, b, c, d, x, right);
+						buffer.advancePlayheadUnbounded();
+						pos += inc;
+					}				
 				}
 				else // linear mono
 				{
@@ -678,7 +698,7 @@ class SamplerSynth implements SoftSynth
 			}
 			else
 			{
-				if (inc == 1.) // drop stereo
+				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop stereo
 				{
 					for (n in 0...samples_requested)
 					{
@@ -690,6 +710,27 @@ class SamplerSynth implements SoftSynth
 						buffer.advancePlayheadUnbounded();
 						pos += inc;
 					}
+				}
+				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
+				{
+					for (n in 0...samples_requested)
+					{
+						sample_left.playhead = Std.int(pos);
+						var x = pos - sample_left.playhead;
+						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var d = sample_left.read();
+						copy_samples_cubic(buffer, a, b, c, d, x, left);
+						buffer.advancePlayheadUnbounded();
+						a = sample_right.read(); sample_right.advancePlayheadUnbounded();
+						b = sample_right.read(); sample_right.advancePlayheadUnbounded();
+						c = sample_right.read(); sample_right.advancePlayheadUnbounded();
+						d = sample_right.read();
+						copy_samples_cubic(buffer, a, b, c, d, x, right);
+						buffer.advancePlayheadUnbounded();
+						pos += inc;
+					}				
 				}
 				else // linear stereo
 				{
@@ -723,6 +764,18 @@ class SamplerSynth implements SoftSynth
 	{
 		// Linear
 		buffer.add(level * (a * (1. -x) + b * x));
+	}
+	
+	public inline function copy_samples_cubic(buffer : FastFloatBuffer, y0 : Float, y1 : Float, y2 : Float, y3 : Float,
+			x : Float, level : Float)
+	{
+		// Cubic
+		var x2 = x*x;
+		var a0 = y3 - y2 - y0 + y1;
+		var a1 = y0 - y1 - a0;
+		var a2 = y2 - y0;
+		var a3 = y1;
+		buffer.add(level * (a0*x*x2+a1*x2+a2*x+a3));
 	}
 	
 	public function event(patch_ev : PatchEvent, channel : SequencerChannel)
