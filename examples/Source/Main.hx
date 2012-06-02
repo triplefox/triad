@@ -2,6 +2,7 @@
 //typedef MyExample = Blackjack;
 //typedef MyExample = ASCIITest;
 typedef MyExample = SynthTest;
+//typedef MyExample = Keyjammer;
 //typedef MyExample = AssetReloading;
 //typedef MyExample = Assistant;
 //typedef MyExample = Raycast;

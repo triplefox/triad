@@ -64,6 +64,8 @@ class SamplerSynth implements SoftSynth
 	
 	public var resample_method : Int;
 	
+	public var filter : IIRFilter2;
+	
 	public static inline var RESAMPLE_DROP = 0;
 	public static inline var RESAMPLE_LINEAR = 1;
 	public static inline var RESAMPLE_CUBIC = 2;
@@ -202,7 +204,7 @@ class SamplerSynth implements SoftSynth
 		mips.push( { left:left, right:right, rate_multiplier:1. } );
 		for (n in 0...PAD_INTERP)
 			{ left.push(0.); right.push(0.); }
-		for (n in 0...6)
+		for (n in 0...4)
 			mips.push(mipx2(mips[mips.length - 1]));
 		// FIXME: Trying to make a downsampled mip actually sounds worse in some material. 
 		// It could be the interpolation, the mipmapping, or loop setting at fault...or just the general concept :p
@@ -246,11 +248,12 @@ class SamplerSynth implements SoftSynth
 		
 		if (wav.header.smpl != null)
 		{
-				
+			
 			if (wav.header.smpl.loop_data!=null && wav.header.smpl.loop_data.length>0)
 			{
 				loop_start = wav.header.smpl.loop_data[0].start;
 				loop_end = wav.header.smpl.loop_data[0].end;
+				loop_type = wav.header.smpl.loop_data[0].type;
 			}
 			
 			midi_unity_note = wav.header.smpl.midi_unity_note;
@@ -274,7 +277,7 @@ class SamplerSynth implements SoftSynth
 			arpeggiation_rate:0.0,
 			},
 			function(settings, seq, ev) : Array<PatchEvent> { return [new PatchEvent(ev,settings)]; }
-		);				
+		);
 	}
 	
 	public static function defaultPatch() : SamplerPatch
@@ -311,6 +314,8 @@ class SamplerSynth implements SoftSynth
 		this.sequencer = sequencer;
 		this.buffer = sequencer.buffer;
 		this.followers = new Array();		
+		filter = new IIRFilter2(0, 220., 0, sequencer.sampleRate());
+		// FIXME: I should have a filter state per follower, I think, not on the synth...
 	}
 	
 	public inline function pipeAdjustment(qty : Float, assigns : Array<Int>)
@@ -447,8 +452,6 @@ class SamplerSynth implements SoftSynth
 				if (dist < best_dist)
 					{ best_dist = dist; ptr = n; }
 			}
-			//ptr = sampleset.length - 1;
-			ptr = 0;
 			
 			var rate_mult = sampleset[ptr].rate_multiplier;
 			
@@ -476,7 +479,7 @@ class SamplerSynth implements SoftSynth
 			}
 			
 			// kill the voice quickly when the settings allow it
-			if (cur_follower.loop_pos >= sample_left.length && 
+			if (cur_follower.loop_pos > sample_left.length+inc_samples && 
 				(patch.loop_mode == ONE_SHOT || cur_follower.env[0].state == RELEASE))
 			{
 				cur_follower.env[0].state = OFF;
@@ -551,8 +554,7 @@ class SamplerSynth implements SoftSynth
 		
 		var temp_pos = cur_follower.loop_pos * sample_left.length;
 		var loop_start : Float = (cur_follower.patch_event.patch.loop_start * rate_mult);
-		var loop_end : Float = (Math.min(sample_left.length - 1 - PAD_INTERP, 
-										cur_follower.patch_event.patch.loop_end * rate_mult));
+		var loop_end : Float = (cur_follower.patch_event.patch.loop_end * rate_mult);
 		var loop_len : Float = (loop_end - loop_start) + 1;
 		
 		while (buffer.playhead < buffer.length)
@@ -560,15 +562,15 @@ class SamplerSynth implements SoftSynth
 			if (cur_follower.loop_state == EventFollower.LOOP_PRE)
 			{
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_start);
-				var next_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, 
-					sample_right, ll, loop_end, loop_len, write);
+				var next_pos = runSegment2(buffer, temp_pos, inc, left, right, sample_left, 
+					sample_right, ll, loop_start, loop_start+1, write);
 				if (next_pos >= loop_start) // we crossed the threshold into the loop
 					cur_follower.loop_state = EventFollower.LOOP;
 				temp_pos = next_pos;
 			}
 			else
 			{
-				temp_pos = divisorModulo(temp_pos - loop_start, loop_len) + loop_start;
+				temp_pos = ((temp_pos - loop_start) % loop_len) + loop_start;
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
 				temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, 
 					sample_right, ll, loop_end, loop_len, write);
@@ -598,7 +600,7 @@ class SamplerSynth implements SoftSynth
 			else
 			{
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
-				temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, 
+				temp_pos = runSegment2(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, 
 					loop_end, sample_left.length, write);
 				if (ll < 1)
 					buffer.playhead = buffer.length;
@@ -617,7 +619,7 @@ class SamplerSynth implements SoftSynth
 		
 		// Cut samples in half to account for stereo. Then do some corrections.
 		samples >>= 1;
-		while ((samples) * inc + loop_pos > loop_end + inc) samples--;
+		while ((samples) * inc + loop_pos > loop_end) samples--;
 		if (samples < 1 ) samples = 1;
 		
 		return samples;
@@ -626,7 +628,12 @@ class SamplerSynth implements SoftSynth
 	
 	private inline function divisorModulo(val : Float, mod : Float) : Float
 	{
-		return val < 0 ? mod - ( -val % mod) : val % mod;
+		return val < 0 ? negativeModulo(val, mod) : val % mod;
+	}
+	
+	private inline function negativeModulo(val : Float, mod : Float) : Float
+	{
+		return mod - ( -val % mod);
 	}
 	
 	private inline function runSegment(buffer : FastFloatBuffer, 
@@ -814,6 +821,191 @@ class SamplerSynth implements SoftSynth
 		}
 	}
 	
+	private inline function runSegment2(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left, right, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
+		samples_requested : Int, loop_end : Float, loop_len : Float, write : Bool)
+	{
+		// As runSegment, but allows bleedover (for the "pre" loop segment)
+		// FIXME: This really should be factored into a macro or something.
+		
+		var len = (sample_left.length - PAD_INTERP);
+		if (!write)
+		{
+			buffer.playhead += samples_requested * 2;
+			pos = pos + (inc * samples_requested);
+			return pos;
+		}
+		else
+		{
+			var total_inc = inc * (samples_requested);
+			
+			sample_left.playback_rate = 1;
+			sample_right.playback_rate = 1;
+			
+			if (sample_left == sample_right)
+			{
+				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop mono
+				{
+					for (n in 0...samples_requested)
+					{
+						sample_left.playhead = Std.int(pos);
+						var a = sample_left.read();
+						copy_samples_drop(buffer, a, left);
+						buffer.advancePlayheadUnbounded();
+						copy_samples_drop(buffer, a, right);
+						buffer.advancePlayheadUnbounded();
+						pos += inc;
+					}
+				}
+				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
+				{
+					for (n in 0...samples_requested-1)
+					{
+						sample_left.playhead = Std.int(pos);
+						var x = pos - sample_left.playhead;
+						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var d = sample_left.read();
+						copy_samples_cubic(buffer, a, b, c, d, x, left);
+						buffer.advancePlayheadUnbounded();
+						copy_samples_cubic(buffer, a, b, c, d, x, right);
+						buffer.advancePlayheadUnbounded();
+						pos += inc;
+					}
+					sample_left.playhead = Std.int(pos);
+					var x = pos - sample_left.playhead;
+					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
+					var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
+					var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
+					var d = sample_left.read();
+					copy_samples_cubic(buffer, a, b, c, d, x, left);
+					buffer.advancePlayheadUnbounded();
+					copy_samples_cubic(buffer, a, b, c, d, x, right);
+					buffer.advancePlayheadUnbounded();
+					pos += inc;
+				}
+				else // linear mono
+				{
+					for (n in 0...samples_requested-1)
+					{
+						sample_left.playhead = Std.int(pos);
+						var x = pos - sample_left.playhead;
+						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var b = sample_left.read();
+						copy_samples_lin(buffer, a, b, x, left);
+						buffer.advancePlayheadUnbounded();
+						copy_samples_lin(buffer, a, b, x, right);
+						buffer.advancePlayheadUnbounded();
+						pos += inc;
+					}
+					sample_left.playhead = Std.int(pos);
+					var x = pos - sample_left.playhead;
+					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
+					var b = sample_left.read();
+					copy_samples_lin(buffer, a, b, x, left);
+					buffer.advancePlayheadUnbounded();
+					copy_samples_lin(buffer, a, b, x, right);
+					buffer.advancePlayheadUnbounded();
+					pos += inc;
+				}
+			}
+			else
+			{
+				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop stereo
+				{
+					for (n in 0...samples_requested)
+					{
+						sample_left.playhead = Std.int(pos);
+						sample_right.playhead = sample_left.playhead;
+						copy_samples_drop(buffer, sample_left.read(), left);
+						buffer.advancePlayheadUnbounded();
+						copy_samples_drop(buffer, sample_right.read(), right);
+						buffer.advancePlayheadUnbounded();
+						pos += inc;
+					}
+				}
+				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
+				{
+					for (n in 0...samples_requested-1)
+					{
+						sample_left.playhead = Std.int(pos);
+						var x = pos - sample_left.playhead;
+						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var d = sample_left.read();
+						copy_samples_cubic(buffer, a, b, c, d, x, left);
+						buffer.advancePlayheadUnbounded();
+						a = sample_right.read(); sample_right.advancePlayheadUnbounded();
+						b = sample_right.read(); sample_right.advancePlayheadUnbounded();
+						c = sample_right.read(); sample_right.advancePlayheadUnbounded();
+						d = sample_right.read();
+						copy_samples_cubic(buffer, a, b, c, d, x, right);
+						buffer.advancePlayheadUnbounded();
+						pos += inc;
+					}				
+					sample_left.playhead = Std.int(pos);
+					var x = pos - sample_left.playhead;
+					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
+					var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
+					var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
+					var d = sample_left.read();
+					copy_samples_cubic(buffer, a, b, c, d, x, left);
+					buffer.advancePlayheadUnbounded();
+					a = sample_right.read(); sample_right.advancePlayheadUnbounded();
+					if (sample_right.playhead > sample_right.length) sample_right.playhead = Std.int(sample_right.length - 1);
+					b = sample_right.read(); sample_right.advancePlayheadUnbounded();
+					if (sample_right.playhead > sample_right.length) sample_right.playhead = Std.int(sample_right.length - 1);
+					c = sample_right.read(); sample_right.advancePlayheadUnbounded();
+					if (sample_right.playhead > sample_right.length) sample_right.playhead = Std.int(sample_right.length - 1);
+					d = sample_right.read();
+					copy_samples_cubic(buffer, a, b, c, d, x, right);
+					buffer.advancePlayheadUnbounded();
+					pos += inc;
+				}
+				else // linear stereo
+				{
+					for (n in 0...samples_requested-1)
+					{
+						sample_left.playhead = Std.int(pos);
+						var x = pos - sample_left.playhead;
+						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+						var b = sample_left.read();
+						copy_samples_lin(buffer, a, b, x, left);
+						buffer.advancePlayheadUnbounded();
+						a = sample_right.read(); sample_right.advancePlayheadUnbounded();
+						b = sample_right.read();
+						copy_samples_lin(buffer, a, b, x, right);
+						buffer.advancePlayheadUnbounded();
+						pos += inc;
+					}				
+					sample_left.playhead = Std.int(pos);
+					var x = pos - sample_left.playhead;
+					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
+					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
+					var b = sample_left.read();
+					copy_samples_lin(buffer, a, b, x, left);
+					buffer.advancePlayheadUnbounded();
+					a = sample_right.read(); sample_right.advancePlayheadUnbounded();
+					if (sample_right.playhead > sample_right.length) sample_right.playhead = Std.int(sample_right.length - 1);
+					b = sample_right.read();
+					copy_samples_lin(buffer, a, b, x, right);
+					buffer.advancePlayheadUnbounded();
+					pos += inc;
+				}
+			}
+			return pos;
+		}
+	}
+	
 	public inline function copy_samples_drop(buffer : FastFloatBuffer, a : Float, level : Float)
 	{
 		// Drop
@@ -823,7 +1015,7 @@ class SamplerSynth implements SoftSynth
 	public inline function copy_samples_lin(buffer : FastFloatBuffer, a : Float, b : Float, x : Float, level : Float)
 	{
 		// Linear
-		buffer.add(level * (a * (1. -x) + b * x));
+		buffer.add(level * filter.getLP((a * (1. -x) + b * x)));
 	}
 	
 	public inline function copy_samples_cubic(buffer : FastFloatBuffer, y0 : Float, y1 : Float, y2 : Float, y3 : Float,
