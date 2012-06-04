@@ -17,6 +17,7 @@ import nme.events.Event;
 import flash.events.SampleDataEvent;
 import nme.events.MouseEvent;
 import nme.events.KeyboardEvent;
+import nme.geom.Rectangle;
 import nme.ui.Keyboard;
 import nme.Lib;
 import nme.media.Sound;
@@ -123,8 +124,8 @@ class Keyjammer
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
-		//seq = new Sequencer(Std.int(44100), 4096,16,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		seq = new Sequencer(Std.int(44100), 4096,32);
+		seq = new Sequencer(Std.int(44100), 4096,16,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
+		//seq = new Sequencer(Std.int(44100), 4096,8);
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 
@@ -187,7 +188,7 @@ class Keyjammer
 			Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, onDown);
 			Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, onUp);
 			
-			//drawDebugwaveform();
+			drawDebugwaveform();
 			
 		});
 		
@@ -195,23 +196,37 @@ class Keyjammer
 		
 	}
 	
+	public var spr : Bitmap;
+	public var info_vals : Dynamic;
+	
 	public function drawDebugwaveform()
 	{
-		var wf = TableSynth.pulseWavetable[0][0];
-		var spr : Bitmap = new Bitmap(new BitmapData(wf.length, Main.H, false, 0));
+		spr = new Bitmap(new BitmapData(Main.W, Main.H, true, 0));
 		Lib.current.stage.addChild(spr);
-		for (n in 0...wf.length)
-		{
-			spr.bitmapData.setPixel(Std.int(n), Std.int(Main.H/2 - 100), 0x444400);
-			spr.bitmapData.setPixel(Std.int(n), Std.int(Main.H/2 + 100), 0x444400);
-			spr.bitmapData.setPixel(Std.int(n), Std.int(Main.H/2), 0x444400);
-		}
-		for (n in 0...wf.length)
-		{
-			spr.bitmapData.setPixel(Std.int(n), Std.int(wf.get(n) * 100 + Main.H/2), 0x00FF00);
-		}
-		spr.scaleX *= Main.W / spr.width;
 		spr.alpha = 0.5;
+	}
+	
+	public function updateDebugwaveform()
+	{
+		//var wf = TableSynth.pulseWavetable[0][0];
+		spr.bitmapData.fillRect(new Rectangle(0, 0, Main.W, Main.H),0);
+		for (s in seq.synths)
+		{
+			var sc : Dynamic = s;
+			for (follower in cast(sc.followers,Array<Dynamic>))
+			{
+				var mips : RawSample = follower.patch_event.patch.mips[0];
+				var sample = mips.sample_left;
+				var rate_multiplier : Float = mips.rate_multiplier;
+				var p = Std.int(follower.loop_pos * Main.W);
+				spr.bitmapData.fillRect(new Rectangle(p,0,1,Main.H), 0xFF444400);
+				p = Std.int(follower.patch_event.patch.loop_start/(sample.length*rate_multiplier) * Main.W);
+				spr.bitmapData.fillRect(new Rectangle(p,0,1,Main.H), 0xFF880000);
+				p = Std.int(follower.patch_event.patch.loop_end/(sample.length*rate_multiplier) * Main.W);
+				spr.bitmapData.fillRect(new Rectangle(p, 0, 1, Main.H), 0xFF000088);
+				info_vals = {loop_pos : follower.loop_pos, release_level:follower.env[0].release_level, level:follower.env[0].level};
+			}
+		}
 	}
 	
 	public function doLoop(_)
@@ -229,9 +244,19 @@ class Keyjammer
 		}
 		var prog_str = "";
 		for (u in programs) prog_str += Std.string(u) + " ";
-		infos.text = "Octave "+Std.string(octave)+" ("+Std.string(octave*12)+"-"+(octave*12+11)+")";
+		var str = "Octave " + Std.string(octave) + " (" + Std.string(octave * 12) + "-" + (octave * 12 + 11) + ") ";
+		if (info_vals != null)
+		{
+			for (f in Reflect.fields(info_vals))
+			{
+				str += " " + f + ": " + Std.string(Reflect.field(info_vals, f));
+			}
+		}
+		infos.text = str;
+		infos.x = Main.W / 2 - infos.width / 2;
 		infos2.text = Std.string(cc) + "/" + Std.string(seq.synths.length) + " playing. Programs: "+prog_str;
 		infos2.x = Main.W / 2 - infos2.width / 2;
+		updateDebugwaveform();
 	}
 	
 	public function onDown(e : KeyboardEvent)
@@ -273,12 +298,19 @@ class Keyjammer
 		
 	}
 	
-	// now figure out what i'm doing wrong with the events(maybe look at audioland again)
-	
 	public function noteOn(input : Int)
 	{
 		var n = input + octave * 12;
-		seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, { freq:seq.tuning.midiNoteToFrequency(n), velocity:127 }, 0, n, 0., 0));
+		var freq = seq.tuning.midiNoteToFrequency(n);
+		for (s in seq.synths)
+		{
+			for (f in s.getFollowers())
+			{
+				if (!f.env[0].releasing() && f.patch_event.sequencer_event.data.freq == freq)
+					return;
+			}
+		}
+		seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, { freq:freq, velocity:127 }, 0, n, 0., 0));
 	}
 	
 	public function noteOff(input : Int)

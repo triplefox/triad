@@ -8,6 +8,7 @@ import nme.utils.ByteArray;
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.audio.MIDITuning;
+import com.ludamix.triad.audio.Envelope;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
 
@@ -57,7 +58,9 @@ class SFZGroup
 			if (sampler_patch == null) continue; // no sample found...
 			
 			// ampeg directives are all in % and seconds.
-			var env_vals = [0.,1.,0.,0.,0.,1.,0.];
+			var amp_vals = [0., 0., 0., 0., 0., 1., 0.];			
+			var fil_vals = [0., 0., 0., 0., 0., 1., 0.];
+			var fil_depth = 0.;
 			
 			var midinote : Float = 60.0;
 			for (directives in [group_opcodes, region])
@@ -68,13 +71,22 @@ class SFZGroup
 				if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
 				sampler_patch.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
 				
-				if (directives.exists("ampeg_delay")) { env_vals[0] = directives.get("ampeg_delay"); }
-				if (directives.exists("ampeg_start")) { env_vals[1] = directives.get("ampeg_start"); }
-				if (directives.exists("ampeg_attack")) { env_vals[2] = directives.get("ampeg_attack"); }
-				if (directives.exists("ampeg_hold")) { env_vals[3] = directives.get("ampeg_hold"); } 
-				if (directives.exists("ampeg_decay")) { env_vals[4] = directives.get("ampeg_decay"); }
-				if (directives.exists("ampeg_sustain")) { env_vals[5] = directives.get("ampeg_sustain") / 100; }
-				if (directives.exists("ampeg_release")) { env_vals[6] = directives.get("ampeg_release"); }
+				if (directives.exists("ampeg_delay")) { amp_vals[0] = directives.get("ampeg_delay"); }
+				if (directives.exists("ampeg_start")) { amp_vals[1] = directives.get("ampeg_start") / 100; }
+				if (directives.exists("ampeg_attack")) { amp_vals[2] = directives.get("ampeg_attack"); }
+				if (directives.exists("ampeg_hold")) { amp_vals[3] = directives.get("ampeg_hold"); } 
+				if (directives.exists("ampeg_decay")) { amp_vals[4] = directives.get("ampeg_decay"); }
+				if (directives.exists("ampeg_sustain")) { amp_vals[5] = directives.get("ampeg_sustain") / 100; }
+				if (directives.exists("ampeg_release")) { amp_vals[6] = directives.get("ampeg_release"); }
+				
+				if (directives.exists("fileg_delay")) { fil_vals[0] = directives.get("fileg_delay"); }
+				if (directives.exists("fileg_start")) { fil_vals[1] = directives.get("fileg_start") / 100; }
+				if (directives.exists("fileg_attack")) { fil_vals[2] = directives.get("fileg_attack"); }
+				if (directives.exists("fileg_hold")) { fil_vals[3] = directives.get("fileg_hold"); } 
+				if (directives.exists("fileg_decay")) { fil_vals[4] = directives.get("fileg_decay"); }
+				if (directives.exists("fileg_sustain")) { fil_vals[5] = directives.get("fileg_sustain") / 100; }
+				if (directives.exists("fileg_release")) { fil_vals[6] = directives.get("fileg_release"); }
+				if (directives.exists("fileg_depth")) { fil_depth = directives.get("fileg_depth"); }
 				
 				if (directives.exists("loop_mode")) {
 					switch(directives.get("loop_mode"))
@@ -93,16 +105,22 @@ class SFZGroup
 				if (directives.exists("volume")) { sampler_patch.volume = 1.0 *
 					//1.0; }
 					// in the sfz spec: "+6db = power*2, -6db = power/2"
-					// but I am using "real" dbs here because it seems a little better.
+					// but I am using "real" dbs (+/- 10db = power*/2) here because it seems a little better.
 					Math.pow(2, directives.get("volume") / 10);  }
+				
+				if (directives.exists("cutoff")) { sampler_patch.cutoff_frequency = directives.get("cutoff"); }
 				
 			}
 			
-			var envs = SynthTools.interpretDSAHDSHR(seq.secondsToFrames, env_vals[0], env_vals[1], env_vals[2], env_vals[3],
-				env_vals[4], env_vals[5], 0., env_vals[6], SynthTools.CURVE_POW, SynthTools.CURVE_SQR, 
-					SynthTools.CURVE_SQR);
-			sampler_patch.envelopes = [ { attack:envs.attack, sustain:envs.sustain, release:envs.release,
-				quantization:0, assigns:[SamplerSynth.AS_VOLUME_ADD]}];
+			var ampeg = Envelope2.DSAHDSHR(seq.secondsToFrames, amp_vals[0], amp_vals[1], amp_vals[2], amp_vals[3],
+				amp_vals[4], amp_vals[5], 0., amp_vals[6], 1., 1., 1., [SamplerSynth.AS_VOLUME_ADD]);
+			sampler_patch.envelope_profiles = [ ampeg ];
+			if (fil_depth != 0)
+			{
+				var fileg = Envelope2.DSAHDSHR(seq.secondsToFrames, fil_vals[0], fil_vals[1], fil_vals[2], fil_vals[3],
+					fil_vals[4], fil_vals[5], 0., fil_vals[6], 1., 1., 1., [SamplerSynth.AS_FREQUENCY_ADD_CENTS]);
+				sampler_patch.envelope_profiles.push(fileg);
+			}
 			
 			region_cache.push( { region:region, patch:sampler_patch } );
 		}

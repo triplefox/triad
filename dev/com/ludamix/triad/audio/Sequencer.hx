@@ -224,7 +224,7 @@ class Sequencer
 	public var postFrame : Sequencer->FastFloatBuffer->Void;
 	public var reverb : Reverb;
 	
-	private static inline var DC_OFFSET = -0.00001;
+	private static inline var DC_OFFSET = 0.;
 	private static inline var NATURAL_RATE = 44100;
 	private var RATE : Int;
 	public var RATE_MULTIPLE : Float;

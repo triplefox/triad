@@ -2,13 +2,14 @@ package com.ludamix.triad.audio;
 
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.audio.Sequencer;
+import com.ludamix.triad.audio.Envelope;
 import com.ludamix.triad.math.LFSR;
 import com.ludamix.triad.tools.FloatPlayhead;
 
 typedef TSAssign = Int;
 
 typedef TableSynthPatch = {
-	envelopes : Array<Envelope>,
+	envelope_profiles : Array<EnvelopeProfile>,
 	lfos : Array<LFO>,
 	oscillator : Int,
 	modulation_lfo : Float, // applies to LFO1, depth multiplier if greater than 0
@@ -111,13 +112,9 @@ class TableSynth implements SoftSynth
 	
 	public static function defaultPatch(seq : Sequencer) : TableSynthPatch
 	{
-		var adsr_base = SynthTools.interpretADSR(seq.secondsToFrames, 0.01, 0.4, 0.5, 0.01, SynthTools.CURVE_POW,
-			SynthTools.CURVE_POW, SynthTools.CURVE_POW, false);
-		var envs : Array<Envelope> = [ { attack:adsr_base.attack, sustain:adsr_base.sustain, release:adsr_base.release, assigns:[AS_VOLUME_ADD],
-							quantization:0 } ];
 		var lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] },
 			{ frequency:1.7, depth:1., delay:0., attack:0., assigns:[AS_PULSEWIDTH] }];
-		return { envelopes:envs,
+		return { envelope_profiles:[Envelope2.ADSR(seq.secondsToFrames, 0.01, 0.4, 0.5, 0.01, [AS_VOLUME_ADD])],
 				oscillator:SAW_WT,
 				lfos : lfos,
 				modulation_lfo:1.0,
@@ -160,17 +157,12 @@ class TableSynth implements SoftSynth
 		var env_num = 0;
 		for (env in cur_follower.env)
 		{
-			if (env.state < 3)
+			if (!env.isOff())
 			{
-				var patch_env = patch.envelopes[env_num];
-				var env_val = 0.;
-				env_val = env.getTable(patch_env)[env.ptr];
-				if (patch_env.quantization != 0)
-					env_val = (Math.round(env_val * patch_env.quantization) / patch_env.quantization);	
-				pipeAdjustment(env_val, patch_env.assigns);
+				pipeAdjustment(env.update(1.0), env.assigns);
 			}
 			env_num++;
-		}		
+		}
 	}
 	
 	public inline function updateLFO(patch : TableSynthPatch, channel : SequencerChannel, cur_follower : EventFollower)
@@ -407,8 +399,6 @@ class TableSynth implements SoftSynth
 		
 		velocity = seq_event.data.velocity / 128;
 		
-		if (cur_follower.env[0].state == RELEASE) // apply the release envelope on top of the release level
-			frame_vol_adjust *= cur_follower.release_level;
 		var curval = master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
 			frame_vol_adjust;
 		
@@ -550,44 +540,22 @@ class TableSynth implements SoftSynth
 		
 		playhead.setSamplePos(pos);
 		
-		for (ev in followers)
+		// Priority calculations.
+		
+		var ct = 0;
+		var master = cur_follower.env[0];
+		
+		if (!master.isOff())
 		{
-			// Advance each envelope of each follower one step.
-			
-			var idx = 0;
-			for (env in ev.env)
-			{
-				env.ptr++;
-				var cur_env : Array<Float> = null;
-				if (env.state == SUSTAIN)
-				{
-					if (idx == 0)
-						cur_follower.patch_event.sequencer_event.priority += PRIORITY_RAMPUP;
-					cur_env = patch.envelopes[idx].sustain;
-				}
-				else if (env.state==ATTACK)
-					cur_env = patch.envelopes[idx].attack;
-				else if (env.state == RELEASE)
-				{
-					if (idx == 0)
-						cur_follower.patch_event.sequencer_event.priority = 
-							Std.int(cur_follower.patch_event.sequencer_event.priority * PRIORITY_RAMPDOWN);
-					cur_env = patch.envelopes[idx].release;
-				}
-				if (env.state < RELEASE && idx == 0) // release is tied to master env
-				{
-					cur_follower.release_level = frame_vol_adjust;
-				}
-				if (env.state!=OFF && env.ptr >= cur_env.length)
-				{
-					if (env.state != SUSTAIN)
-						{env.state += 1; }
-					env.ptr = 0;
-				}
-				idx++;
-			}
-			
+			if (master.sustaining()) // encourage sustains to be retained
+				cur_follower.patch_event.sequencer_event.priority += PRIORITY_RAMPUP;
 		}
+		if (master.releasing()) // ramp down on release
+		{
+			cur_follower.patch_event.sequencer_event.priority = 
+				Std.int(cur_follower.patch_event.sequencer_event.priority * PRIORITY_RAMPDOWN);
+		}
+		
 		return true;
 	}
 	
@@ -701,7 +669,7 @@ class TableSynth implements SoftSynth
 				// as the channel adds more voices, the priority of its notes gets squashed.
 				// doing this on note ons naturally favors squashing of repetitive drum hits and stacattos,
 				// which have plenty of release tails, instead of held notes.
-				followers.push(new EventFollower(patch_ev, patch_ev.patch.envelopes.length));
+				followers.push(new EventFollower(patch_ev));
 				for (f in channel.allocated)
 				{
 					patch_ev.sequencer_event.priority = Std.int((patch_ev.sequencer_event.priority * PRIORITY_VOICE));
@@ -732,6 +700,11 @@ class TableSynth implements SoftSynth
 			result.push(n.patch_event);
 		}
 		return result;
+	}
+	
+	public inline function getFollowers() : Array<EventFollower>
+	{
+		return followers;
 	}
 	
 	public function allOff()

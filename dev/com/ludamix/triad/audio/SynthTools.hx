@@ -63,7 +63,7 @@ class SynthTools
 	public static inline function interpretDSAHDSHR(secondsToFrames : Float->Float, delay : Float, start : Float, 
 		a : Float, hold_attack : Float, 
 		decay : Float,  s : Float, hold_release : Float, r : Float, a_curve : Int, d_curve : Int, r_curve : Int,
-		?sustainToRelease = false) : {attack:Array<Float>,release:Array<Float>,sustain:Array<Float>}
+		?sustainToRelease = false,?multiplier:Float=1.0) : {attack:Array<Float>,release:Array<Float>,sustain:Array<Float>}
 	{
 		var delayf = Math.ceil(secondsToFrames(delay));
 		var af = Math.ceil(secondsToFrames(a));
@@ -71,6 +71,8 @@ class SynthTools
 		var hold_rf = Math.ceil(secondsToFrames(hold_release));
 		var decayf = Math.ceil(secondsToFrames(decay));
 		var rf = Math.ceil(secondsToFrames(r));
+		
+		s *= multiplier;
 		
 		if (af == 0) af = 1;
 		if (decayf == 0) decayf = 1;
@@ -80,11 +82,11 @@ class SynthTools
 		for (n in 0...delayf)
 			attack_envelope.push(0.);
 		for (n in 0...af)
-			attack_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, af, start, 1.0, n), a_curve));
+			attack_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, af, start, multiplier, n), a_curve));
 		for (n in 0...hold_af)
-			attack_envelope.push(1.);
+			attack_envelope.push(multiplier);
 		for (n in 0...decayf)
-			attack_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, decayf, s, 1.0, decayf - n), d_curve));
+			attack_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, decayf, s, multiplier, decayf - n), d_curve));
 		
 		var sustain_envelope = [s];
 		var release_envelope = new Array<Float>();
@@ -98,9 +100,9 @@ class SynthTools
 		else
 		{
 			for (n in 0...hold_rf)
-				release_envelope.push(1.);
+				release_envelope.push(multiplier);
 			for (n in 0...rf)
-				release_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, rf, 0., 1.0, rf - n), r_curve));
+				release_envelope.push(curve(com.ludamix.triad.tools.MathTools.rescale(0, rf, 0., multiplier, rf - n), r_curve));
 		}
 		
 		return {attack:attack_envelope,sustain:sustain_envelope,release:release_envelope};

@@ -13,7 +13,6 @@ loop_mode=loop_continuous
 transpose=-4
 tune=36
 pitch_keycenter=e4
-ampeg_hold=0.138
 ampeg_sustain=0
 effect1=7
 

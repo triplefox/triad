@@ -10,6 +10,7 @@ import com.ludamix.triad.tools.MathTools;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.format.WAV;
 import com.ludamix.triad.audio.SFZ;
+import com.ludamix.triad.audio.Envelope;
 import nme.Assets;
 import nme.utils.ByteArray;
 import nme.utils.CompressionAlgorithm;
@@ -38,10 +39,12 @@ typedef SamplerPatch = {
 	loop_start : Int,
 	loop_end : Int,
 	volume : Float,
-	envelopes : Array<Envelope>,
+	envelope_profiles : Array<EnvelopeProfile>,
 	lfos : Array<LFO>,
 	modulation_lfo : Float, // multiplier if greater than 0
-	arpeggiation_rate : Float, // 0 = off, hz value
+	arpeggiation_rate : Float, // 0 = off, hz value	
+	cutoff_frequency : Float,
+	resonance_level : Float
 };
 
 class SamplerSynth implements SoftSynth
@@ -59,6 +62,8 @@ class SamplerSynth implements SoftSynth
 	
 	public var frame_pitch_adjust : Float;
 	public var frame_vol_adjust : Float;
+	public var frame_frequency_adjust : Float;
+	public var frame_resonance_adjust : Float;
 	
 	public var arpeggio : Float;
 	
@@ -101,6 +106,11 @@ class SamplerSynth implements SoftSynth
 	public static inline var AS_PITCH_MUL = 1;
 	public static inline var AS_VOLUME_ADD = 2;
 	public static inline var AS_VOLUME_MUL = 3;
+	public static inline var AS_FREQUENCY_ADD = 4;
+	public static inline var AS_FREQUENCY_ADD_CENTS = 5;
+	public static inline var AS_FREQUENCY_MUL = 6;
+	public static inline var AS_RESONANCE_ADD = 7;
+	public static inline var AS_RESONANCE_MUL = 8;
 	
 	// heuristic to ramp down priority when releasing
 	public static inline var PRIORITY_RAMPDOWN = 0.95;
@@ -270,11 +280,13 @@ class SamplerSynth implements SoftSynth
 			loop_end:loop_end,
 			sample_rate:wav.header.samplingRate,
 			base_frequency:tuning.midiNoteToFrequency( midi_unity_note + midi_pitch_fraction/0xFFFFFFFF),
-			envelopes:[{attack:[1.0],sustain:[1.0],release:[1.0],quantization:0,assigns:[AS_VOLUME_ADD]}],
+			envelope_profiles:[Envelope2.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[AS_VOLUME_ADD])],
 			volume:1.0,
 			lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
 			modulation_lfo:1.0,
 			arpeggiation_rate:0.0,
+			cutoff_frequency:22050.,
+			resonance_level:0.
 			},
 			function(settings, seq, ev) : Array<PatchEvent> { return [new PatchEvent(ev,settings)]; }
 		);
@@ -301,10 +313,12 @@ class SamplerSynth implements SoftSynth
 				loop_end:loop_end,
 				sample_rate:44100,
 				base_frequency:1.,
-				envelopes:[{attack:[1.0],sustain:[1.0],release:[1.0],quantization:0,assigns:[AS_VOLUME_ADD]}],
+				envelope_profiles:[Envelope2.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[AS_VOLUME_ADD])],
 				lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
 				modulation_lfo:1.0,
 				arpeggiation_rate:0.0,
+				cutoff_frequency:22050.,
+				resonance_level:0.,
 				}
 				;
 	}
@@ -314,8 +328,6 @@ class SamplerSynth implements SoftSynth
 		this.sequencer = sequencer;
 		this.buffer = sequencer.buffer;
 		this.followers = new Array();		
-		filter = new IIRFilter2(0, 220., 0, sequencer.sampleRate());
-		// FIXME: I should have a filter state per follower, I think, not on the synth...
 	}
 	
 	public inline function pipeAdjustment(qty : Float, assigns : Array<Int>)
@@ -328,6 +340,12 @@ class SamplerSynth implements SoftSynth
 				case AS_PITCH_MUL: frame_pitch_adjust *= qty;
 				case AS_VOLUME_ADD: frame_vol_adjust += qty;
 				case AS_VOLUME_MUL: frame_vol_adjust *= qty;
+				case AS_FREQUENCY_ADD: frame_frequency_adjust += qty;
+				case AS_FREQUENCY_ADD_CENTS: frame_frequency_adjust = 
+					sequencer.tuning.midiNoteToFrequency(sequencer.tuning.frequencyToMidiNote(frame_frequency_adjust)+qty/100.);
+				case AS_FREQUENCY_MUL: frame_frequency_adjust *= qty;
+				case AS_RESONANCE_ADD: frame_resonance_adjust += qty;
+				case AS_RESONANCE_MUL: frame_resonance_adjust *= qty;
 			}
 		}
 	}
@@ -337,16 +355,12 @@ class SamplerSynth implements SoftSynth
 		var env_num = 0;
 		for (env in cur_follower.env)
 		{
-			if (env.state < OFF)
+			if (!env.isOff())
 			{
-				var patch_env = patch.envelopes[env_num];
-				var env_val = env.getTable(patch_env)[env.ptr];
-				if (patch_env.quantization != 0)
-					env_val = (Math.round(env_val * patch_env.quantization) / patch_env.quantization);	
-				pipeAdjustment(env_val, patch_env.assigns);
+				pipeAdjustment(env.update(1.0), env.assigns);
 			}
 			env_num++;
-		}		
+		}
 	}
 	
 	public inline function updateLFO(patch : SamplerPatch, channel : SequencerChannel, cur_follower : EventFollower)
@@ -413,9 +427,15 @@ class SamplerSynth implements SoftSynth
 		
 		frame_pitch_adjust = 0.;
 		frame_vol_adjust = 0.;
+		frame_frequency_adjust = patch.cutoff_frequency;
+		frame_resonance_adjust = patch.resonance_level;
+		
+		filter = cur_follower.filter;
 		
 		updateEnvelope(patch, cur_channel, cur_follower);
 		updateLFO(patch, cur_channel, cur_follower);
+		
+		filter.set(frame_frequency_adjust, frame_resonance_adjust);
 		
 		freq = seq_event.data.freq;
 		
@@ -429,8 +449,6 @@ class SamplerSynth implements SoftSynth
 		if (!cur_follower.isOff())
 		{
 			
-			if (cur_follower.env[0].state == RELEASE) // apply the release envelope on top of the release level
-				frame_vol_adjust *= cur_follower.release_level;
 			var curval = patch.volume * master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
 				frame_vol_adjust;
 			
@@ -480,62 +498,28 @@ class SamplerSynth implements SoftSynth
 			
 			// kill the voice quickly when the settings allow it
 			if (cur_follower.loop_pos > sample_left.length+inc_samples && 
-				(patch.loop_mode == ONE_SHOT || cur_follower.env[0].state == RELEASE))
+				(patch.loop_mode == ONE_SHOT || cur_follower.env[0].releasing()))
 			{
-				cur_follower.env[0].state = OFF;
+				cur_follower.setOff();
 			}
 			
-			// Envelope advancement. We judge the length of the note based on the master envelope.
+			// Priority calculations.
 			
 			var ct = 0;
-			for (e in cur_follower.env)
+			var master = cur_follower.env[0];
+			
+			if (!master.isOff())
 			{
-				e.ptr++;
-				if (ct == 0) // master envelope treatment
-				{
-					var master_env : Array<Float> = cur_follower.env[0].getTable(patch.envelopes[0]);
-					var master_state = cur_follower.env[0].state;
-					var master_ptr = cur_follower.env[0].ptr;
-					
-					if (master_state!=OFF && master_ptr >= master_env.length)
-					{
-						// advance to next state if not sustaining
-						if (master_state != SUSTAIN || patch.loop_mode == ONE_SHOT || patch.loop_mode == NO_LOOP)
-							{master_state += 1; if (master_state == SUSTAIN && 
-								patch.envelopes[0].sustain.length < 1) master_state++; }
-						else if (master_state == SUSTAIN) // encourage sustains to be retained
-							cur_follower.patch_event.sequencer_event.priority += PRIORITY_RAMPUP;
-						// allow one shots to play through, ignoring their envelope tail
-						if (patch.loop_mode == ONE_SHOT && master_state == OFF && 
-							cur_follower.loop_pos < 1.)
-						{
-							master_state = RELEASE;
-							master_ptr = patch.envelopes[0].release.length - 1;
-						}
-						else
-							master_ptr = 0;
-						cur_follower.env[0].state = master_state;
-						cur_follower.env[0].ptr = master_ptr;
-					}
-					// set release level
-					if (master_state < RELEASE)
-					{
-						cur_follower.release_level = frame_vol_adjust;
-					}
-					else
-					{
-						cur_follower.patch_event.sequencer_event.priority = 
-							Std.int(cur_follower.patch_event.sequencer_event.priority * PRIORITY_RAMPDOWN);
-					}
-				}
-				else // other envelopes are simple...
-				{
-					if (e.state!=OFF && e.state!=SUSTAIN && e.ptr >= e.getTable(patch.envelopes[ct]).length)
-					{ 
-						e.state++; e.ptr = 0; 
-					}
-				}
-				ct++;
+				if (master.sustaining()) // encourage sustains to be retained
+					cur_follower.patch_event.sequencer_event.priority += PRIORITY_RAMPUP;
+				// allow one shots to play through, ignoring their envelope tail
+				if (patch.loop_mode == ONE_SHOT && cur_follower.loop_pos < 1.)
+					cur_follower.setRelease();
+			}
+			if (master.releasing()) // ramp down on release
+			{
+				cur_follower.patch_event.sequencer_event.priority = 
+					Std.int(cur_follower.patch_event.sequencer_event.priority * PRIORITY_RAMPDOWN);
 			}
 			
 		}
@@ -562,11 +546,10 @@ class SamplerSynth implements SoftSynth
 			if (cur_follower.loop_state == EventFollower.LOOP_PRE)
 			{
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_start);
-				var next_pos = runSegment2(buffer, temp_pos, inc, left, right, sample_left, 
-					sample_right, ll, loop_start, loop_start+1, write);
-				if (next_pos >= loop_start) // we crossed the threshold into the loop
+				temp_pos = runSegment2(buffer, temp_pos, inc, left, right, sample_left, 
+					sample_right, ll, write);
+				if (temp_pos >= loop_start) // we crossed the threshold into the loop
 					cur_follower.loop_state = EventFollower.LOOP;
-				temp_pos = next_pos;
 			}
 			else
 			{
@@ -600,8 +583,8 @@ class SamplerSynth implements SoftSynth
 			else
 			{
 				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
-				temp_pos = runSegment2(buffer, temp_pos, inc, left, right, sample_left, sample_right, ll, 
-					loop_end, sample_left.length, write);
+				temp_pos = runSegment2(buffer, temp_pos, inc, left, 
+					right, sample_left, sample_right, ll, write);
 				if (ll < 1)
 					buffer.playhead = buffer.length;
 			}
@@ -823,7 +806,7 @@ class SamplerSynth implements SoftSynth
 	
 	private inline function runSegment2(buffer : FastFloatBuffer, 
 		pos : Float, inc : Float, left, right, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
-		samples_requested : Int, loop_end : Float, loop_len : Float, write : Bool)
+		samples_requested : Int, write : Bool)
 	{
 		// As runSegment, but allows bleedover (for the "pre" loop segment)
 		// FIXME: This really should be factored into a macro or something.
@@ -1009,7 +992,7 @@ class SamplerSynth implements SoftSynth
 	public inline function copy_samples_drop(buffer : FastFloatBuffer, a : Float, level : Float)
 	{
 		// Drop
-		buffer.add(level * a);
+		buffer.add(level * filter.getLP(a));
 	}
 	
 	public inline function copy_samples_lin(buffer : FastFloatBuffer, a : Float, b : Float, x : Float, level : Float)
@@ -1027,7 +1010,7 @@ class SamplerSynth implements SoftSynth
 		var a1 = y0 - y1 - a0;
 		var a2 = y2 - y0;
 		var a3 = y1;
-		buffer.add(level * (a0*x*x2+a1*x2+a2*x+a3));
+		buffer.add(level * filter.getLP(a0*x*x2+a1*x2+a2*x+a3));
 	}
 	
 	public function event(patch_ev : PatchEvent, channel : SequencerChannel)
@@ -1039,7 +1022,7 @@ class SamplerSynth implements SoftSynth
 				// as the channel adds more voices, the priority of its notes gets squashed.
 				// doing this on note ons naturally favors squashing of repetitive drum hits and stacattos,
 				// which have plenty of release tails, instead of held notes.
-				followers.push(new EventFollower(patch_ev, patch_ev.patch.envelopes.length));
+				followers.push(new EventFollower(patch_ev));
 				for (f in channel.allocated)
 				{
 					patch_ev.sequencer_event.priority = Std.int((patch_ev.sequencer_event.priority * PRIORITY_VOICE));
@@ -1070,6 +1053,11 @@ class SamplerSynth implements SoftSynth
 			result.push(n.patch_event);
 		}
 		return result;
+	}
+	
+	public inline function getFollowers() : Array<EventFollower>
+	{
+		return followers;
 	}
 	
 	public function allOff()

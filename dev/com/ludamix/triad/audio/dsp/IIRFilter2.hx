@@ -138,16 +138,11 @@ class IIRFilter2
 		return output;
 	}
 	
-	public function set(cutoff, resonance) {
-	  this.calcCoeff(cutoff, resonance);
-	}	
-	
-	public inline function clear():Void 
+	public function set(cutoff : Float, resonance : Float) 
 	{
-		f0 = 0.;
-		f1 = 0.;
-		f2 = 0.;
-		f3 = 0.;
-	}
+		this.calcCoeff(cutoff, resonance);
+		this.cutoff = cutoff;
+		this.resonance = resonance;
+	}	
 	
 }

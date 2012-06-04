@@ -91,7 +91,7 @@ class SynthTest
 		#if debug
 		  for (n in 0...4) // trying not to kill cpu!
 		#else
-		  for (n in 0...128)
+		  for (n in 0...64)
 		#end
 		{
 			var synth = new SamplerSynth();
@@ -193,8 +193,8 @@ class SynthTest
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
-		seq = new Sequencer(Std.int(44100), 4096,16,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		//seq = new Sequencer(Std.int(44100), 4096,8);
+		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
+		seq = new Sequencer(Std.int(44100), 4096,8);
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 

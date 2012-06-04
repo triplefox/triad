@@ -1,4 +1,5 @@
 package com.ludamix.triad.audio;
+import com.ludamix.triad.audio.dsp.IIRFilter2;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.audio.Envelope;
 
@@ -8,41 +9,39 @@ class EventFollower
 	// this thing holds some additional state per-event.
 	
 	public var patch_event : PatchEvent;
-	public var env : Array<EnvelopeState>;
+	public var env : Array<Envelope2>;
 	public var lfo_pos : Int;
 	public var loop_pos : Float;
 	public var loop_state : Int;
-	public var release_level : Float;
+	public var filter : IIRFilter2;
 	
 	public static inline var LOOP_PRE = 0;
 	public static inline var LOOP = 1;
 	public static inline var LOOP_POST = 2;
 	
-	public function new(event : PatchEvent, num_envelopes)
+	public function new(event : PatchEvent)
 	{
 		this.patch_event = event; 
 		env = new Array();
-		for (n in 0...num_envelopes)
-			env.push(new EnvelopeState());
+		for (n in cast(event.patch.envelope_profiles,Array<Dynamic>))
+			env.push(new Envelope2(n.attack,n.release,n.assigns));
 		this.lfo_pos = 0;
-		loop_pos = 0.; loop_state = LOOP_PRE; release_level = 1.;
+		loop_pos = 0.; loop_state = LOOP_PRE;
+		filter = new IIRFilter2(0,440.,0,44100);
 	}
 	
-	public inline function isOff()
-	{
-		return env[0].state == TableSynth.OFF;
-	}
+	public inline function isOff() { return env[0].isOff(); }
 	
 	public inline function setRelease()
 	{
-		if (patch_event.patch.envelopes[0].release.length == 0)
-		{
-			for (e in env) { e.state = TableSynth.OFF; release_level = 0.; }
-		}
-		else if (env[0].state != TableSynth.RELEASE)
-		{
-			for (e in env) { e.state = TableSynth.RELEASE; e.ptr = 0; }
-		}
+		for (e in env)
+			e.setRelease();
+	}
+	
+	public inline function setOff()
+	{
+		for (e in env)
+			e.setOff();
 	}
 	
 }
