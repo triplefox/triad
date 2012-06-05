@@ -218,12 +218,12 @@ class Keyjammer
 				var mips : RawSample = follower.patch_event.patch.mips[0];
 				var sample = mips.sample_left;
 				var rate_multiplier : Float = mips.rate_multiplier;
-				var p = Std.int(follower.loop_pos * Main.W);
-				spr.bitmapData.fillRect(new Rectangle(p,0,1,Main.H), 0xFF444400);
-				p = Std.int(follower.patch_event.patch.loop_start/(sample.length*rate_multiplier) * Main.W);
+				var p = Std.int(follower.patch_event.patch.loop_start/(sample.length*rate_multiplier) * Main.W);
 				spr.bitmapData.fillRect(new Rectangle(p,0,1,Main.H), 0xFF880000);
 				p = Std.int(follower.patch_event.patch.loop_end/(sample.length*rate_multiplier) * Main.W);
 				spr.bitmapData.fillRect(new Rectangle(p, 0, 1, Main.H), 0xFF000088);
+				p = Std.int(follower.loop_pos * Main.W);
+				spr.bitmapData.fillRect(new Rectangle(p,0,1,Main.H), 0xFF444400);
 				info_vals = {loop_pos : follower.loop_pos, release_level:follower.env[0].release_level, level:follower.env[0].level};
 			}
 		}

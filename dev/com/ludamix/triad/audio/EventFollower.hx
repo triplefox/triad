@@ -16,8 +16,11 @@ class EventFollower
 	public var filter : IIRFilter2;
 	
 	public static inline var LOOP_PRE = 0;
-	public static inline var LOOP = 1;
-	public static inline var LOOP_POST = 2;
+	public static inline var LOOP_FORWARD = 1;
+	public static inline var LOOP_BACKWARD = 2;
+	public static inline var LOOP_PING = 3;
+	public static inline var LOOP_PONG = 4;
+	public static inline var LOOP_POST = 5;
 	
 	public function new(event : PatchEvent)
 	{

@@ -50,7 +50,7 @@ class SFZGroup
 		region_cache = new Array();
 		for (region in regions)
 		{
-			var sampler_patch : SamplerPatch =null;
+			var sampler_patch : SamplerPatch = null;
 			if (region.exists('sample'))
 				sampler_patch = Reflect.copy(samples.get(region.get('sample')));
 			else if (group_opcodes.exists('sample'))
@@ -298,7 +298,7 @@ class SFZBank
 			if (!samples.exists(n))
 			{
 				var header = WAV.read(Assets.getBytes(path + n), path+n);
-				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header);
+				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header, n);
 				samples.set(n, content.settings);
 			}
 		}

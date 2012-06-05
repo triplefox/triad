@@ -44,8 +44,21 @@ typedef SamplerPatch = {
 	modulation_lfo : Float, // multiplier if greater than 0
 	arpeggiation_rate : Float, // 0 = off, hz value	
 	cutoff_frequency : Float,
-	resonance_level : Float
+	resonance_level : Float,
+	name : String
 };
+
+/*
+ * Things that would be nice to see:
+ * 
+ * per-sample envelopes (this will fix a few "clicking" artifacts, but mostly can be covered in data)
+ * make the pingpong loop not suck(this means getting the edge samples exact, right now they are "meh")
+ * macroified implementation of the sample copiers so that source code size is small and maintainable
+ * implementation of all sfz filter types (IIRFilter2's lowpass is just a starting point)
+ * implementation of more sfz opcodes (up to the limits of the current architecture)
+ * optimize to not use the filter _all_ the time (probably after macroifying)
+ * 
+ * */
 
 class SamplerSynth implements SoftSynth
 {
@@ -244,7 +257,7 @@ class SamplerSynth implements SoftSynth
 		return result;
 	}
 	
-	public static function ofWAVE(tuning : MIDITuning, wav : WAVE)
+	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, name : String)
 	{
 		var wav_data = wav.data;
 		
@@ -286,7 +299,8 @@ class SamplerSynth implements SoftSynth
 			modulation_lfo:1.0,
 			arpeggiation_rate:0.0,
 			cutoff_frequency:22050.,
-			resonance_level:0.
+			resonance_level:0.,
+			name:name
 			},
 			function(settings, seq, ev) : Array<PatchEvent> { return [new PatchEvent(ev,settings)]; }
 		);
@@ -319,6 +333,7 @@ class SamplerSynth implements SoftSynth
 				arpeggiation_rate:0.0,
 				cutoff_frequency:22050.,
 				resonance_level:0.,
+				name:"default"
 				}
 				;
 	}
@@ -487,10 +502,8 @@ class SamplerSynth implements SoftSynth
 			
 			switch(patch.loop_mode)
 			{
-				case LOOP_FORWARD, LOOP_BACKWARD, LOOP_PINGPONG: 
-					runLoop(cur_follower, buffer, inc_samples, left, right, sample_left, sample_right, rate_mult, write);
 				// FIXME: Find samples that test sustain so that it can be implemented properly
-				case SUSTAIN_FORWARD, SUSTAIN_BACKWARD, SUSTAIN_PINGPONG:
+				case LOOP_FORWARD, LOOP_BACKWARD, SUSTAIN_FORWARD, SUSTAIN_BACKWARD, LOOP_PINGPONG, SUSTAIN_PINGPONG: 
 					runLoop(cur_follower, buffer, inc_samples, left, right, sample_left, sample_right, rate_mult, write);
 				case ONE_SHOT, NO_LOOP:
 					runUnlooped(cur_follower, buffer, inc_samples, left, right, sample_left, sample_right, write);
@@ -533,13 +546,12 @@ class SamplerSynth implements SoftSynth
 		// LOOP - repeat loop until envelope reaches OFF
 		buffer.playhead = 0;
 		
-		// then we add backwards and forwards runs, and then bidi.
-		// lastly, we turn this stuff into macros to get the line count down a little more and make the concept generic.
-		
 		var temp_pos = cur_follower.loop_pos * sample_left.length;
 		var loop_start : Float = (cur_follower.patch_event.patch.loop_start * rate_mult);
 		var loop_end : Float = (cur_follower.patch_event.patch.loop_end * rate_mult);
 		var loop_len : Float = (loop_end - loop_start) + 1;
+		
+		var loop_mode = cur_follower.patch_event.patch.loop_mode;
 		
 		while (buffer.playhead < buffer.length)
 		{
@@ -549,16 +561,51 @@ class SamplerSynth implements SoftSynth
 				temp_pos = runSegment2(buffer, temp_pos, inc, left, right, sample_left, 
 					sample_right, ll, write);
 				if (temp_pos >= loop_start) // we crossed the threshold into the loop
-					cur_follower.loop_state = EventFollower.LOOP;
+				{
+					switch(loop_mode)
+					{
+						case LOOP_BACKWARD, SUSTAIN_BACKWARD:
+							cur_follower.loop_state = EventFollower.LOOP_BACKWARD;
+						case LOOP_PINGPONG, SUSTAIN_PINGPONG:
+							cur_follower.loop_state = EventFollower.LOOP_PING;
+						default:
+							cur_follower.loop_state = EventFollower.LOOP_FORWARD;
+					}
+				}
 			}
-			else
-			{
-				temp_pos = ((temp_pos - loop_start) % loop_len) + loop_start;
-				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
-				temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, 
-					sample_right, ll, loop_end, loop_len, write);
+			else 
+			{ 
+				if (cur_follower.loop_state == EventFollower.LOOP_FORWARD || 
+					cur_follower.loop_state == EventFollower.LOOP_PING)
+				{
+					// forward
+					var lt = temp_pos;
+					temp_pos = ((temp_pos - loop_start) % loop_len) + loop_start;
+					var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
+					temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, 
+						sample_right, ll, loop_end, loop_len, write);
+					if (cur_follower.loop_state == EventFollower.LOOP_PING && temp_pos < lt)
+					{
+						cur_follower.loop_state = EventFollower.LOOP_PONG;
+					}
+				}
+				else 
+				{
+					// backward
+					var lt = temp_pos;
+					temp_pos = ((temp_pos - loop_start) % loop_len) + loop_start;
+					var temp_pos_b = loop_end - temp_pos;
+					var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
+					runSegment(buffer, temp_pos_b, -inc, 
+						left, right, sample_left, sample_right, ll, loop_end, loop_len, write);
+					temp_pos += ll * inc;
+					if (cur_follower.loop_state == EventFollower.LOOP_PONG && temp_pos < lt)
+					{
+						cur_follower.loop_state = EventFollower.LOOP_PING;
+					}
+				}
 			}
-		}
+		}		
 		cur_follower.loop_pos = temp_pos / sample_left.length;
 	}
 	
@@ -598,6 +645,7 @@ class SamplerSynth implements SoftSynth
 		// Calculates a single loop, starting from the buffer's playhead
 		
 		var len = buffer.length - buffer.playhead;
+		
 		var samples = Std.int(Math.min(len, (loop_end - loop_pos) / inc));
 		
 		// Cut samples in half to account for stereo. Then do some corrections.

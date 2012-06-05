@@ -140,9 +140,12 @@ class IIRFilter2
 	
 	public function set(cutoff : Float, resonance : Float) 
 	{
-		this.calcCoeff(cutoff, resonance);
-		this.cutoff = cutoff;
-		this.resonance = resonance;
+		if (this.cutoff != cutoff || this.resonance != resonance)
+		{
+			this.calcCoeff(cutoff, resonance);
+			this.cutoff = cutoff;
+			this.resonance = resonance;
+		}
 	}	
 	
 }
