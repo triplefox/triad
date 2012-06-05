@@ -16,8 +16,8 @@
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
     <class path="Source" />
-    <class path="../dev" />
-    <class path="Export/flash/haxe" />
+    <class path="..\dev" />
+    <class path="Export\flash\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
@@ -54,7 +54,7 @@
   <options>
     <option showHiddenPaths="False" />
     <option testMovie="Custom" />
-    <option testMovieCommand="flash" />
+    <option testMovieCommand="" />
   </options>
   <!-- Plugin storage -->
   <storage />

@@ -95,6 +95,7 @@ class SynthTest
 		#end
 		{
 			var synth = new SamplerSynth();
+			synth.filter_cutoff_adjust_cents = 6400.;
 			synth.master_volume = 0.5;
 			seq.addSynth(synth);
 			voices.push(synth);
