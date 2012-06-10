@@ -85,7 +85,7 @@ class SamplerSynth implements SoftSynth
 	
 	public var filter : IIRFilter2;
 	
-	public var filter_cutoff_adjust_cents : Float; // a kind of hacky thing to compensate for a strong/weak filter
+	public var filter_cutoff_multiplier : Float; // a kind of hacky thing to compensate for a strong/weak filter
 	
 	public static inline var RESAMPLE_DROP = 0;
 	public static inline var RESAMPLE_LINEAR = 1;
@@ -103,7 +103,7 @@ class SamplerSynth implements SoftSynth
 		master_volume = 0.1;
 		velocity = 1.0;
 		arpeggio = 0.;
-		filter_cutoff_adjust_cents = 0.;
+		filter_cutoff_multiplier = 1.;
 		resample_method = RESAMPLE_LINEAR;
 	}
 	
@@ -446,11 +446,7 @@ class SamplerSynth implements SoftSynth
 		
 		frame_pitch_adjust = 0.;
 		frame_vol_adjust = 0.;
-		if (filter_cutoff_adjust_cents==0.)
-			frame_frequency_adjust = patch.cutoff_frequency;
-		else
-			frame_frequency_adjust = sequencer.tuning.midiNoteToFrequency(
-			sequencer.tuning.frequencyToMidiNote(patch.cutoff_frequency)+filter_cutoff_adjust_cents/1200);
+		frame_frequency_adjust = patch.cutoff_frequency * filter_cutoff_multiplier;
 		frame_resonance_adjust = patch.resonance_level;
 		
 		filter = cur_follower.filter;
