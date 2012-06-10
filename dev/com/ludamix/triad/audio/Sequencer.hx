@@ -364,7 +364,7 @@ class Sequencer
 		{ synths.push(synth); synth.common.init(this);  return synth; }
 	
 	public inline function addChannel(voicegroups : Array<VoiceGroup>, 
-			patch : PatchGenerator, ?velocity_curve = 2.0) : SequencerChannel
+			patch : PatchGenerator, ?velocity_curve = 1.0) : SequencerChannel
 		{ 
 			var channel = new SequencerChannel(channels.length, voicegroups, patch, velocity_curve); 
 			channels.push(channel); 

@@ -90,7 +90,7 @@ class SynthTest
 		public static inline var PERCUSSION_VOICES = 1;
 	#else
 		public static inline var VOICES = 64;
-		public static inline var CHANNEL_POLYPHONY = 48;
+		public static inline var CHANNEL_POLYPHONY = 64;
 		public static inline var PERCUSSION_VOICES = 8;
 	#end
 	
