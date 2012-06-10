@@ -69,37 +69,22 @@ class PatchGenerator
 	}
 }
 
-class SequencerChannel
-{	
-	public var id : Int; 
-	public var outputs : Array<SoftSynth>;
+class VoiceGroup
+{
+	
+	// Each voice group contains a set of voices that can be allocated(e.g. sampler, wavetable)
+	// according to some desired polyphony.
+	
+	public var voices : Array<SoftSynth>;
 	public var allocated : Array<SoftSynth>;
-	
-	public var pitch_bend : Int;
-	public var channel_volume : Float;
-	public var modulation : Float;
-	public var pan : Float;	
-	public var patch_id : Int;	
+	public var channel : SequencerChannel;
 	public var polyphony : Int;
-	public var sustain : Bool;
 	
-	public var patch_generator : PatchGenerator;
-	
-	public var velocity_mapping : Int;
-	
-	public function new(id, outputs, patch_generator : PatchGenerator, velocity_mapping) 
-	{ 
-		this.id = id; this.outputs = outputs; this.velocity_mapping = velocity_mapping;
-		this.patch_generator = patch_generator;
-		patch_id = 0;
-		var ct = 0;
-		pitch_bend = 0;
-		channel_volume = 1.0;
-		modulation = 0.;
-		pan = 0.5;
-		polyphony = outputs.length;
-		sustain = false;
-		allocated = new Array();
+	public function new(voices : Array<SoftSynth>, polyphony : Int)
+	{
+		this.voices = voices;
+		this.allocated = new Array();
+		this.polyphony = polyphony;
 	}
 	
 	public function priority(synth : SoftSynth) : Int
@@ -116,6 +101,119 @@ class SequencerChannel
 	{
 		return Lambda.exists(synth.getEvents(), function(ev : PatchEvent) { 
 			return ev.patch == patchevent.patch && ev.sequencer_event.id == patchevent.sequencer_event.id ; } );
+	}	
+	
+	public function sendPatchEvents(type : Int, event_priority : Int, patched_events : Array<PatchEvent>)
+	{
+		if (type == SequencerEvent.NOTE_OFF && !channel.sustain)
+		{
+			for (patched_ev in patched_events)
+			{
+				for (voice in voices)
+				{
+					if (hasEvent(voice, patched_ev))
+						voiceEvent(voice, patched_ev);
+				}		
+			}
+		}
+		else
+		{
+			for (patched_ev in patched_events)
+			{
+				var usable = voices;
+				if (allocated.length >= polyphony)
+					usable = allocated;
+				// overlapping behavior
+				for (voice in usable)
+				{
+					if (hasEvent(voice, patched_ev))
+					{
+						allocated.remove(voice);
+						if (voiceEvent(voice, patched_ev))
+							allocated.push(voice);
+						return;
+					}
+				}
+				// stealing behavior
+				var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(usable, 
+					function(synth : SoftSynth) { return {synth:synth, priority:priority(synth) }; } ,
+					function(a, b) { return a.priority < b.priority; }, usable[0] );
+				if (best.priority <= event_priority)
+				{
+					allocated.remove(best.synth);
+					if (voiceEvent(best.synth, patched_ev))
+						allocated.push(best.synth);
+				}
+			}
+		}
+	}
+	
+	// ramp down priority this much each time a new voice is added to the channel
+	public static inline var PRIORITY_VOICE = 0.95;
+	
+	private function voiceEvent(voice : SoftSynth, patch_ev : PatchEvent)
+	{
+		var ev = patch_ev.sequencer_event;
+		switch(ev.type)
+		{
+			case SequencerEvent.NOTE_ON: 
+				// as the channel adds more voices, the priority of its notes gets squashed.
+				// doing this on note ons naturally favors squashing of repetitive drum hits and stacattos,
+				// which have plenty of release tails, instead of held notes.
+				voice.followers.push(new EventFollower(patch_ev));
+				for (f in allocated)
+				{
+					patch_ev.sequencer_event.priority = Std.int((patch_ev.sequencer_event.priority * PRIORITY_VOICE));
+				}
+			case SequencerEvent.NOTE_OFF: 
+				for (n in voice.followers) 
+				{ 
+					if (n.patch_event.sequencer_event.id == ev.id)
+					{
+						n.setRelease();
+					}
+				}
+		}
+		for (n in voice.followers) 
+		{	
+			if (n.patch_event.sequencer_event.channel == channel.id)
+				return true; 
+		}
+		return false;
+	}
+	
+}
+
+class SequencerChannel
+{	
+	public var id : Int; 
+	public var voice_groups : Array<VoiceGroup>;
+	
+	public var pitch_bend : Int;
+	public var channel_volume : Float;
+	public var modulation : Float;
+	public var pan : Float;	
+	public var patch_id : Int;	
+	public var sustain : Bool;
+	
+	public var patch_generator : PatchGenerator;
+	
+	public var velocity_curve : Float;
+	
+	public function new(id, voicegroups : Array<VoiceGroup>, patch_generator : PatchGenerator, velocity_curve) 
+	{
+		this.id = id; 
+		this.voice_groups = voicegroups; 
+		for (n in voicegroups) n.channel = this;
+		this.velocity_curve = velocity_curve;
+		this.patch_generator = patch_generator;
+		patch_id = 0;
+		var ct = 0;
+		pitch_bend = 0;
+		channel_volume = 1.0;
+		modulation = 0.;
+		pan = 0.5;
+		sustain = false;
 	}
 	
 	public function pipe(ev : SequencerEvent, seq : Sequencer)
@@ -140,70 +238,35 @@ class SequencerChannel
 				case SequencerEvent.SUSTAIN_PEDAL:
 					sustain = (ev.data > 63);
 					if (!sustain)
-						for (n in allocated)
-							n.allRelease();
+					{
+						for (g in voice_groups)
+						{
+							for (n in g.allocated)
+								n.allRelease();
+						}
+					}
 				case SequencerEvent.ALL_NOTES_OFF:
-					for (n in allocated)
-						n.allOff();
+					for (g in voice_groups)
+					{
+						for (n in g.allocated)
+							n.allOff();
+					}
 			}
 			return;
 		}
 		else
 		{
-			if (ev.type == SequencerEvent.NOTE_OFF && sustain) return;
-			
 			var patched_events = patch_generator.generator(patch_generator.settings, seq, ev);
 			if (patched_events == null) return;
-			
-			if (ev.type == SequencerEvent.NOTE_OFF)
-			{
-				for (patched_ev in patched_events)
-				{
-					for (synth in outputs)
-					{
-						if (hasEvent(synth, patched_ev))
-							synth.event(patched_ev, this);
-					}
-				}
-			}
-			else
-			{
-				for (patched_ev in patched_events)
-				{
-					var usable = outputs;
-					if (allocated.length >= polyphony)
-						usable = allocated;
-					// overlapping behavior
-					for (synth in usable)
-					{
-						if (hasEvent(synth, patched_ev))
-						{
-							allocated.remove(synth);
-							if (synth.event(patched_ev, this))
-								allocated.push(synth);
-							return;
-						}
-					}
-					// stealing behavior
-					var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(usable, 
-						function(synth : SoftSynth) { return {synth:synth, priority:priority(synth) }; } ,
-						function(a, b) { return a.priority < b.priority; }, usable[0] );
-					if (best.priority <= ev.priority)
-					{
-						allocated.remove(best.synth);
-						if (best.synth.event(patched_ev, this))
-							allocated.push(best.synth);
-					}
-				}
-			}
+			for (vgroup in voice_groups)
+				vgroup.sendPatchEvents(ev.type, ev.priority, patched_events);
 		}
 		
 	}
 	
 	public inline function velocityCurve(velocity : Float) : Float
 	{		
-		// remaps note velocity to exaggerate or compress dynamics as needed by the source input.	
-		return SynthTools.curve(velocity, velocity_mapping);		
+		return Math.pow(velocity, velocity_curve);	
 	}
 	
 }
@@ -300,10 +363,10 @@ class Sequencer
 	public inline function addSynth(synth : SoftSynth) : SoftSynth 
 		{ synths.push(synth); synth.init(this);  return synth; }
 	
-	public inline function addChannel(synths : Array<SoftSynth>, 
-			patch : PatchGenerator, ?velocity_mapping = SynthTools.CURVE_SQR) : SequencerChannel
+	public inline function addChannel(voicegroups : Array<VoiceGroup>, 
+			patch : PatchGenerator, ?velocity_curve = 2.0) : SequencerChannel
 		{ 
-			var channel = new SequencerChannel(channels.length, synths, patch, velocity_mapping); 
+			var channel = new SequencerChannel(channels.length, voicegroups, patch, velocity_curve); 
 			channels.push(channel); 
 			return channel; 
 		}

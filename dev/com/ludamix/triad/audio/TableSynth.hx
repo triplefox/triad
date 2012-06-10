@@ -90,8 +90,6 @@ class TableSynth implements SoftSynth
 	public static inline var PRIORITY_RAMPDOWN = 0.95;
 	// and ramp up priority when sustaining
 	public static inline var PRIORITY_RAMPUP = 1;
-	// and ramp down priority this much each time a new voice is added to the channel
-	public static inline var PRIORITY_VOICE = 0.95;
 	
 	public function new()
 	{
@@ -658,38 +656,6 @@ class TableSynth implements SoftSynth
 			}		
 		}
 		return pos;
-	}
-	
-	public function event(patch_ev : PatchEvent, channel : SequencerChannel)
-	{
-		var ev = patch_ev.sequencer_event;
-		switch(ev.type)
-		{
-			case SequencerEvent.NOTE_ON: 
-				// as the channel adds more voices, the priority of its notes gets squashed.
-				// doing this on note ons naturally favors squashing of repetitive drum hits and stacattos,
-				// which have plenty of release tails, instead of held notes.
-				followers.push(new EventFollower(patch_ev));
-				for (f in channel.allocated)
-				{
-					patch_ev.sequencer_event.priority = Std.int((patch_ev.sequencer_event.priority * PRIORITY_VOICE));
-				}
-			case SequencerEvent.NOTE_OFF: 
-				for (n in followers) 
-				{ 
-					if (n.patch_event.sequencer_event.id == ev.id)
-					{
-						n.setRelease();
-					}
-				}
-		}
-		
-		for (n in followers) 
-		{	
-			if (n.patch_event.sequencer_event.channel == channel.id)
-				return true; 
-		}
-		return false;
 	}
 	
 	public function getEvents() : Array<PatchEvent>

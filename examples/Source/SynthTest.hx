@@ -84,14 +84,18 @@ class SynthTest
 	var melodic : SFZBank;
 	var percussion : SFZBank;
 	
+	public static inline var DEBUG_VOICES = 4;
+	public static inline var RELEASE_VOICES = 64;
+	public static inline var CHANNEL_POLYPHONY = 24;
+	
 	private function resetSamplerSynth()
 	{
 		var voices = new Array<SoftSynth>();
 		// set up melodic voices
 		#if debug
-		  for (n in 0...4) // trying not to kill cpu!
+		  for (n in 0...DEBUG_VOICES)
 		#else
-		  for (n in 0...64)
+		  for (n in 0...RELEASE_VOICES)
 		#end
 		{
 			var synth = new SamplerSynth();
@@ -103,13 +107,14 @@ class SynthTest
 		// setup channels
 		for (n in 0...16)
 		{
+			var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
+			
 			if (n == 9)
-				seq.addChannel(voices, percussion.getGenerator());
+				seq.addChannel([vgroup], percussion.getGenerator());
 			else
-				seq.addChannel(voices, melodic.getGenerator());
+				seq.addChannel([vgroup], melodic.getGenerator());
 			
-			
-			/*seq.addChannel(voices, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
+			/*seq.addChannel([vgroup], SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 			
 		}				
 	}
@@ -120,9 +125,9 @@ class SynthTest
 		var percussion_voices = new Array<SoftSynth>();
 		// set up melodic voices
 		#if debug
-		  for (n in 0...4) // trying not to kill cpu!
+		  for (n in 0...DEBUG_VOICES) // trying not to kill cpu!
 		#else
-		  for (n in 0...32)
+		  for (n in 0...RELEASE_VOICES)
 		#end
 		{
 			var synth = new TableSynth();
@@ -142,9 +147,15 @@ class SynthTest
 		for (n in 0...16)
 		{
 			if (n == 9)
-				seq.addChannel(percussion_voices, percussion.getGenerator());
+			{
+				var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
+				seq.addChannel([vgroup], percussion.getGenerator());
+			}
 			else
-				seq.addChannel(voices, TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
+			{
+				var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
+				seq.addChannel([vgroup], TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
+			}
 			
 		}		
 	}
