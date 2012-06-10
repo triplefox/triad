@@ -60,32 +60,13 @@ typedef SamplerPatch = {
  * optimize to not use the filter _all_ the time (probably after macroifying)
  * 
  * */
-
+ 
 class SamplerSynth implements SoftSynth
 {
 	
-	public var buffer : FastFloatBuffer;
-	public var followers : Array<EventFollower>;
-	public var sequencer : Sequencer;
-	
-	public var freq : Float;
-	public var bufptr : Int;
-	
-	public var master_volume : Float;
-	public var velocity : Float;
-	
-	public var frame_pitch_adjust : Float;
-	public var frame_vol_adjust : Float;
-	public var frame_frequency_adjust : Float;
-	public var frame_resonance_adjust : Float;
-	
-	public var arpeggio : Float;
+	public var common : VoiceCommon;
 	
 	public var resample_method : Int;
-	
-	public var filter : IIRFilter2;
-	
-	public var filter_cutoff_multiplier : Float; // a kind of hacky thing to compensate for a strong/weak filter
 	
 	public static inline var RESAMPLE_DROP = 0;
 	public static inline var RESAMPLE_LINEAR = 1;
@@ -98,12 +79,7 @@ class SamplerSynth implements SoftSynth
 	
 	public function new()
 	{
-		freq = 440.;
-		bufptr = 0;
-		master_volume = 0.1;
-		velocity = 1.0;
-		arpeggio = 0.;
-		filter_cutoff_multiplier = 1.;
+		common = new VoiceCommon();
 		resample_method = RESAMPLE_LINEAR;
 	}
 	
@@ -118,16 +94,6 @@ class SamplerSynth implements SoftSynth
 	public static inline var SUSTAIN_PINGPONG = 5;
 	public static inline var ONE_SHOT = 6;
 	public static inline var NO_LOOP = 7;
-	
-	public static inline var AS_PITCH_ADD = 0;
-	public static inline var AS_PITCH_MUL = 1;
-	public static inline var AS_VOLUME_ADD = 2;
-	public static inline var AS_VOLUME_MUL = 3;
-	public static inline var AS_FREQUENCY_ADD = 4;
-	public static inline var AS_FREQUENCY_ADD_CENTS = 5;
-	public static inline var AS_FREQUENCY_MUL = 6;
-	public static inline var AS_RESONANCE_ADD = 7;
-	public static inline var AS_RESONANCE_MUL = 8;
 	
 	// heuristic to ramp down priority when releasing
 	public static inline var PRIORITY_RAMPDOWN = 0.95;
@@ -295,9 +261,9 @@ class SamplerSynth implements SoftSynth
 			loop_end:loop_end,
 			sample_rate:wav.header.samplingRate,
 			base_frequency:tuning.midiNoteToFrequency( midi_unity_note + midi_pitch_fraction/0xFFFFFFFF),
-			envelope_profiles:[Envelope2.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[AS_VOLUME_ADD])],
+			envelope_profiles:[Envelope2.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[VoiceCommon.AS_VOLUME_ADD])],
 			volume:1.0,
-			lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
+			lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
 			modulation_lfo:1.0,
 			arpeggiation_rate:0.0,
 			cutoff_frequency:22050.,
@@ -329,8 +295,8 @@ class SamplerSynth implements SoftSynth
 				loop_end:loop_end,
 				sample_rate:44100,
 				base_frequency:1.,
-				envelope_profiles:[Envelope2.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[AS_VOLUME_ADD])],
-				lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[AS_PITCH_ADD]}],
+				envelope_profiles:[Envelope2.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[VoiceCommon.AS_VOLUME_ADD])],
+				lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
 				modulation_lfo:1.0,
 				arpeggiation_rate:0.0,
 				cutoff_frequency:22050.,
@@ -340,139 +306,20 @@ class SamplerSynth implements SoftSynth
 				;
 	}
 	
-	public function init(sequencer : Sequencer)
-	{
-		this.sequencer = sequencer;
-		this.buffer = sequencer.buffer;
-		this.followers = new Array();		
-	}
-	
-	public inline function pipeAdjustment(qty : Float, assigns : Array<Int>)
-	{
-		for (assign in assigns)
-		{
-			switch(assign)
-			{
-				case AS_PITCH_ADD: frame_pitch_adjust += qty;
-				case AS_PITCH_MUL: frame_pitch_adjust *= qty;
-				case AS_VOLUME_ADD: frame_vol_adjust += qty;
-				case AS_VOLUME_MUL: frame_vol_adjust *= qty;
-				case AS_FREQUENCY_ADD: frame_frequency_adjust += qty;
-				case AS_FREQUENCY_ADD_CENTS: frame_frequency_adjust = 
-					sequencer.tuning.midiNoteToFrequency(sequencer.tuning.frequencyToMidiNote(frame_frequency_adjust)+qty/100.);
-				case AS_FREQUENCY_MUL: frame_frequency_adjust *= qty;
-				case AS_RESONANCE_ADD: frame_resonance_adjust += qty;
-				case AS_RESONANCE_MUL: frame_resonance_adjust *= qty;
-			}
-		}
-	}
-	
-	public inline function updateEnvelope(patch : SamplerPatch, channel : SequencerChannel, cur_follower : EventFollower)
-	{
-		var env_num = 0;
-		for (env in cur_follower.env)
-		{
-			if (!env.isOff())
-			{
-				pipeAdjustment(env.update(1.0), env.assigns);
-			}
-			env_num++;
-		}
-	}
-	
-	public inline function updateLFO(patch : SamplerPatch, channel : SequencerChannel, cur_follower : EventFollower)
-	{
-		var lfo_num = 0;
-		for (n in patch.lfos)
-		{
-			var cycle_length = sequencer.secondsToFrames(1. / n.frequency);
-			var delay_length = sequencer.secondsToFrames(n.delay);
-			var attack_length = sequencer.secondsToFrames(n.attack);
-			var modulation_amount = (lfo_num == 0 && patch.modulation_lfo > 0) ? 
-				patch.modulation_lfo * channel.modulation : 1.0;
-			var mpos = cur_follower.lfo_pos - delay_length;
-			if (mpos > 0)
-			{
-				if (mpos > attack_length)
-				{
-					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) * n.depth * modulation_amount, n.assigns);
-				}
-				else // ramp up
-				{
-					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) * modulation_amount * 
-						(n.depth * (mpos/attack_length)), n.assigns);
-				}
-			}
-			lfo_num++;
-		}
-		cur_follower.lfo_pos += 1;
-	}
-	
-	public function write()
+	public inline function write()
 	{	
-		while (followers.length > 0 && followers[followers.length - 1].isOff()) followers.pop();
-		if (followers.length < 1) { return false; }
-		
-		var cur_follower : EventFollower = followers[followers.length - 1];		
-		var patch : SamplerPatch = cur_follower.patch_event.patch;
-		if (patch.arpeggiation_rate>0.0)
-		{
-			var available = Lambda.array(Lambda.filter(followers, function(a) { return !a.isOff(); } ));
-			cur_follower = available[Std.int(((arpeggio) % 1) * available.length)];
-			patch = cur_follower.patch_event.patch;
-			arpeggio += sequencer.secondsToFrames(1.0) / (patch.arpeggiation_rate);
-		}
-		
-		for (follower in followers)
-		{
-			progress_follower(follower, follower==cur_follower);
-		}
-		
-		return true;
+		return common.updateFollowers(progress_follower);
 	}
 	
-	public inline function progress_follower(cur_follower : EventFollower, ?write : Bool)
+	public function progress_follower(freq : Float, wl : Float, left : Float, right : Float,
+		cur_follower : EventFollower, ?write : Bool)
 	{
-		var cur_channel = sequencer.channels[cur_follower.patch_event.sequencer_event.channel];
-		var patch : SamplerPatch = cur_follower.patch_event.patch;
-		
-		var pitch_bend = cur_channel.pitch_bend;
-		var channel_volume = cur_channel.channel_volume;
-		var pan = cur_channel.pan;
-		
-		var seq_event = cur_follower.patch_event.sequencer_event;
-		
-		frame_pitch_adjust = 0.;
-		frame_vol_adjust = 0.;
-		frame_frequency_adjust = patch.cutoff_frequency * filter_cutoff_multiplier;
-		frame_resonance_adjust = patch.resonance_level;
-		
-		filter = cur_follower.filter;
-		
-		updateEnvelope(patch, cur_channel, cur_follower);
-		updateLFO(patch, cur_channel, cur_follower);
-		
-		filter.set(frame_frequency_adjust, frame_resonance_adjust);
-		
-		freq = seq_event.data.freq;
-		
-		var wl = Std.int(sequencer.waveLengthOfBentFrequency(freq, 
-					pitch_bend + Std.int((frame_pitch_adjust * 8192 / sequencer.tuning.bend_semitones))));
-		
-		freq = sequencer.frequency(wl);
-		
-		velocity = seq_event.data.velocity / 128;
 		
 		if (!cur_follower.isOff())
 		{
 			
-			var curval = patch.volume * master_volume * channel_volume * cur_channel.velocityCurve(velocity) * 
-				frame_vol_adjust;
-			
-			// get sample and volume data
-			var pan_sum = MathTools.limit(0., 1., pan + 2 * (patch.pan - 0.5));
-			var left = curval * Math.sin(pan_sum * 2);
-			var right = curval * Math.cos(1. - pan_sum) * 2;
+			var patch : SamplerPatch = cur_follower.patch_event.patch;
+			var buffer = common.buffer;
 			
 			var sampleset : Array<RawSample> = patch.mips;
 			var sample_rate = patch.sample_rate;
@@ -1042,13 +889,13 @@ class SamplerSynth implements SoftSynth
 	public inline function copy_samples_drop(buffer : FastFloatBuffer, a : Float, level : Float)
 	{
 		// Drop
-		buffer.add(level * filter.getLP(a));
+		buffer.add(level * common.filter.getLP(a));
 	}
 	
 	public inline function copy_samples_lin(buffer : FastFloatBuffer, a : Float, b : Float, x : Float, level : Float)
 	{
 		// Linear
-		buffer.add(level * filter.getLP((a * (1. -x) + b * x)));
+		buffer.add(level * common.filter.getLP((a * (1. -x) + b * x)));
 	}
 	
 	public inline function copy_samples_cubic(buffer : FastFloatBuffer, y0 : Float, y1 : Float, y2 : Float, y3 : Float,
@@ -1060,32 +907,7 @@ class SamplerSynth implements SoftSynth
 		var a1 = y0 - y1 - a0;
 		var a2 = y2 - y0;
 		var a3 = y1;
-		buffer.add(level * filter.getLP(a0*x*x2+a1*x2+a2*x+a3));
-	}
-	
-	public function getEvents() : Array<PatchEvent>
-	{
-		var result = new Array<PatchEvent>();
-		for ( n in followers )
-		{
-			result.push(n.patch_event);
-		}
-		return result;
-	}
-	
-	public inline function getFollowers() : Array<EventFollower>
-	{
-		return followers;
-	}
-	
-	public function allOff()
-	{
-		while (followers.length>0) followers.pop();
-	}
-	
-	public function allRelease()
-	{
-		for (f in followers) { f.setRelease(); }
+		buffer.add(level * common.filter.getLP(a0*x*x2+a1*x2+a2*x+a3));
 	}
 	
 }

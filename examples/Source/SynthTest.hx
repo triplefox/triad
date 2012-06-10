@@ -84,23 +84,25 @@ class SynthTest
 	var melodic : SFZBank;
 	var percussion : SFZBank;
 	
-	public static inline var DEBUG_VOICES = 4;
-	public static inline var RELEASE_VOICES = 64;
-	public static inline var CHANNEL_POLYPHONY = 24;
+	#if debug
+		public static inline var VOICES = 4;
+		public static inline var CHANNEL_POLYPHONY = 4;
+		public static inline var PERCUSSION_VOICES = 1;
+	#else
+		public static inline var VOICES = 64;
+		public static inline var CHANNEL_POLYPHONY = 48;
+		public static inline var PERCUSSION_VOICES = 8;
+	#end
 	
 	private function resetSamplerSynth()
 	{
 		var voices = new Array<SoftSynth>();
 		// set up melodic voices
-		#if debug
-		  for (n in 0...DEBUG_VOICES)
-		#else
-		  for (n in 0...RELEASE_VOICES)
-		#end
+		for (n in 0...VOICES)
 		{
 			var synth = new SamplerSynth();
-			synth.filter_cutoff_multiplier = 4.0;
-			synth.master_volume = 0.5;
+			synth.common.filter_cutoff_multiplier = 4.0;
+			synth.common.master_volume = 0.5;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
@@ -124,22 +126,18 @@ class SynthTest
 		var voices = new Array<SoftSynth>();
 		var percussion_voices = new Array<SoftSynth>();
 		// set up melodic voices
-		#if debug
-		  for (n in 0...DEBUG_VOICES) // trying not to kill cpu!
-		#else
-		  for (n in 0...RELEASE_VOICES)
-		#end
+		for (n in 0...VOICES)
 		{
 			var synth = new TableSynth();
-			synth.master_volume = 0.5;
+			synth.common.master_volume = 0.5;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
 		// dedicated percussion for when testing tablesynth
-		for (n in 0...8)
+		for (n in 0...PERCUSSION_VOICES)
 		{
 			var synth = new SamplerSynth();
-			synth.master_volume = 0.5;
+			synth.common.master_volume = 0.5;
 			seq.addSynth(synth);
 			percussion_voices.push(synth);
 		}
@@ -385,7 +383,7 @@ class SynthTest
 		var cc = 0;
 		for (c in seq.synths)
 		{
-			if (c.getEvents().length > 0)
+			if (c.common.getEvents().length > 0)
 				cc++;
 		}
 		var programs = new Array<Int>();

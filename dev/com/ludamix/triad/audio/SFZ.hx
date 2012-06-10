@@ -113,12 +113,12 @@ class SFZGroup
 			}
 			
 			var ampeg = Envelope2.DSAHDSHR(seq.secondsToFrames, amp_vals[0], amp_vals[1], amp_vals[2], amp_vals[3],
-				amp_vals[4], amp_vals[5], 0., amp_vals[6], 1., 1., 1., [SamplerSynth.AS_VOLUME_ADD]);
+				amp_vals[4], amp_vals[5], 0., amp_vals[6], 1., 1., 1., [VoiceCommon.AS_VOLUME_ADD]);
 			sampler_patch.envelope_profiles = [ ampeg ];
 			if (fil_depth != 0)
 			{
 				var fileg = Envelope2.DSAHDSHR(seq.secondsToFrames, fil_vals[0], fil_vals[1], fil_vals[2], fil_vals[3],
-					fil_vals[4], fil_vals[5], 0., fil_vals[6], 1., 1., 1., [SamplerSynth.AS_FREQUENCY_ADD_CENTS]);
+					fil_vals[4], fil_vals[5], 0., fil_vals[6], 1., 1., 1., [VoiceCommon.AS_FREQUENCY_ADD_CENTS]);
 				sampler_patch.envelope_profiles.push(fileg);
 			}
 			

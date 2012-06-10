@@ -6,22 +6,12 @@ import com.ludamix.triad.audio.Sequencer;
 interface SoftSynth
 {	
 	
-	// SoftSynth responsibilities:
-	// 1. Initialize with the given sequencer
-	// 2. Write bytes to the buffer when requested with write() - if synth has no activity, can return False
-	// 3. Recieve events and maintain their state: The event array should be used so that channels
-	//    can make a decision on how to assign voicing. However, the synth is free to change event population
-	//    at write() time.
+	// VoiceCommon contains most of the key elements of the synth:
+	// Envelopes, LFOs, pitch and volume state, the buffer pointer.
+	// When the synth runs write() it should update the VoiceCommon data, with a hook for the inner loop of
+	// synth processing.
 	
-	public var buffer : FastFloatBuffer;
-	public var sequencer : Sequencer;
-	public var followers : Array<EventFollower>;
-	
-	public function init(sequencer : Sequencer):Void;
+	public var common : VoiceCommon;	
 	public function write():Bool;
-	public function getEvents():Array<PatchEvent>;
-	public function getFollowers():Array<EventFollower>;
-	public function allOff():Void;
-	public function allRelease():Void;
 	
 }

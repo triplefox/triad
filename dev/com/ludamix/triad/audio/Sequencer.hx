@@ -90,7 +90,7 @@ class VoiceGroup
 	public function priority(synth : SoftSynth) : Int
 	{
 		// this is fairly horrible at this point, and could probably stand a custom optimized version.
-		return MathTools.bestOf(synth.getEvents(), 
+		return MathTools.bestOf(synth.common.getEvents(), 
 			function(inp) { return inp; }, 
 			function(a, b) 
 			{ return a.sequencer_event.priority > b.sequencer_event.priority; }, 
@@ -99,7 +99,7 @@ class VoiceGroup
 	
 	public function hasEvent(synth : SoftSynth, patchevent : PatchEvent)
 	{
-		return Lambda.exists(synth.getEvents(), function(ev : PatchEvent) { 
+		return Lambda.exists(synth.common.getEvents(), function(ev : PatchEvent) { 
 			return ev.patch == patchevent.patch && ev.sequencer_event.id == patchevent.sequencer_event.id ; } );
 	}	
 	
@@ -160,13 +160,13 @@ class VoiceGroup
 				// as the channel adds more voices, the priority of its notes gets squashed.
 				// doing this on note ons naturally favors squashing of repetitive drum hits and stacattos,
 				// which have plenty of release tails, instead of held notes.
-				voice.followers.push(new EventFollower(patch_ev));
+				voice.common.followers.push(new EventFollower(patch_ev));
 				for (f in allocated)
 				{
 					patch_ev.sequencer_event.priority = Std.int((patch_ev.sequencer_event.priority * PRIORITY_VOICE));
 				}
 			case SequencerEvent.NOTE_OFF: 
-				for (n in voice.followers) 
+				for (n in voice.common.followers) 
 				{ 
 					if (n.patch_event.sequencer_event.id == ev.id)
 					{
@@ -174,7 +174,7 @@ class VoiceGroup
 					}
 				}
 		}
-		for (n in voice.followers) 
+		for (n in voice.common.followers) 
 		{	
 			if (n.patch_event.sequencer_event.channel == channel.id)
 				return true; 
@@ -242,14 +242,14 @@ class SequencerChannel
 						for (g in voice_groups)
 						{
 							for (n in g.allocated)
-								n.allRelease();
+								n.common.allRelease();
 						}
 					}
 				case SequencerEvent.ALL_NOTES_OFF:
 					for (g in voice_groups)
 					{
 						for (n in g.allocated)
-							n.allOff();
+							n.common.allOff();
 					}
 			}
 			return;
@@ -361,7 +361,7 @@ class Sequencer
 	}
 	
 	public inline function addSynth(synth : SoftSynth) : SoftSynth 
-		{ synths.push(synth); synth.init(this);  return synth; }
+		{ synths.push(synth); synth.common.init(this);  return synth; }
 	
 	public inline function addChannel(voicegroups : Array<VoiceGroup>, 
 			patch : PatchGenerator, ?velocity_curve = 2.0) : SequencerChannel
