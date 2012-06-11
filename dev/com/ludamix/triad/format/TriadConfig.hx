@@ -13,13 +13,13 @@ Example:
 	
 	Plain text strings are mostly transparent. Leading and ending whitespace are trimmed.
 	If I want to maximize string flexibility, I open a "long string":
-		[" Now I can use ; __ = and [] as often as I please. 
+		[" Now I can use ; _ = and [] as often as I please. 
 			As well, whitespace is preserved exactly within the markers. "];
 	
 	A key-value = Hello world!;
 	My First Sequence = [1;2;3;4;5;6]
 	Nested sequences = [[a;b;c][e;f;g]]
-	Null value = __;
+	Null value = _;
 	Nested key-value stores = [
 		Key One=Moo;
 		Key Two=[ 1.3; 5.6; 7.8; ["Some string data"] ]
@@ -41,7 +41,7 @@ Spec:
 		When [" is encountered, characters until a corresponding "] are accumulated into a single string Atom.
 	2. (recursive) Rewrite unparsed atoms.
 		Leading and ending whitespace(including newlines) is trimmed.
-		The characters "__" (with no additional text after trim) are turned into a null. To escape "__" use a long string.
+		The character "_" (with no additional text after trim) are turned into a null. To escape "_" use a long string.
 		Numbers are parsed.
 		Delimiters are stripped.
 		Each [ ] pairing forms a tree of Sequences, which contain any number of Atoms and Sequences.
@@ -146,7 +146,7 @@ class TriadConfig
 			{
 				case TCUnparsedAtom(data): 
 					var data = LXString.parseIntFloatString(HXString.trim(data));
-					if (data == "__") data = null;
+					if (data == "_") data = null;
 					if (data != "")
 						result.push(TCAtom(data));
 				case TCAtom(data): result.push(t);
