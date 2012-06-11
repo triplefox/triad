@@ -1,6 +1,7 @@
 package com.ludamix.triad.audio;
 
 import com.ludamix.triad.format.WAV;
+import com.ludamix.triad.tools.StringTools;
 import haxe.Json;
 import nme.Assets;
 import nme.utils.ByteArray;
@@ -201,27 +202,7 @@ class SFZ
 			ct++;
 		}
 		
-		// number?
-		var before_deci : String = ""; 
-		var after_deci : String = "";
-		var decimal : Bool = false;
-		var ok : Bool = true;
-		for (idx in 0...value.length)
-		{
-			switch(value.charAt(idx))
-			{
-				case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9": 
-					if (decimal) after_deci += value.charAt(idx);
-					else before_deci += value.charAt(idx);
-				case ".": if (decimal) { ok = false;  break; } else { decimal = true; }
-				default:
-					ok = false;  break;
-			}
-		}
-		if (ok) { if (decimal) return Std.parseFloat(value); else return Std.parseInt(value); }
-		
-		// string...
-		return value;		
+		return StringTools.parseIntFloatString(value);
 	}
 	
 	public static function load(seq : Sequencer, file : ByteArray) : Array<SFZGroup>

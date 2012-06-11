@@ -33,4 +33,31 @@ class StringTools
 		return set;
 	}
 	
+	public static function parseIntFloatString(value : String) : Dynamic
+	{
+		if (value.length == 0) return value;
+		
+		// number?
+		var before_deci : String = ""; 
+		var after_deci : String = "";
+		var decimal : Bool = false;
+		var ok : Bool = true;
+		for (idx in 0...value.length)
+		{
+			switch(value.charAt(idx))
+			{
+				case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9": 
+					if (decimal) after_deci += value.charAt(idx);
+					else before_deci += value.charAt(idx);
+				case ".": if (decimal) { ok = false;  break; } else { decimal = true; }
+				default:
+					ok = false;  break;
+			}
+		}
+		if (ok) { if (decimal) return Std.parseFloat(value); else return Std.parseInt(value); }
+		
+		// string...
+		return value;		
+	}
+	
 }
