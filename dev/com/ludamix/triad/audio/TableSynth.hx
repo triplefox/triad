@@ -3,6 +3,7 @@ package com.ludamix.triad.audio;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.audio.Envelope;
+import com.ludamix.triad.audio.VoiceCommon;
 import com.ludamix.triad.math.LFSR;
 import com.ludamix.triad.tools.FloatPlayhead;
 
@@ -251,11 +252,14 @@ class TableSynth implements SoftSynth
 		return common.updateFollowers(progress_follower);
 	}
 	
-	public function progress_follower(freq : Float, wl : Float, left : Float, right : Float,
-		cur_follower : EventFollower, ?write : Bool)
+	public function progress_follower(infos : VoiceFrameInfos, cur_follower : EventFollower, ?write : Bool)
 	{
 		
-		var wl = Std.int(wl);
+		var freq = infos.frequency;
+		var wl = Std.int(infos.wavelength);
+		var left = infos.volume_left;
+		var right = infos.volume_right;
+		
 		var patch = cur_follower.patch_event.patch;
 		var buffer = common.buffer;
 		var vol = (left + right) / 2;

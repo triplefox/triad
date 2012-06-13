@@ -1,7 +1,6 @@
 package com.ludamix.triad.audio;
 
 import com.ludamix.triad.format.WAV;
-import com.ludamix.triad.tools.StringTools;
 import haxe.Json;
 import nme.Assets;
 import nme.utils.ByteArray;
@@ -12,6 +11,9 @@ import com.ludamix.triad.audio.MIDITuning;
 import com.ludamix.triad.audio.Envelope;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
+
+typedef TString = com.ludamix.triad.tools.StringTools;
+typedef HString = StringTools;
 
 class SFZGroup
 {
@@ -202,7 +204,7 @@ class SFZ
 			ct++;
 		}
 		
-		return StringTools.parseIntFloatString(value);
+		return TString.parseIntFloatString(value);
 	}
 	
 	public static function load(seq : Sequencer, file : ByteArray) : Array<SFZGroup>
@@ -223,19 +225,19 @@ class SFZ
 		
 		for (l in lines)
 		{
-			l = StringTools.trim(l);
-			if (l.length == 0 || StringTools.startsWith(l, "//")) { } // pass
-			else if (StringTools.startsWith(l, "<group>")) { 
+			l = HString.trim(l);
+			if (l.length == 0 || HString.startsWith(l, "//")) { } // pass
+			else if (HString.startsWith(l, "<group>")) { 
 				cur_group = new SFZGroup(); groups.push(cur_group); 
 				ctx = GROUP;  } // group
-			else if (StringTools.startsWith(l, "<region>")) { 
+			else if (HString.startsWith(l, "<region>")) { 
 				if (cur_group == null) { cur_group = new SFZGroup(); groups.push(cur_group); }
 				cur_region = new Hash<Dynamic>(); 
 				cur_group.regions.push(cur_region); ctx = REGION;  } // region
 			else if (l.indexOf("=") >= 0) // opcode
 			{
 				var parts = l.split("=");
-				parts[1] = StringTools.trim(parts[1].split("//")[0]); // eliminate comments
+				parts[1] = HString.trim(parts[1].split("//")[0]); // eliminate comments
 				if (ctx == GROUP)
 				{
 					cur_group.group_opcodes.set(parts[0],interpret_type(seq, parts[0], parts[1]));

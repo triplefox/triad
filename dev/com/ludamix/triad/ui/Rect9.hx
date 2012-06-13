@@ -1,6 +1,6 @@
 package com.ludamix.triad.ui;
 import com.ludamix.triad.tools.Color;
-import flash.display.Sprite;
+import nme.display.Sprite;
 import nme.display.BitmapData;
 import nme.geom.Matrix;
 import nme.geom.Point;

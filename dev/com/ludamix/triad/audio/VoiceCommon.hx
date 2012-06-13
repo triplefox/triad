@@ -5,6 +5,8 @@ import com.ludamix.triad.audio.dsp.IIRFilter2;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.tools.MathTools;
 
+typedef VoiceFrameInfos = { frequency:Float, wavelength:Float, volume_left:Float, volume_right:Float };
+
 class VoiceCommon
 {
 	public var buffer : FastFloatBuffer;
@@ -125,7 +127,7 @@ class VoiceCommon
 		cur_follower.lfo_pos += 1;
 	}
 	
-	public function updateFollowers(progress_follower : Float->Float->Float->Float->EventFollower->Bool->Void) : Bool
+	public function updateFollowers(progress_follower : VoiceFrameInfos->EventFollower->Bool->Void) : Bool
 	{
 		while (followers.length > 0 && followers[followers.length - 1].isOff()) followers.pop();
 		if (followers.length < 1) { return false; }
@@ -190,7 +192,8 @@ class VoiceCommon
 			var left = curval * Math.sin(pan_sum * 2);
 			var right = curval * Math.cos(1. - pan_sum) * 2;
 			
-			progress_follower(freq, wl, left, right, follower, follower==cur_follower);
+			progress_follower( { frequency:freq, wavelength:wl, volume_left:left, volume_right:right }, 			
+				follower, follower==cur_follower);
 		}
 		return true;
 	}

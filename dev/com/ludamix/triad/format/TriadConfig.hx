@@ -61,6 +61,7 @@ Spec:
 		error on mixed container
 		auto-coercion to list
 		auto-coercion to key-value
+		auto-coercion to list of key-value pairs
 	
 */
 
@@ -83,6 +84,7 @@ enum TCParseMode
 {
 	TCPTable;
 	TCPList;
+	TCPPairs;
 	TCPKeyValue;
 	TCPReject;
 }
@@ -207,6 +209,7 @@ class TriadConfig
 		var isKV = true;
 		var result_list = new Array<Dynamic>();
 		var result_dict : Dynamic = { };
+		var result_pairs : Array<{key:String,val:Dynamic}> = new Array();
 		var idx = 0;
 		
 		var setProp = function(key, val) : Void
@@ -229,11 +232,11 @@ class TriadConfig
 						case TCKeyValue(key, val): throw "shouldn't get here";
 						case TCAssign, TCOpenSequence, TCCloseSequence, TCDelimit: throw "shouldn't get here";						
 					}
-					result_list.push(d); setProp(key, d);
-				case TCAtom(data): isKV = false;
-					result_list.push(data); setProp(Std.string(idx), data);
-				case TCSequence(data): isKV = false; var d = pass4(data, parse_mode);
-					result_list.push(d); setProp(Std.string(idx), d);
+					result_list.push(d); setProp(key, d); result_pairs.push( { key:key, val:d } );
+				case TCAtom(data): isKV = false; var key = Std.string(idx);
+					result_list.push(data); setProp(key, data); result_pairs.push( { key:key, val:data } );
+				case TCSequence(data): isKV = false; var d = pass4(data, parse_mode); var key = Std.string(idx);
+					result_list.push(d); setProp(key, d); result_pairs.push( { key:key, val:d } );
 				case TCUnparsedAtom(data): throw "shouldn't get here";
 				case TCOpenSequence, TCCloseSequence, TCDelimit, TCAssign: throw "shouldn't get here";
 			}
@@ -243,9 +246,10 @@ class TriadConfig
 		if (isKV) return result_dict;
 		switch(parse_mode)
 		{
-			case TCPTable: return {list:result_list, dict:result_dict};
+			case TCPTable: return {list:result_list, dict:result_dict, pairs:result_pairs};
 			case TCPList: return result_list;
 			case TCPKeyValue: return result_dict;
+			case TCPPairs: return result_pairs;
 			case TCPReject: throw "Error: Mixture of sequence and key-value data.";
 		}
 	}

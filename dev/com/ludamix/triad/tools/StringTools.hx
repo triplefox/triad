@@ -1,12 +1,14 @@
 package com.ludamix.triad.tools;
 
+typedef IInt = #if neko Int #else UInt #end;
+
 class StringTools
 {
 	
-	public static function parseHex(hexstr : String) : UInt
+	public static function parseHex(hexstr : String) : IInt
 	{
 		var remain = hexstr.substr(2).toUpperCase();
-		var set : UInt = 0;
+		var set : IInt = 0;
 		for (idx in 0...remain.length)
 		{
 			var chr = remain.charAt((remain.length - 1) - idx);

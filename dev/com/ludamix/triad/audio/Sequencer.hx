@@ -2,7 +2,7 @@ package com.ludamix.triad.audio;
 
 import com.ludamix.triad.audio.dsp.Reverb;
 import com.ludamix.triad.tools.FastFloatBuffer;
-import flash.events.SampleDataEvent;
+import nme.events.SampleDataEvent;
 import nme.media.Sound;
 import nme.media.SoundChannel;
 import nme.utils.ByteArray;

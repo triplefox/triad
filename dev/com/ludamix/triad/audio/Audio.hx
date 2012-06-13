@@ -46,7 +46,7 @@ class Audio
 	private static function _channelPlay(name:String, soundname : String, mixgroup : String,
 		startTime : Float, loops:Int, vol : Float, pan : Float, timestamp : Float)
 	{
-		var tfm = new flash.media.SoundTransform(mixLevel(mixgroup) * vol, pan);
+		var tfm = new nme.media.SoundTransform(mixLevel(mixgroup) * vol, pan);
 		var snd = Assets.getSound(soundname);
 		if (snd == null ) throw "Undefined sound asset " + soundname;
 		var sc = snd.play(startTime,loops,tfm);

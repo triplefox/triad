@@ -15,6 +15,7 @@ import nme.Assets;
 import nme.utils.ByteArray;
 import nme.utils.CompressionAlgorithm;
 import com.ludamix.triad.audio.Sequencer;
+import com.ludamix.triad.audio.VoiceCommon;
 import nme.Vector;
 
 typedef RawSample = {
@@ -311,9 +312,14 @@ class SamplerSynth implements SoftSynth
 		return common.updateFollowers(progress_follower);
 	}
 	
-	public function progress_follower(freq : Float, wl : Float, left : Float, right : Float,
+	public function progress_follower(infos : VoiceFrameInfos,
 		cur_follower : EventFollower, ?write : Bool)
 	{
+		
+		var freq = infos.frequency;
+		var wl = infos.wavelength;
+		var left = infos.volume_left;
+		var right = infos.volume_right;
 		
 		if (!cur_follower.isOff())
 		{
@@ -540,162 +546,20 @@ class SamplerSynth implements SoftSynth
 			if (sample_left == sample_right)
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop mono
-				{
-					for (n in 0...samples_requested)
-					{
-						sample_left.playhead = Std.int(pos);
-						var a = sample_left.read();
-						copy_samples_drop(buffer, a, left);
-						buffer.advancePlayheadUnbounded();
-						copy_samples_drop(buffer, a, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}
-				}
+					CopyLoop.copyLoop(1, "mirror", "copy_samples_drop", "loop");					
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
-				{
-					for (n in 0...samples_requested-1)
-					{
-						sample_left.playhead = Std.int(pos);
-						var x = pos - sample_left.playhead;
-						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var d = sample_left.read();
-						copy_samples_cubic(buffer, a, b, c, d, x, left);
-						buffer.advancePlayheadUnbounded();
-						copy_samples_cubic(buffer, a, b, c, d, x, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}
-					sample_left.playhead = Std.int(pos);
-					var x = pos - sample_left.playhead;
-					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
-					var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
-					var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
-					var d = sample_left.read();
-					copy_samples_cubic(buffer, a, b, c, d, x, left);
-					buffer.advancePlayheadUnbounded();
-					copy_samples_cubic(buffer, a, b, c, d, x, right);
-					buffer.advancePlayheadUnbounded();
-					pos += inc;
-				}
+					CopyLoop.copyLoop(4, "mirror", "copy_samples_cubic", "loop");
 				else // linear mono
-				{
-					for (n in 0...samples_requested-1)
-					{
-						sample_left.playhead = Std.int(pos);
-						var x = pos - sample_left.playhead;
-						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var b = sample_left.read();
-						copy_samples_lin(buffer, a, b, x, left);
-						buffer.advancePlayheadUnbounded();
-						copy_samples_lin(buffer, a, b, x, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}
-					sample_left.playhead = Std.int(pos);
-					var x = pos - sample_left.playhead;
-					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
-					var b = sample_left.read();
-					copy_samples_lin(buffer, a, b, x, left);
-					buffer.advancePlayheadUnbounded();
-					copy_samples_lin(buffer, a, b, x, right);
-					buffer.advancePlayheadUnbounded();
-					pos += inc;
-				}
+					CopyLoop.copyLoop(2, "mirror", "copy_samples_lin", "loop");
 			}
 			else
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop stereo
-				{
-					for (n in 0...samples_requested)
-					{
-						sample_left.playhead = Std.int(pos);
-						sample_right.playhead = sample_left.playhead;
-						copy_samples_drop(buffer, sample_left.read(), left);
-						buffer.advancePlayheadUnbounded();
-						copy_samples_drop(buffer, sample_right.read(), right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}
-				}
+					CopyLoop.copyLoop(1, "split", "copy_samples_drop","loop");
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
-				{
-					for (n in 0...samples_requested-1)
-					{
-						sample_left.playhead = Std.int(pos);
-						var x = pos - sample_left.playhead;
-						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var d = sample_left.read();
-						copy_samples_cubic(buffer, a, b, c, d, x, left);
-						buffer.advancePlayheadUnbounded();
-						a = sample_right.read(); sample_right.advancePlayheadUnbounded();
-						b = sample_right.read(); sample_right.advancePlayheadUnbounded();
-						c = sample_right.read(); sample_right.advancePlayheadUnbounded();
-						d = sample_right.read();
-						copy_samples_cubic(buffer, a, b, c, d, x, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}				
-					sample_left.playhead = Std.int(pos);
-					var x = pos - sample_left.playhead;
-					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
-					var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
-					var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
-					var d = sample_left.read();
-					copy_samples_cubic(buffer, a, b, c, d, x, left);
-					buffer.advancePlayheadUnbounded();
-					a = sample_right.read(); sample_right.advancePlayheadUnbounded();
-					if (sample_right.playhead > loop_end) sample_left.playhead = Std.int(sample_right.playhead - loop_len);
-					b = sample_right.read(); sample_right.advancePlayheadUnbounded();
-					if (sample_right.playhead > loop_end) sample_left.playhead = Std.int(sample_right.playhead - loop_len);
-					c = sample_right.read(); sample_right.advancePlayheadUnbounded();
-					if (sample_right.playhead > loop_end) sample_left.playhead = Std.int(sample_right.playhead - loop_len);
-					d = sample_right.read();
-					copy_samples_cubic(buffer, a, b, c, d, x, right);
-					buffer.advancePlayheadUnbounded();
-					pos += inc;
-				}
+					CopyLoop.copyLoop(4, "split", "copy_samples_cubic","loop");
 				else // linear stereo
-				{
-					for (n in 0...samples_requested-1)
-					{
-						sample_left.playhead = Std.int(pos);
-						var x = pos - sample_left.playhead;
-						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var b = sample_left.read();
-						copy_samples_lin(buffer, a, b, x, left);
-						buffer.advancePlayheadUnbounded();
-						a = sample_right.read(); sample_right.advancePlayheadUnbounded();
-						b = sample_right.read();
-						copy_samples_lin(buffer, a, b, x, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}				
-					sample_left.playhead = Std.int(pos);
-					var x = pos - sample_left.playhead;
-					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > loop_end) sample_left.playhead = Std.int(sample_left.playhead - loop_len);
-					var b = sample_left.read();
-					copy_samples_lin(buffer, a, b, x, left);
-					buffer.advancePlayheadUnbounded();
-					a = sample_right.read(); sample_right.advancePlayheadUnbounded();
-					if (sample_right.playhead > loop_end) sample_left.playhead = Std.int(sample_right.playhead - loop_len);
-					b = sample_right.read();
-					copy_samples_lin(buffer, a, b, x, right);
-					buffer.advancePlayheadUnbounded();
-					pos += inc;
-				}
+					CopyLoop.copyLoop(2, "split", "copy_samples_lin","loop");
 			}
 			return pos;
 		}
@@ -706,7 +570,6 @@ class SamplerSynth implements SoftSynth
 		samples_requested : Int, write : Bool)
 	{
 		// As runSegment, but allows bleedover (for the "pre" loop segment)
-		// FIXME: This really should be factored into a macro or something.
 		
 		var len = (sample_left.length - PAD_INTERP);
 		if (!write)
@@ -725,162 +588,20 @@ class SamplerSynth implements SoftSynth
 			if (sample_left == sample_right)
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop mono
-				{
-					for (n in 0...samples_requested)
-					{
-						sample_left.playhead = Std.int(pos);
-						var a = sample_left.read();
-						copy_samples_drop(buffer, a, left);
-						buffer.advancePlayheadUnbounded();
-						copy_samples_drop(buffer, a, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}
-				}
+					CopyLoop.copyLoop(1, "mirror", "copy_samples_drop","cut");
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
-				{
-					for (n in 0...samples_requested-1)
-					{
-						sample_left.playhead = Std.int(pos);
-						var x = pos - sample_left.playhead;
-						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var d = sample_left.read();
-						copy_samples_cubic(buffer, a, b, c, d, x, left);
-						buffer.advancePlayheadUnbounded();
-						copy_samples_cubic(buffer, a, b, c, d, x, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}
-					sample_left.playhead = Std.int(pos);
-					var x = pos - sample_left.playhead;
-					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
-					var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
-					var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
-					var d = sample_left.read();
-					copy_samples_cubic(buffer, a, b, c, d, x, left);
-					buffer.advancePlayheadUnbounded();
-					copy_samples_cubic(buffer, a, b, c, d, x, right);
-					buffer.advancePlayheadUnbounded();
-					pos += inc;
-				}
+					CopyLoop.copyLoop(4, "mirror", "copy_samples_cubic","cut");
 				else // linear mono
-				{
-					for (n in 0...samples_requested-1)
-					{
-						sample_left.playhead = Std.int(pos);
-						var x = pos - sample_left.playhead;
-						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var b = sample_left.read();
-						copy_samples_lin(buffer, a, b, x, left);
-						buffer.advancePlayheadUnbounded();
-						copy_samples_lin(buffer, a, b, x, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}
-					sample_left.playhead = Std.int(pos);
-					var x = pos - sample_left.playhead;
-					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
-					var b = sample_left.read();
-					copy_samples_lin(buffer, a, b, x, left);
-					buffer.advancePlayheadUnbounded();
-					copy_samples_lin(buffer, a, b, x, right);
-					buffer.advancePlayheadUnbounded();
-					pos += inc;
-				}
+					CopyLoop.copyLoop(2, "mirror", "copy_samples_lin", "cut");
 			}
 			else
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop stereo
-				{
-					for (n in 0...samples_requested)
-					{
-						sample_left.playhead = Std.int(pos);
-						sample_right.playhead = sample_left.playhead;
-						copy_samples_drop(buffer, sample_left.read(), left);
-						buffer.advancePlayheadUnbounded();
-						copy_samples_drop(buffer, sample_right.read(), right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}
-				}
+					CopyLoop.copyLoop(1, "split", "copy_samples_drop","cut");
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
-				{
-					for (n in 0...samples_requested-1)
-					{
-						sample_left.playhead = Std.int(pos);
-						var x = pos - sample_left.playhead;
-						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var d = sample_left.read();
-						copy_samples_cubic(buffer, a, b, c, d, x, left);
-						buffer.advancePlayheadUnbounded();
-						a = sample_right.read(); sample_right.advancePlayheadUnbounded();
-						b = sample_right.read(); sample_right.advancePlayheadUnbounded();
-						c = sample_right.read(); sample_right.advancePlayheadUnbounded();
-						d = sample_right.read();
-						copy_samples_cubic(buffer, a, b, c, d, x, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}				
-					sample_left.playhead = Std.int(pos);
-					var x = pos - sample_left.playhead;
-					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
-					var b = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
-					var c = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
-					var d = sample_left.read();
-					copy_samples_cubic(buffer, a, b, c, d, x, left);
-					buffer.advancePlayheadUnbounded();
-					a = sample_right.read(); sample_right.advancePlayheadUnbounded();
-					if (sample_right.playhead > sample_right.length) sample_right.playhead = Std.int(sample_right.length - 1);
-					b = sample_right.read(); sample_right.advancePlayheadUnbounded();
-					if (sample_right.playhead > sample_right.length) sample_right.playhead = Std.int(sample_right.length - 1);
-					c = sample_right.read(); sample_right.advancePlayheadUnbounded();
-					if (sample_right.playhead > sample_right.length) sample_right.playhead = Std.int(sample_right.length - 1);
-					d = sample_right.read();
-					copy_samples_cubic(buffer, a, b, c, d, x, right);
-					buffer.advancePlayheadUnbounded();
-					pos += inc;
-				}
+					CopyLoop.copyLoop(4, "split", "copy_samples_cubic", "cut");
 				else // linear stereo
-				{
-					for (n in 0...samples_requested-1)
-					{
-						sample_left.playhead = Std.int(pos);
-						var x = pos - sample_left.playhead;
-						var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-						var b = sample_left.read();
-						copy_samples_lin(buffer, a, b, x, left);
-						buffer.advancePlayheadUnbounded();
-						a = sample_right.read(); sample_right.advancePlayheadUnbounded();
-						b = sample_right.read();
-						copy_samples_lin(buffer, a, b, x, right);
-						buffer.advancePlayheadUnbounded();
-						pos += inc;
-					}				
-					sample_left.playhead = Std.int(pos);
-					var x = pos - sample_left.playhead;
-					var a = sample_left.read(); sample_left.advancePlayheadUnbounded();
-					if (sample_left.playhead > sample_left.length) sample_left.playhead = Std.int(sample_left.length - 1);
-					var b = sample_left.read();
-					copy_samples_lin(buffer, a, b, x, left);
-					buffer.advancePlayheadUnbounded();
-					a = sample_right.read(); sample_right.advancePlayheadUnbounded();
-					if (sample_right.playhead > sample_right.length) sample_right.playhead = Std.int(sample_right.length - 1);
-					b = sample_right.read();
-					copy_samples_lin(buffer, a, b, x, right);
-					buffer.advancePlayheadUnbounded();
-					pos += inc;
-				}
+					CopyLoop.copyLoop(2, "split", "copy_samples_lin", "cut");
 			}
 			return pos;
 		}

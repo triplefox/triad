@@ -3,7 +3,7 @@ package com.ludamix.triad.ui.layout;
 import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.ui.ScrollArea;
 import com.ludamix.triad.ui.HSlider6;
-import flash.display.BitmapData;
+import nme.display.BitmapData;
 import haxe.Unserializer;
 import nme.display.DisplayObject;
 import nme.display.DisplayObjectContainer;

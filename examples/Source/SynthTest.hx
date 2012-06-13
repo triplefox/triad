@@ -4,6 +4,7 @@ import com.ludamix.triad.audio.SMFParser;
 import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.TableSynth;
+import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.ui.HSlider6;
 import haxe.io.Bytes;
@@ -14,7 +15,7 @@ import nme.display.Bitmap;
 import nme.display.BitmapData;
 import nme.display.Sprite;
 import nme.events.Event;
-import flash.events.SampleDataEvent;
+import nme.events.SampleDataEvent;
 import nme.events.MouseEvent;
 import nme.Lib;
 import nme.media.Sound;
@@ -310,7 +311,7 @@ class SynthTest
 	public function drawDebugwaveform()
 	{
 		var wf = TableSynth.pulseWavetable[0][0];
-		var spr : Bitmap = new Bitmap(new BitmapData(wf.length, Main.H, false, 0));
+		var spr : Bitmap = new Bitmap(new BitmapData(wf.length, Main.H, false, Color.ARGB(0,0)));
 		Lib.current.stage.addChild(spr);
 		for (n in 0...wf.length)
 		{
