@@ -38,16 +38,12 @@ class SingleDelay
 	public function new(maxDelayInSamplesSize, delayInSamples, delayVolume) 
 	{
 	  this.delayBufferSamples = new FastFloatBuffer(maxDelayInSamplesSize); // The maximum size of delay
-	  this.delayInputPointer  = delayInSamples;
-	  this.delayOutputPointer = 0;
 	 
 	  this.delayInSamples     = delayInSamples;
 	  this.delayVolume        = delayVolume;
 	}
 	
 	public var delayBufferSamples : FastFloatBuffer;
-	public var delayInputPointer : Int;
-	public var delayOutputPointer : Int;
 	public var delayInSamples : Int;
 	public var delayVolume : Float;
 
@@ -58,11 +54,6 @@ class SingleDelay
 	 */
 	public function setDelayInSamples(delayInSamples) {
 	  this.delayInSamples = delayInSamples;
-	  this.delayInputPointer = this.delayOutputPointer + delayInSamples;
-
-	  if (this.delayInputPointer >= this.delayBufferSamples.length-1) {
-		this.delayInputPointer = this.delayInputPointer - this.delayBufferSamples.length; 
-	  }
 	}
 
 	/**
@@ -84,32 +75,25 @@ class SingleDelay
 	 */
 	public function process(samples : FastFloatBuffer, ?outputSamples : FastFloatBuffer) {
 	  // NB. Make a copy to put in the output samples to return.
-	  if (outputSamples==null)
+	  if (outputSamples == null)
+	  {
 		outputSamples = new FastFloatBuffer(samples.length);
+		#if alchemy throw "potential leak detected"; #end
+	  }
+	  outputSamples.playhead = 0;
+	  samples.playhead = 0;
 
 	  for (i in 0...samples.length) {
 
 		// Add audio data with the delay in the delay buffer
-		this.delayBufferSamples.set(this.delayInputPointer, samples.get(i));
+		this.delayBufferSamples.set((delayBufferSamples.playhead + delayInSamples) % delayBufferSamples.length, 
+			samples.read()); samples.advancePlayheadUnbounded();
 	   
-		// delayBufferSamples could contain initial NULL's, return silence in that case
-		var delaySample = this.delayBufferSamples.get(this.delayOutputPointer);
-
 		// Return the audio with delay mix
-		outputSamples.set(i, delaySample * this.delayVolume);
+		outputSamples.write(delayBufferSamples.read() * this.delayVolume); 
+			outputSamples.advancePlayheadUnbounded();
+			delayBufferSamples.advancePlayhead();
 
-		// Manage circulair delay buffer pointers
-		this.delayInputPointer++;
-
-		if (this.delayInputPointer >= this.delayBufferSamples.length-1) {
-		  this.delayInputPointer = 0;
-		}
-		 
-		this.delayOutputPointer++;
-
-		if (this.delayOutputPointer >= this.delayBufferSamples.length-1) {
-		  this.delayOutputPointer = 0; 
-		} 
 	  }
 	 
 	  return outputSamples;

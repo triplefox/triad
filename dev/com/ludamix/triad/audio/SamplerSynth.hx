@@ -45,6 +45,7 @@ typedef SamplerPatch = {
 	modulation_lfo : Float, // multiplier if greater than 0
 	arpeggiation_rate : Float, // 0 = off, hz value	
 	cutoff_frequency : Float,
+	filter_mode : Int,
 	resonance_level : Float,
 	name : String
 };
@@ -267,7 +268,8 @@ class SamplerSynth implements SoftSynth
 			lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
 			modulation_lfo:1.0,
 			arpeggiation_rate:0.0,
-			cutoff_frequency:22050.,
+			cutoff_frequency:0.,
+			filter_mode:VoiceCommon.FILTER_OFF,
 			resonance_level:0.,
 			name:name
 			},
@@ -300,7 +302,8 @@ class SamplerSynth implements SoftSynth
 				lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
 				modulation_lfo:1.0,
 				arpeggiation_rate:0.0,
-				cutoff_frequency:22050.,
+				filter_mode:VoiceCommon.FILTER_OFF,
+				cutoff_frequency:0.,
 				resonance_level:0.,
 				name:"default"
 				}
@@ -523,7 +526,7 @@ class SamplerSynth implements SoftSynth
 	}
 	
 	private inline function runSegment(buffer : FastFloatBuffer, 
-		pos : Float, inc : Float, left, right, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
 		samples_requested : Int, loop_end : Float, loop_len : Float, write : Bool)
 	{
 		// Copy exactly the number of samples requested for the buffer.
@@ -546,27 +549,57 @@ class SamplerSynth implements SoftSynth
 			if (sample_left == sample_right)
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop mono
-					CopyLoop.copyLoop(1, "mirror", "copy_samples_drop", "loop");					
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(1, "mirror", ["interp_drop"], "loop");
+					else
+						CopyLoop.copyLoop(1, "mirror", ["lowpass_filter","interp_drop"], "loop");
+				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
-					CopyLoop.copyLoop(4, "mirror", "copy_samples_cubic", "loop");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(4, "mirror", ["interp_cubic"], "loop");
+					else
+						CopyLoop.copyLoop(4, "mirror", ["lowpass_filter","interp_cubic"], "loop");
+				}
 				else // linear mono
-					CopyLoop.copyLoop(2, "mirror", "copy_samples_lin", "loop");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(2, "mirror", ["interp_linear"], "loop");
+					else
+						CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","interp_linear"], "loop");
+				}
 			}
 			else
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop stereo
-					CopyLoop.copyLoop(1, "split", "copy_samples_drop","loop");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(1, "split", ["interp_drop"], "loop");
+					else
+						CopyLoop.copyLoop(1, "split", ["lowpass_filter","interp_drop"], "loop");
+				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
-					CopyLoop.copyLoop(4, "split", "copy_samples_cubic","loop");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(4, "split", ["interp_cubic"], "loop");
+					else
+						CopyLoop.copyLoop(4, "split", ["lowpass_filter","interp_cubic"], "loop");
+				}
 				else // linear stereo
-					CopyLoop.copyLoop(2, "split", "copy_samples_lin","loop");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(2, "split", ["interp_linear"], "loop");
+					else
+						CopyLoop.copyLoop(2, "split", ["lowpass_filter","interp_linear"], "loop");
+				}
 			}
 			return pos;
 		}
 	}
 	
 	private inline function runSegment2(buffer : FastFloatBuffer, 
-		pos : Float, inc : Float, left, right, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
 		samples_requested : Int, write : Bool)
 	{
 		// As runSegment, but allows bleedover (for the "pre" loop segment)
@@ -588,47 +621,70 @@ class SamplerSynth implements SoftSynth
 			if (sample_left == sample_right)
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop mono
-					CopyLoop.copyLoop(1, "mirror", "copy_samples_drop","cut");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(1, "mirror", ["interp_drop"], "cut");
+					else
+						CopyLoop.copyLoop(1, "mirror", ["lowpass_filter","interp_drop"], "cut");
+				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
-					CopyLoop.copyLoop(4, "mirror", "copy_samples_cubic","cut");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(4, "mirror", ["interp_cubic"], "cut");
+					else
+						CopyLoop.copyLoop(4, "mirror", ["lowpass_filter","interp_cubic"], "cut");
+				}
 				else // linear mono
-					CopyLoop.copyLoop(2, "mirror", "copy_samples_lin", "cut");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(2, "mirror", ["interp_linear"], "cut");
+					else
+						CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","interp_linear"], "cut");
+				}
 			}
 			else
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop stereo
-					CopyLoop.copyLoop(1, "split", "copy_samples_drop","cut");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(1, "split", ["interp_drop"], "cut");
+					else
+						CopyLoop.copyLoop(1, "split", ["lowpass_filter","interp_drop"], "cut");
+				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
-					CopyLoop.copyLoop(4, "split", "copy_samples_cubic", "cut");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(4, "split", ["interp_cubic"], "cut");
+					else
+						CopyLoop.copyLoop(4, "split", ["lowpass_filter","interp_cubic"], "cut");
+				}
 				else // linear stereo
-					CopyLoop.copyLoop(2, "split", "copy_samples_lin", "cut");
+				{
+					if (common.filter_mode == VoiceCommon.FILTER_OFF)
+						CopyLoop.copyLoop(2, "split", ["interp_linear"], "cut");
+					else
+						CopyLoop.copyLoop(2, "split", ["lowpass_filter","interp_linear"], "cut");
+				}
 			}
 			return pos;
 		}
 	}
 	
-	public inline function copy_samples_drop(buffer : FastFloatBuffer, a : Float, level : Float)
-	{
-		// Drop
-		buffer.add(level * common.filter.getLP(a));
-	}
+	public inline function lowpass_filter(a : Float) { return common.filter.getLP(a); }
 	
-	public inline function copy_samples_lin(buffer : FastFloatBuffer, a : Float, b : Float, x : Float, level : Float)
-	{
-		// Linear
-		buffer.add(level * common.filter.getLP((a * (1. -x) + b * x)));
-	}
+	public inline function interp_drop(a : Float) { return a; }
 	
-	public inline function copy_samples_cubic(buffer : FastFloatBuffer, y0 : Float, y1 : Float, y2 : Float, y3 : Float,
-			x : Float, level : Float)
+	public inline function interp_linear(a : Float, b : Float, x : Float)
+	{ return (a * (1. -x) + b * x); }
+	
+	public inline function interp_cubic(y0 : Float, y1 : Float, y2 : Float, y3 : Float, x : Float)
 	{
-		// Cubic
 		var x2 = x*x;
 		var a0 = y3 - y2 - y0 + y1;
 		var a1 = y0 - y1 - a0;
 		var a2 = y2 - y0;
 		var a3 = y1;
-		buffer.add(level * common.filter.getLP(a0*x*x2+a1*x2+a2*x+a3));
+		return (a0*x*x2+a1*x2+a2*x+a3);
 	}
 	
 }

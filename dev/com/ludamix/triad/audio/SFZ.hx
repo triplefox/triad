@@ -112,9 +112,11 @@ class SFZGroup
 					Math.pow(2, directives.get("volume") / 10);  }
 				
 				if (directives.exists("cutoff")) { sampler_patch.cutoff_frequency = directives.get("cutoff"); }
+				// todo: reso, more filter modes
 				
 			}
 			
+			// create envelopes
 			var ampeg = Envelope2.DSAHDSHR(seq.secondsToFrames, amp_vals[0], amp_vals[1], amp_vals[2], amp_vals[3],
 				amp_vals[4], amp_vals[5], 0., amp_vals[6], 1., 1., 1., [VoiceCommon.AS_VOLUME_ADD]);
 			sampler_patch.envelope_profiles = [ ampeg ];
@@ -124,6 +126,11 @@ class SFZGroup
 					fil_vals[4], fil_vals[5], 0., fil_vals[6], 1., 1., 1., [VoiceCommon.AS_FREQUENCY_ADD_CENTS]);
 				sampler_patch.envelope_profiles.push(fileg);
 			}
+			
+			// set default filter mode
+			if ((fil_depth != 0 || sampler_patch.cutoff_frequency != 0.) && 
+				sampler_patch.filter_mode == VoiceCommon.FILTER_OFF)
+				sampler_patch.filter_mode == VoiceCommon.FILTER_LP;
 			
 			region_cache.push( { region:region, patch:sampler_patch } );
 		}

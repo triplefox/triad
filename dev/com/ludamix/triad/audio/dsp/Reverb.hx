@@ -48,8 +48,14 @@ class Reverb
 	public var LOWPASSR : IIRFilter2;
 	public var multiDelays : Array<MultiDelay>;
 	public var singleDelays : Array<SingleDelay>;
+	public var outputSamples : FastFloatBuffer;
+	public var filteredSamples : FastFloatBuffer;
+	public var reusableBuffer : FastFloatBuffer;
+	public var singleDelaySamples : FastFloatBuffer;
+	public var leftRightMix : Array<FastFloatBuffer>;
 	
-	public function new(maxDelayInSamplesSize, delayInSamples, masterVolume, mixVolume, delayVolume, dampFrequency) {
+	public function new(maxDelayInSamplesSize, delayInSamples, masterVolume, mixVolume, delayVolume, dampFrequency,
+		inputSize) {
 	  this.delayInSamples   = delayInSamples;
 	  this.masterVolume     = masterVolume;
 	  this.mixVolume       = mixVolume;
@@ -75,6 +81,14 @@ class Reverb
 		delayMultiply = 1.0 + (i/10.0); // 1.0, 1.1, 1.2... 
 		this.multiDelays[i] = new MultiDelay(maxDelayInSamplesSize, Math.round(this.delayInSamples * delayMultiply), this.masterVolume, this.delayVolume);
 	  }
+	  
+	  outputSamples = new FastFloatBuffer(inputSize);
+	  filteredSamples = new FastFloatBuffer(inputSize);
+	  reusableBuffer = new FastFloatBuffer(inputSize);
+	  singleDelaySamples = new FastFloatBuffer(inputSize);
+	  leftRightMix = new Array();
+	  leftRightMix.push(new FastFloatBuffer(inputSize>>1));
+	  leftRightMix.push(new FastFloatBuffer(inputSize>>1));
 	}
 
 	/**
@@ -145,7 +159,31 @@ class Reverb
 	  this.LOWPASSL.set(dampFrequency, 0);
 	  this.LOWPASSR.set(dampFrequency, 0); 
 	}
+	
+	private inline function deinterleave(input : FastFloatBuffer, left : FastFloatBuffer, right : FastFloatBuffer)
+	{
+		input.playhead = 0;
+		left.playhead = 0;
+		right.playhead = 0;
+		for (n in 0...left.length)
+		{
+			left.write(input.read()); input.advancePlayheadUnbounded(); left.advancePlayheadUnbounded();
+			right.write(input.read()); input.advancePlayheadUnbounded(); right.advancePlayheadUnbounded();
+		}
+	}
 
+	private inline function interleave(left : FastFloatBuffer, right : FastFloatBuffer, output : FastFloatBuffer)
+	{
+		output.playhead = 0;
+		left.playhead = 0;
+		right.playhead = 0;
+		for (n in 0...left.length)
+		{
+			output.write(left.read()); output.advancePlayheadUnbounded(); left.advancePlayheadUnbounded();
+			output.write(right.read()); output.advancePlayheadUnbounded(); right.advancePlayheadUnbounded();
+		}
+	}
+	
 	/**
 	 * Process a given interleaved float value Array and copies and adds the reverb signal.
 	 *
@@ -153,62 +191,83 @@ class Reverb
 	 *
 	 * @returns A new Float32Array interleaved buffer.
 	 */
-	public function process(interleavedSamples : FastFloatBuffer){ 
-	  // NB. Make a copy to put in the output samples to return.
-	  var outputSamples = new FastFloatBuffer(interleavedSamples.length);
-	  var reusableBuffer = new FastFloatBuffer(interleavedSamples.length);
+	public function process(interleavedSamples : FastFloatBuffer) { 
+		
+	  if (outputSamples.length != interleavedSamples.length) throw "reverb size (" + Std.string(outputSamples.length) +
+		") must match input buffer size (" + Std.string(interleavedSamples.length) + ")";		
 	 
 	  // Perform low pass on the input samples to mimick damp
-	  var leftRightMix = DSP.deinterleave(interleavedSamples);
-	  this.LOWPASSL.process( leftRightMix[DSP.LEFT] );
-	  this.LOWPASSR.process( leftRightMix[DSP.RIGHT] ); 
-	  var filteredSamples = DSP.interleave(leftRightMix[DSP.LEFT], leftRightMix[DSP.RIGHT]);
-	  
+	  deinterleave(interleavedSamples, leftRightMix[0], leftRightMix[1]);
+	  this.LOWPASSL.process( leftRightMix[0] );
+	  this.LOWPASSR.process( leftRightMix[1] ); 
+	  interleave(leftRightMix[0], leftRightMix[1], filteredSamples);
+		
 	  // Process MultiDelays in parallel
 	  for (i in 0...NR_OF_MULTIDELAYS) {
 		// Invert the signal of every even multiDelay
-		reusableBuffer = multiDelays[i].process(filteredSamples, reusableBuffer);
+		multiDelays[i].process(filteredSamples, reusableBuffer);
+		outputSamples.playhead = 0;
+		reusableBuffer.playhead = 0;
 		if (2 % i == 0)
 		{
-			for (s in 0...filteredSamples.length)
+			for (s in 0...reusableBuffer.length)
 			{
-				outputSamples.set(s, (outputSamples.get(s) - reusableBuffer.get(s)) / NR_OF_MULTIDELAYS);
+				outputSamples.write((outputSamples.read() - 
+					reusableBuffer.read()) / NR_OF_MULTIDELAYS);
+				outputSamples.advancePlayheadUnbounded(); reusableBuffer.advancePlayheadUnbounded();
 			}
 		}
 		else
 		{
-			for (s in 0...filteredSamples.length)
+			for (s in 0...reusableBuffer.length)
 			{
-				outputSamples.set(s, (outputSamples.get(s) + reusableBuffer.get(s)) / NR_OF_MULTIDELAYS);
+				outputSamples.write((outputSamples.read() + 
+					reusableBuffer.read()) / NR_OF_MULTIDELAYS);
+				outputSamples.advancePlayheadUnbounded(); reusableBuffer.advancePlayheadUnbounded();
 			}
 		}
 	  }
-	 
+	  
 	  // Process SingleDelays in series
-	  var singleDelaySamples = new FastFloatBuffer(outputSamples.length);
-	  for (i in 0...NR_OF_SINGLEDELAYS) {
+	  
+	  /*for (i in 0...NR_OF_SINGLEDELAYS) {
 		// Invert the signal of every even singleDelay
-		var postDelaySamples = singleDelays[i].process(outputSamples, reusableBuffer);
+		singleDelays[i].process(outputSamples, reusableBuffer);
+		singleDelaySamples.playhead = 0;
+		reusableBuffer.playhead = 0;
 		if (2 % i == 0)
 		{
 			for (s in 0...singleDelaySamples.length) 
 			{
-				singleDelaySamples.set(s, singleDelaySamples.get(s) - postDelaySamples.get(s) * this.mixVolume);
+				singleDelaySamples.write(singleDelaySamples.read() - reusableBuffer.read());
+				singleDelaySamples.advancePlayheadUnbounded(); reusableBuffer.advancePlayheadUnbounded();
 			}
 		}
 		else
 		{
 			for (s in 0...singleDelaySamples.length) 
 			{
-				singleDelaySamples.set(s, singleDelaySamples.get(s) + postDelaySamples.get(s) * this.mixVolume);
+				singleDelaySamples.write(singleDelaySamples.read() + reusableBuffer.read());
+				singleDelaySamples.advancePlayheadUnbounded(); reusableBuffer.advancePlayheadUnbounded();
 			}
 		}
-	  }
+	  }*/
+	  //return singleDelaySamples;
 	 
 	  // Mix the original signal with the reverb signal
+	  outputSamples.playhead = 0;
+	  singleDelaySamples.playhead = 0;
+	  interleavedSamples.playhead = 0;
 	  for (i in 0...outputSamples.length)
-		outputSamples.set(i, singleDelaySamples.get(i) + interleavedSamples.get(i) * this.masterVolume);
-	   
+	  {
+		// FIXME: I broke the singleDelays somehow! For now I'm just returning the multidelay part, so it's
+		// still a reverb, just not as strong.
+		//outputSamples.write((singleDelaySamples.read() * this.mixVolume + interleavedSamples.read()) * this.masterVolume);
+		outputSamples.write((outputSamples.read() * this.mixVolume + interleavedSamples.read()) * this.masterVolume);
+		outputSamples.advancePlayheadUnbounded();
+		singleDelaySamples.advancePlayheadUnbounded();
+		interleavedSamples.advancePlayheadUnbounded();
+	  }
 	  return outputSamples;
 	}	
 	

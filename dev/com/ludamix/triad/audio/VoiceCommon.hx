@@ -26,6 +26,10 @@ class VoiceCommon
 	
 	public var filter : IIRFilter2;	
 	public var filter_cutoff_multiplier : Float; // a kind of hacky thing to compensate for a strong/weak filter
+	public var filter_mode : Int;
+	
+	public static inline var FILTER_OFF = 0;
+	public static inline var FILTER_LP = 1;
 	
 	public static inline var AS_PITCH_ADD = 0;
 	public static inline var AS_PITCH_MUL = 1;
@@ -171,7 +175,9 @@ class VoiceCommon
 			
 			updateLFO(patch, channel, follower);
 			
-			filter.set(frame_frequency_adjust, frame_resonance_adjust);
+			filter_mode = patch.filter_mode;
+			if (filter_mode!=FILTER_OFF)
+				filter.set(frame_frequency_adjust, frame_resonance_adjust);
 			
 			freq = seq_event.data.freq;
 			

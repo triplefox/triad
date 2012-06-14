@@ -20,7 +20,7 @@ class CopyLoop
 
 	public static var var_names = ["a","b","c","d","e","f","g","h"];
 
-	public static function parseLoopAction(act : CopyLoopAction, copy_function : String) : String
+	public static function parseLoopAction(act : CopyLoopAction, copy_functions : Array<String>) : String
 	{
 		switch act
 		{
@@ -33,7 +33,7 @@ class CopyLoop
 				else { opening = "for (n in 0...samples_requested-"+Std.string(decrement) + ") {"; }
 				for (i in inner)
 				{
-					body.push(parseLoopAction(i, copy_function));
+					body.push(parseLoopAction(i, copy_functions));
 				}
 				body.insert(0, opening);
 				body.push(closing);
@@ -69,30 +69,46 @@ class CopyLoop
 						st += "\n";						
 					}
 				};
-				var writeCopy = function(smp : String, volume_name : String)
+				var writeCopy = function(smp : String, volume_name : Array<String>)
 				{
-					// copy + interpolate the temp data into the output buffer.
-					var vars = ["buffer"];
+					// apply each copy function and add the result to the output buffer.
+					
+					var vars = new Array<String>();
 					for (time in 0...times)
 						vars.push(var_names[time]);
 					if (times > 1)
 						vars.push("x");
-					vars.push(volume_name);
-					st += copy_function + "(" + vars.join(", ") + "); buffer.advancePlayheadUnbounded();\n";
+					
+					var copystuff = "";
+					for (fn in copy_functions) copystuff += fn + "(";
+					copystuff += vars.join(", ");
+					for (fn in copy_functions) copystuff += ")";
+					
+					if (volume_name.length > 1) // introduce an intermediate step so that we interp only once
+					{
+						st += "a = " + copystuff+";\n";
+						for (v in volume_name)						
+							st += "buffer.add( a * " + v + "); buffer.advancePlayheadUnbounded();\n";
+					}
+					else // add directly.
+					{
+						st += "buffer.add(" + copystuff + " * " + volume_name[0] + "); ";
+						st += "buffer.advancePlayheadUnbounded();\n";
+					}
+					
 				}
 				
 				if (channel == CLCMirror) 
 				{
 					writeRead("sample_left");
-					writeCopy("sample_left","left");
-					writeCopy("sample_left","right");
+					writeCopy("sample_left",["left","right"]);
 				}
 				else
 				{
 					writeRead("sample_left");
-					writeCopy("sample_left","left");
+					writeCopy("sample_left",["left"]);
 					writeRead("sample_right");
-					writeCopy("sample_right","right");
+					writeCopy("sample_right",["right"]);
 				}
 				
 				return st;
@@ -106,12 +122,10 @@ class CopyLoop
 				return "pos+=inc;";
 		}
 	}
-	
-	// now we should test to see if this works...
 
 #end
 
-	@:macro public static function copyLoop(num_samples : Int, channel_behavior : String, copy_function : String,
+	@:macro public static function copyLoop(num_samples : Int, channel_behavior : String, copy_functions : Array<String>,
 		endpoint_behavior : String) : Expr
 	{
 		
@@ -134,8 +148,6 @@ class CopyLoop
 		
 		var combi = new Array<String>();
 		
-		// TODO: filter should be factored out into a macro parameter.
-		
 		if (num_samples == 1)
 		{
 			for (n in [
@@ -144,7 +156,7 @@ class CopyLoop
 						CLARead(channel,1,CLEIgnore),
 						CLAIncrementPosition]),
 					])
-			combi.push(parseLoopAction(n,copy_function));
+			combi.push(parseLoopAction(n,copy_functions));
 		}
 		else if (num_samples == 2)
 		{
@@ -156,7 +168,7 @@ class CopyLoop
 						CLAGetPosition(num_samples, channel),
 						CLARead(channel,2,endpoint),
 						CLAIncrementPosition])
-			combi.push(parseLoopAction(n,copy_function));
+			combi.push(parseLoopAction(n,copy_functions));
 		}
 		else if (num_samples == 4)
 		{
@@ -168,7 +180,7 @@ class CopyLoop
 					CLAGetPosition(num_samples, channel),
 					CLARead(channel,4,endpoint),
 					CLAIncrementPosition])
-			combi.push(parseLoopAction(n,copy_function));
+			combi.push(parseLoopAction(n,copy_functions));
 		}
 		else throw "bad # of samples "+Std.string(num_samples);
 		

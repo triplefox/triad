@@ -66,7 +66,7 @@ class FastFloatBuffer
 		}
 		else
 		{
-			if (basis.length == size) // faster copy when size matches
+			if (Std.int(basis.length) == size) // faster copy when size matches
 			{
 				for (n in 0...size)
 				{

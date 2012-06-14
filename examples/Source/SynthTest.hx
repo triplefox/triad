@@ -204,8 +204,8 @@ class SynthTest
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
-		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		seq = new Sequencer(Std.int(44100), 4096,8);
+		seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 1200, 1.0, 1.0, 0.83, 780, 1024));
+		//seq = new Sequencer(Std.int(44100), 4096,8);
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 
