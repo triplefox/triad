@@ -160,6 +160,10 @@ class VoiceGroup
 				// as the channel adds more voices, the priority of its notes gets squashed.
 				// doing this on note ons naturally favors squashing of repetitive drum hits and stacattos,
 				// which have plenty of release tails, instead of held notes.
+				
+				// TODO - with region-dependent samples(e.g. GM drums) this concept needs a special case to include
+				// which _notes_ are being played, rather than simply the whole channel.
+				// that way, repetitive samples are discarded without harming the rest of the kit.
 				voice.common.followers.push(new EventFollower(patch_ev));
 				for (f in allocated)
 				{

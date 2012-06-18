@@ -9,17 +9,17 @@
 	<set name="BUILD_DIR" value="Export" />
 	<set name="SWF_VERSION" value="11.0" />
 	
-	<haxedef name="alchemy" if="target_flash" />
+	<!--<haxedef name="alchemy" if="target_flash" /> !-->
 	<!--<haxedef name="layout_debug" if="target_flash" /> !-->
 	
-	<classpath name="Source" />
-	
+	<source path="Source" />
 
-	<haxelib name="nme" />
+	<haxelib name="nme" />	
 	<haxelib name="hxJson2" />
 	<haxelib name="format" />
-	<classpath name="../dev" />
 	<haxelib name="hscript" />
+	
+	<classpath name="../dev" />
 	
 	<assets path="Assets" rename="assets" include="*" exclude="nme.svg|smf|sfz|build_script.py" />
 	<assets path="Assets/smf" rename="assets/smf" include="*" type="binary" />

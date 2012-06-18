@@ -107,14 +107,32 @@ class SamplerSynth implements SoftSynth
 		// six point hermite spline interpolator
 		var true_len = (sample.length - PAD_INTERP) >> 1;
 		var out = new Vector<Float>();
+		var y0 = 0.;
+		var y1 = 0.;
+		var y2 = 0.;
+		var y3 = 0.;
+		var y4 = 0.;
+		var y5 = 0.;
 		for (i in 0...true_len)
 		{
-			var y0 = sample[(i << 1) % sample.length];
-			var y1 = sample[((i << 1) + 1) % sample.length];
-			var y2 = sample[((i << 1) + 2) % sample.length];
-			var y3 = sample[((i << 1) + 3) % sample.length];
-			var y4 = sample[((i << 1) + 4) % sample.length];
-			var y5 = sample[((i << 1) + 5) % sample.length];
+			if ((i << 1) < Std.int(sample.length-6))
+			{
+				y0 = sample[(i << 1)];
+				y1 = sample[((i << 1) + 1)];
+				y2 = sample[((i << 1) + 2)];
+				y3 = sample[((i << 1) + 3)];
+				y4 = sample[((i << 1) + 4)];
+				y5 = sample[((i << 1) + 5)];
+			}
+			else
+			{
+				y0 = sample[(i << 1) % sample.length];
+				y1 = sample[((i << 1) + 1) % sample.length];
+				y2 = sample[((i << 1) + 2) % sample.length];
+				y3 = sample[((i << 1) + 3) % sample.length];
+				y4 = sample[((i << 1) + 4) % sample.length];
+				y5 = sample[((i << 1) + 5) % sample.length];				
+			}
 			var z = 0. - 0.5;
 			var even1 = y0 + y5; var odd1 = y0 - y5;
 			var even2 = y1 + y4; var odd2 = y1 - y4;
@@ -197,7 +215,7 @@ class SamplerSynth implements SoftSynth
 		mips.push( { left:left, right:right, rate_multiplier:1. } );
 		for (n in 0...PAD_INTERP)
 			{ left.push(0.); right.push(0.); }
-		for (n in 0...4)
+		for (n in 0...8)
 			mips.push(mipx2(mips[mips.length - 1]));
 		// FIXME: Trying to make a downsampled mip actually sounds worse in some material. 
 		// It could be the interpolation, the mipmapping, or loop setting at fault...or just the general concept :p

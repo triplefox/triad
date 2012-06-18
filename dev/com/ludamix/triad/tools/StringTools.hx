@@ -1,6 +1,6 @@
 package com.ludamix.triad.tools;
 
-typedef IInt = #if neko Int #else UInt #end;
+typedef IInt = #if neko Int #elseif cpp Int #else UInt #end;
 
 class StringTools
 {

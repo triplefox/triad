@@ -3,6 +3,7 @@ package com.ludamix.triad.ui;
 import nme.display.DisplayObject;
 import nme.display.Sprite;
 import nme.events.MouseEvent;
+
 class Button extends Sprite
 {
 	

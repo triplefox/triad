@@ -1,6 +1,0 @@
-<project name="triad" url="http://www.ludamix.com/" license="MIT">
-    <user name="jhofmann"/>
-    <tag v="game"/>
-    <description>Triad game library</description>
-    <version name="0.0.2">Not ready for public consumption yet.</version>
-</project>

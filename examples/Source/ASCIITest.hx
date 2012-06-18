@@ -1,9 +1,10 @@
 import com.ludamix.triad.ascii.XBIN;
 import com.ludamix.triad.ascii.ASCIIMap;
 import com.ludamix.triad.ascii.ASCIISheet;
-import com.ludamix.triad.io.AssetCache;
 import nme.events.Event;
 import nme.Lib;
+
+typedef AssetCache = nme.Assets;
 
 class ASCIITest
 {

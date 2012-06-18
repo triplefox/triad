@@ -43,9 +43,12 @@ class SMFParser
 
 	public var note_uniques : IntHash<Int>;
 	public var id_count : Int;
+	public var errors : Array<String>;
 	
 	public function run(remove_intro : Bool)
 	{
+		
+		errors = new Array();
 		
 		// Read SMF headers and track chunks.
 		
@@ -75,7 +78,7 @@ class SMFParser
 		{
 			var tempos_future = smf.tempos.copy();
 			if (tempos_future.length == 0) // uh oh...fill in a default
-				{tempos_future = [ { tick:0, tempo:120 * 60000000, bpm:120.0 } ]; trace("no tempo found");}
+				{tempos_future = [ { tick:0, tempo:120 * 60000000, bpm:120.0 } ]; errors.push("no tempo found");}
 			var tempos_past = new Array<{tick:Int,tempo:Int,bpm:Float}>();
 			var ticks = 0;
 			var frames = 0.;
@@ -224,11 +227,11 @@ class SMFParser
 												frames,
 												-1));
 					default:
-						trace(["unimplemented cc", smf.data]);
+						errors.push(["unimplemented cc", smf.data].join(" "));
 						return null;
 				}
 			default:
-				trace(["unimplemented", smf.type]);
+				errors.push(["unimplemented", smf.type].join(" "));
 				return null;
 		}
 	}

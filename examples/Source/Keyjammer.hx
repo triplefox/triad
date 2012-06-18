@@ -52,11 +52,11 @@ class Keyjammer
 		#if debug
 		  for (n in 0...4) // trying not to kill cpu!
 		#else
-		  for (n in 0...64)
+		  for (n in 0...32)
 		#end
 		{
 			var synth = new SamplerSynth();
-			synth.master_volume = 0.45;
+			synth.common.master_volume = 0.45;
 			synth.resample_method = SamplerSynth.RESAMPLE_CUBIC;
 			seq.addSynth(synth);
 			voices.push(synth);
@@ -64,10 +64,12 @@ class Keyjammer
 		// setup channels
 		for (n in 0...16)
 		{
+			var vgroup = new VoiceGroup(voices, 32);
+			
 			if (n == 9)
-				seq.addChannel(voices, percussion.getGenerator());
+				seq.addChannel([vgroup], percussion.getGenerator());
 			else
-				seq.addChannel(voices, melodic.getGenerator());
+				seq.addChannel([vgroup], melodic.getGenerator());
 			
 			
 			/*seq.addChannel(voices, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
@@ -124,8 +126,8 @@ class Keyjammer
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
-		seq = new Sequencer(Std.int(44100), 4096,16,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		//seq = new Sequencer(Std.int(44100), 4096,8);
+		//seq = new Sequencer(Std.int(44100), 4096,16,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
+		seq = new Sequencer(Std.int(44100), 4096,8);
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 
@@ -234,7 +236,7 @@ class Keyjammer
 		var cc = 0;
 		for (c in seq.synths)
 		{
-			if (c.getEvents().length > 0)
+			if (c.common.getEvents().length > 0)
 				cc++;
 		}
 		var programs = new Array<Int>();
@@ -304,7 +306,7 @@ class Keyjammer
 		var freq = seq.tuning.midiNoteToFrequency(n);
 		for (s in seq.synths)
 		{
-			for (f in s.getFollowers())
+			for (f in s.common.getFollowers())
 			{
 				if (!f.env[0].releasing() && f.patch_event.sequencer_event.data.freq == freq)
 					return;
