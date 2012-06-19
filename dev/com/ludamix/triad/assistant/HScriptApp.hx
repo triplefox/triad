@@ -50,7 +50,7 @@ class HScriptApp extends AssistantApp
 		input.y = wh.h / 2;
 		var run = quickButton("Run").button;
 		run.addEventListener(MouseEvent.CLICK, function(_) {
-				text.text = interp.exprReturn(parse.parseString(input.text));
+				text.text = interp.expr(parse.parseString(input.text));
 			} );
 		
 		var run2 = quickButton("Restart+Run").button;

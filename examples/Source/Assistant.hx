@@ -1,3 +1,4 @@
+import com.ludamix.triad.assistant.ButtonsApp;
 import com.ludamix.triad.assistant.TriadAssistant;
 import com.ludamix.triad.assistant.AssistantApp;
 import com.ludamix.triad.assistant.LoggerApp;
@@ -19,11 +20,14 @@ class Assistant
 		
 		var loggerApp = new LoggerApp();
 		var hscriptApp = new HScriptApp(new Interp());
+		var buttonsApp = new ButtonsApp([BFHeading("hello", "hello world"),
+										 BFButton("click", "Click Me", 
+											function(app : ButtonsApp) { app.layout.hello.text = "hi"; } )]);
 		
 		CommonStyle.init();
 		
 		assist = new TriadAssistant(this, CommonStyle.cascade, CommonStyle.basicButton);
-		assist.addApps([testApp, loggerApp, hscriptApp]);
+		assist.addApps([testApp, loggerApp, hscriptApp, buttonsApp]);
 		nme.Lib.current.stage.addChild(assist);
 		
 		loggerApp.write("hello world");

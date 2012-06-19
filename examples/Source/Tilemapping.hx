@@ -1,6 +1,7 @@
 import com.ludamix.triad.grid.AutotileBoard;
 import com.ludamix.triad.grid.IntGrid;
 import com.ludamix.triad.grid.TilesheetGrid;
+import com.ludamix.triad.grid.Tilepack;
 import flash.display.BitmapData;
 import nme.display.Bitmap;
 import nme.Assets;

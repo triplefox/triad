@@ -25,7 +25,8 @@ class TriadAssistant extends Sprite
 	private var sidebar_internal : DisplayObject;
 	private var app_container : Sprite;
 	
-	public function new(view, textdef, buttondef, ?keyToggle:Int=-123, ?keyTear:Int=-123)
+	public function new(view : Dynamic, textdef : CascadingTextDef, buttondef : LabelButtonStyle,
+		?keyToggle:Int=-123, ?keyTear:Int=-123)
 	{
 		super();
 		this.view = view;

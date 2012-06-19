@@ -1,4 +1,4 @@
-package grid;
+package com.ludamix.triad.grid;
 
 import com.ludamix.triad.geom.BinPacker;
 import nme.display.BitmapData;
@@ -22,15 +22,15 @@ class TilePack
 	/* add the image, sliced by the given width and height */
 	public function addSlice(bd : BitmapData, w : Int, h : Int)
 	{
-		var tw = bd.width / w;
-		var th = bd.height / h;
+		var tw = Std.int(bd.width / w);
+		var th = Std.int(bd.height / h);
 		for (x in 0...tw)
 		{
 			for (y in 0...th)
 			{
 				var nb = new BitmapData(w, h, false, 0);
 				nb.copyPixels(bd, new Rectangle(x * w, y * h, w, h), new Point(0., 0.), bd, new Point(0., 0.));
-				basis.push();
+				basis.push(nb);
 			}
 		}
 	}
@@ -39,12 +39,15 @@ class TilePack
 	{	
 		var bd = new BitmapData(sheet_size, sheet_size, true, 0);
 		
-		var ar = new Array<Dynamic>();
+		var ar = new Array<{w:Float,h:Float,contents:BitmapData}>();
 		for (n in basis)
-			ar.push({contents:n,w:n.width,h:n.height});
-		var bp = new BinPacker(sheet_size, sheet_size, ar);
-		trace(bp.nodes);
-		// blit using these nodes...assuming they're correct :o
+			ar.push({contents:n,w:n.width+0.,h:n.height+0.});
+		var bp : BinPacker = new BinPacker(sheet_size, sheet_size, ar);
+		
+		for (n in bp.nodes)
+			bd.copyPixels(n.contents, n.contents.rect, new Point(n.x, n.y), n.contents, new Point(0., 0.), false);
+		
+		return bd;
 		
 	}
 	
