@@ -5,17 +5,28 @@ class BinPacker
 	
 	public var nodes : Array<PackerNode>;
 	
-	public function new(w:Float,h:Float,stuff : Array<{contents:Dynamic,w:Float,h:Float}>)
+	public function new(w:Float,h:Float,inputs: Array<{contents:Dynamic,w:Float,h:Float}>)
 	{
+		// take the inputs and assign ids, then sort by height(this helps pack efficiency)
+		
+		var stuff = new Array<{contents:Dynamic,w:Float,h:Float,id:Int}>();
+		
+		var id = 0;
+		for (n in inputs)
+			{ stuff.push( { contents:n.contents, w:n.w, h:n.h, id:id } ); id++; }
 		stuff.sort(function(a, b):Int { return Std.int(b.h - a.h); } );
 		nodes = new Array();
 		
 		while (stuff.length > 0)
 		{
 			var d = stuff.shift();
-			var n = new PackerNode(d.contents, 0, 0, d.w, d.h);
+			var n = new PackerNode(d.contents, 0, 0, d.w, d.h, d.id);
 			var fail = true;
 			var min_y = h;
+			
+			// collision test - run through each line left to right, top to bottom;
+			// we use a sort+prune to optimize the collision
+			
 			while (n.b() < h && fail)
 			{
 				n.x = 0.;
@@ -49,6 +60,8 @@ class BinPacker
 					} );
 			}
 		}
+		// make the nodes match the original input order
+		nodes.sort(function(a, b) { return a.id - b.id; } );
 	}
 	
 }
@@ -61,14 +74,16 @@ class PackerNode
 	public var w : Float;
 	public var h : Float;
 	public var contents : Dynamic;
+	public var id : Int;
 	
-	public function new(contents : Dynamic, x,y,w,h)
+	public function new(contents : Dynamic, x,y,w,h,id)
 	{
 		this.contents = contents;
 		this.x = x;
 		this.y = y;
 		this.w = w;
 		this.h = h;
+		this.id = id;
 	}
 	
 	public inline function l() { return x; }

@@ -62,4 +62,17 @@ class StringTools
 		return value;		
 	}
 	
+	public static function parseBits(inp : String)
+	{
+		// parses a string of digits 000100100... with LSB at right-hand side.
+		var msb = inp.length;
+		var result = 0;
+		for (n in 0...inp.length)
+		{
+			var shl = msb - n;
+			if (inp.charAt(n) == "1") result += (1 << shl);
+		}
+		return result;
+	}
+	
 }

@@ -1,7 +1,8 @@
 import com.ludamix.triad.grid.AutotileBoard;
 import com.ludamix.triad.grid.IntGrid;
-import com.ludamix.triad.grid.TilesheetGrid;
-import com.ludamix.triad.grid.Tilepack;
+import com.ludamix.triad.render.SpriteRenderer;
+import com.ludamix.triad.render.TilesheetGrid;
+import com.ludamix.triad.render.TilePack;
 import flash.display.BitmapData;
 import nme.display.Bitmap;
 import nme.Assets;
@@ -14,25 +15,44 @@ class Tilemapping
 	
 	public var grid : TilesheetGrid;
 	public var board : AutotileBoard;
-	public var gfx : Bitmap;
+	public var sprite : SpriteRenderer;
+	public var gfx : Sprite;
+	public var bmp : Bitmap;
+	
+	public var gfx_spr : Sprite;
+	public var bmp_spr : Bitmap;
 	
 	public function new()
 	{
 		
-		var pop = new Array<Int>(); for (n in 0...32 * 32) pop.push(-1);
-		grid = new TilesheetGrid(Assets.getBitmapData("assets/autotile.png"), 32, 32, 8, 8, pop);
+		var pop = new Array<Int>(); for (n in 0...32 * 32) pop.push( -1);
 		
-		gfx = new Bitmap(new BitmapData(16*16,16*16));
+		var gr = com.ludamix.triad.render.GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, "assets/");
+		
+		grid = new TilesheetGrid(gr.tilesheet, 32, 32, 8, 8, pop);
+		
+		bmp = new Bitmap(new BitmapData(16*16,16*16));
+		Lib.current.addChild(bmp);
+		bmp_spr = new Bitmap(new BitmapData(16*16,16*16,true,0));
+		Lib.current.addChild(bmp_spr);
+		gfx = new Sprite();
 		Lib.current.addChild(gfx);
+		gfx_spr = new Sprite();
+		Lib.current.addChild(gfx_spr);
+		animtest = 0;
 		
-		var defs = [ 
-			{ name:"moo", indexes:[0, 1, 0 + 10, 1 + 10, 2, 3, 2 + 10, 3 + 10, 4, 5, 4 + 10, 5 + 10, 6, 7, 6 + 10, 7 + 10, 8, 9, 8 + 10, 9 + 10], mask:1 },
-			{ name:"foo", indexes:[0, 1, 0 + 10, 1 + 10, 2, 3, 2 + 10, 3 + 10, 4, 5, 4 + 10, 5 + 10, 6, 7, 6 + 10, 7 + 10, 8, 9, 8 + 10, 9 + 10], mask:2 }
-			];
-		for (n in 0...defs[1].indexes.length)
-			defs[1].indexes[n] = defs[1].indexes[n] + 20;
+		// instance spriterenderer
+		
+		sprite = new SpriteRenderer(gr.sprite, gr.tilesheet);
+		
+		// I have done absolutely nothing to support more elaborate drawing modes!
+		// This is probably the next thing to think about;
+		// I want to support scale, color and alpha.
+		
+		// instance tilemap
+		
 		pop = new Array<Int>(); for (n in 0...16 * 16) pop.push(0);
-		board = new AutotileBoard(16, 16, 16, 16, pop, defs);
+		board = new AutotileBoard(16, 16, 16, 16, pop, gr.autotile);
 		doOver();
 		
 		Lib.current.addEventListener(nme.events.Event.ENTER_FRAME, render);
@@ -41,9 +61,31 @@ class Tilemapping
 		render(null);
 	}
 	
+	public inline function renderTiles()
+	{
+		gfx.graphics.clear();
+		gfx_spr.graphics.clear();
+			
+		grid.renderFromGrid(board.result, gfx.graphics, true);
+		sprite.draw_tiles(gfx_spr.graphics);
+	}
+	
+	public inline function renderBlitter()
+	{
+		grid.blitFromGrid(board.result, bmp.bitmapData, true);
+		sprite.draw_blitter(bmp_spr.bitmapData, 0);	
+	}
+	
+	public var animtest : Int;
+	
 	public function render(_)
 	{
-		grid.blitFromGrid(board.result, gfx.bitmapData, true);
+		for (n in 0...64)
+			sprite.addName(n*8, animtest, 0, "8x16", n);
+		animtest = (animtest + 1) % 200;
+		
+		//renderTiles();
+		renderBlitter();
 	}
 	
 	public function doOver(?event : KeyboardEvent)
@@ -60,7 +102,8 @@ class Tilemapping
 			board.set2wrap(x, y, 1);
 		}
 		board.recacheAll();
-		grid.blitFromGrid(board.result, gfx.bitmapData, false);
+		grid.blitFromGrid(board.result, bmp.bitmapData, false);
+		//grid.renderFromGrid(board.result, gfx.graphics, false);
 	}
 	
 }

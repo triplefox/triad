@@ -1,0 +1,13 @@
+[group=autotile; type=autotile; tilesize=[8; 8]]
+[id = at1; file = autotile.png; type = autotile;  recth = 16; masksend=[first]; maskrecieve=[first]; ]
+[id = at2; file = autotile.png; type = autotile; tilesize=[8; 8] 
+ recty = 16; recth = 16; masksend=[second]; maskrecieve=[second]; ]
+
+[group=ascii; type = spritesheet;]
+[id = 8x16; file = VGA8x16.png; tilesize=[8; 16] ] 
+[id = 9x16; file = VGA9x16.png; tilesize=[9; 16] ]
+
+[group=comment; comment=[
+[group=cards;]
+[id = cards; file = cards.png; type = spritesheet; tilesize=[74; 98;]]]
+]

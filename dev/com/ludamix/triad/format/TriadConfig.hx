@@ -203,7 +203,7 @@ class TriadConfig
 		return result;
 	}
 	
-	public static function pass4(tok : Array<Dynamic>, parse_mode : TCParseMode) : Dynamic
+	private static function pass4(tok : Array<Dynamic>, parse_mode : TCParseMode) : Dynamic
 	{
 		var isList = true;
 		var isKV = true;

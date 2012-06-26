@@ -6,19 +6,19 @@ import nme.display.Graphics;
 import nme.display.Tilesheet;
 import nme.geom.Rectangle;
 
-typedef TileDef = {name:String,indexes:Array<Int>,mask:Int};
+typedef AutoTileDef = { name:String, indexes:Array<Int>, masksend:Int, maskrecieve:Int };
 
 class AutotileBoard
 {
 	
 	// A layer compatible with TilesheetGrid, allowing the creation of composite tiles from 4 smaller ones.
 	
-	public var defs : Array<TileDef>;
+	public var defs : Array<AutoTileDef>;
 	public var source : IntGrid;
 	public var result : IntGrid;
 	
 	public function new(worldw : Int, worldh : Int, twidth : Float, theight : Float, populate : Array<Int>,
-		defs : Array<TileDef>)
+		defs : Array<AutoTileDef>)
 	{
 		this.defs = defs;
 		source = new IntGrid(worldw, worldh, twidth, theight, populate);
@@ -64,16 +64,16 @@ class AutotileBoard
 		
 		var center = defs[c2tSafe(p.x    , p.y    , fallback)];
 		
-		var m_c = center.mask;
+		var m_c = center.maskrecieve;
 		
-		var m_tl = (defs[c2tSafe(p.x - 1, p.y - 1, fallback)].mask & m_c)>0;
-		var m_t  = (defs[c2tSafe(p.x    , p.y - 1, fallback)].mask & m_c)>0;
-		var m_tr = (defs[c2tSafe(p.x + 1, p.y - 1, fallback)].mask & m_c)>0;
-		var m_l  = (defs[c2tSafe(p.x - 1, p.y    , fallback)].mask & m_c)>0;
-		var m_r  = (defs[c2tSafe(p.x + 1, p.y    , fallback)].mask & m_c)>0;
-		var m_bl = (defs[c2tSafe(p.x - 1, p.y + 1, fallback)].mask & m_c)>0;
-		var m_b  = (defs[c2tSafe(p.x    , p.y + 1, fallback)].mask & m_c)>0;
-		var m_br = (defs[c2tSafe(p.x + 1, p.y + 1, fallback)].mask & m_c)>0;
+		var m_tl = (defs[c2tSafe(p.x - 1, p.y - 1, fallback)].masksend & m_c)>0;
+		var m_t  = (defs[c2tSafe(p.x    , p.y - 1, fallback)].masksend & m_c)>0;
+		var m_tr = (defs[c2tSafe(p.x + 1, p.y - 1, fallback)].masksend & m_c)>0;
+		var m_l  = (defs[c2tSafe(p.x - 1, p.y    , fallback)].masksend & m_c)>0;
+		var m_r  = (defs[c2tSafe(p.x + 1, p.y    , fallback)].masksend & m_c)>0;
+		var m_bl = (defs[c2tSafe(p.x - 1, p.y + 1, fallback)].masksend & m_c)>0;
+		var m_b  = (defs[c2tSafe(p.x    , p.y + 1, fallback)].masksend & m_c)>0;
+		var m_br = (defs[c2tSafe(p.x + 1, p.y + 1, fallback)].masksend & m_c) > 0;
 		
 		// get and assign the indexes for each subtile.
 		

@@ -1,8 +1,11 @@
-import com.ludamix.triad.grid.Tilepack;
+import com.ludamix.triad.render.TilePack;
+import com.ludamix.triad.render.GraphicsResource;
 import flash.display.BitmapData;
 import nme.display.Bitmap;
 import nme.Assets;
+import nme.display.Graphics;
 import nme.display.Sprite;
+import nme.display.Tilesheet;
 import nme.Lib;
 import nme.events.KeyboardEvent;
 
@@ -14,11 +17,28 @@ class SpritePacking
 	public function new()
 	{
 		
+		Lib.current.stage.color = 0x666666;
+		
 		bmp = new Bitmap(new BitmapData(1, 1));
 		Lib.current.addChild(bmp);
-		doOver();
+		doInitial();
 		
 		Lib.current.stage.addEventListener(nme.events.KeyboardEvent.KEY_DOWN, doOver);
+		
+	}
+	
+	public function doInitial()
+	{
+		var infos = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, "assets/");
+		
+		//bmp.bitmapData = infos.tilesheet.nmeBitmap;
+		
+		var spr = new Sprite();
+		var g = spr.graphics;
+		var ts : Tilesheet = infos.tilesheet;
+		ts.drawTiles(g, [0., 0., 20.]);
+		
+		Lib.current.addChild(spr);
 		
 	}
 	
@@ -29,15 +49,15 @@ class SpritePacking
 		pack.add(
 			new BitmapData(Std.int(Math.random() * 30 + 4), Std.int(Math.random() * 30 + 4), 
 			//new BitmapData(16,16,
-				true, 0xFF000000 + Std.int(Math.random() * 0xFFFFFF)));
+				true, 0xFF000000 + Std.int(Math.random() * 0xFFFFFF)),0,0);
 		for (n in pack.basis)
 		{
-			n.setPixel32(0, 0, 0xFF000000);
-			n.setPixel32(n.width-1, 0, 0xFF000000);
-			n.setPixel32(0, n.height-1, 0xFF000000);
-			n.setPixel32(n.width-1, n.height-1, 0xFF000000);
+			n.bitmapdata.setPixel32(0, 0, 0xFF000000);
+			n.bitmapdata.setPixel32(n.bitmapdata.width-1, 0, 0xFF000000);
+			n.bitmapdata.setPixel32(0, n.bitmapdata.height-1, 0xFF000000);
+			n.bitmapdata.setPixel32(n.bitmapdata.width-1, n.bitmapdata.height-1, 0xFF000000);
 		}
-		bmp.bitmapData = pack.compute(256);
+		bmp.bitmapData = pack.compute(256).bitmapdata;
 	}
 	
 }

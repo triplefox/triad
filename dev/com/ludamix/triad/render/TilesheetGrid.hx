@@ -1,6 +1,7 @@
-package com.ludamix.triad.grid;
+package com.ludamix.triad.render;
 
 import com.ludamix.triad.grid.IntGrid;
+import com.ludamix.triad.render.XTilesheet;
 import nme.display.BitmapData;
 import nme.display.Graphics;
 import nme.display.Tilesheet;
@@ -12,28 +13,14 @@ class TilesheetGrid
 	
 	// a very basic DrawTiles 2d grid renderer.
 	
-	public var sheet : Tilesheet;
-	public var rects : Array<Rectangle>;
+	public var sheet : XTilesheet;
 	public var grid : IntGrid;
 	private var cache : Array<Float>;
 	
-	public function new(bd : BitmapData, worldw : Int, worldh : Int, twidth : Int, theight : Int, populate : Array<Int>)
-	{
-		var tw = Std.int(bd.width / twidth);
-		var th = Std.int(bd.height / theight);
-		sheet = new Tilesheet(bd);
-		rects = new Array();
-		for (y in 0...th)
-		{
-			for (x in 0...tw)
-			{
-				var r = new Rectangle(x * twidth, y * theight, twidth, theight);
-				sheet.addTileRect(r);
-				rects.push(r);
-			}
-		}
-		
+	public function new(sheet : XTilesheet, worldw : Int, worldh : Int, twidth : Int, theight : Int, populate : Array<Int>)
+	{		
 		grid = new IntGrid(worldw, worldh, twidth, theight, populate);
+		this.sheet = sheet;
 		
 		recache();		
 	}
@@ -100,7 +87,7 @@ class TilesheetGrid
 		{
 			var idx = Std.int(n * 3);
 			var pt = new Point(cache[idx], cache[idx + 1]);
-			g.copyPixels(src, rects[Std.int(cache[idx + 2])], pt, src, new Point(0., 0.), true);
+			g.copyPixels(src, sheet.rects[Std.int(cache[idx + 2])], pt);
 		}
 	}
 	
@@ -116,7 +103,7 @@ class TilesheetGrid
 				{
 					set1(idx, n);
 					var pt = new Point(cache[idx], cache[idx + 1]);
-					gfx.copyPixels(src, rects[Std.int(cache[idx + 2])], pt, src, new Point(0., 0.), true);
+					gfx.copyPixels(src, sheet.rects[Std.int(cache[idx + 2])], pt);
 				}
 				idx++;
 			}
