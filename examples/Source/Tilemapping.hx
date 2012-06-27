@@ -7,6 +7,7 @@ import flash.display.BitmapData;
 import nme.display.Bitmap;
 import nme.Assets;
 import nme.display.Sprite;
+import nme.display.Tilesheet;
 import nme.Lib;
 import nme.events.KeyboardEvent;
 
@@ -31,7 +32,7 @@ class Tilemapping
 		
 		grid = new TilesheetGrid(gr.tilesheet, 32, 32, 8, 8, pop);
 		
-		bmp = new Bitmap(new BitmapData(16*16,16*16));
+		bmp = new Bitmap(new BitmapData(16*16,16*16,true,0));
 		Lib.current.addChild(bmp);
 		bmp_spr = new Bitmap(new BitmapData(16*16,16*16,true,0));
 		Lib.current.addChild(bmp_spr);
@@ -45,10 +46,6 @@ class Tilemapping
 		
 		sprite = new SpriteRenderer(gr.sprite, gr.tilesheet);
 		
-		// I have done absolutely nothing to support more elaborate drawing modes!
-		// This is probably the next thing to think about;
-		// I want to support scale, color and alpha.
-		
 		// instance tilemap
 		
 		pop = new Array<Int>(); for (n in 0...16 * 16) pop.push(0);
@@ -61,31 +58,38 @@ class Tilemapping
 		render(null);
 	}
 	
+	public static var TESTFLAGS = Tilesheet.TILE_ALPHA +
+			Tilesheet.TILE_RGB + Tilesheet.TILE_ROTATION + Tilesheet.TILE_SCALE;
+	
 	public inline function renderTiles()
 	{
 		gfx.graphics.clear();
 		gfx_spr.graphics.clear();
-			
+		
 		grid.renderFromGrid(board.result, gfx.graphics, true);
-		sprite.draw_tiles(gfx_spr.graphics);
+		sprite.draw_tiles(gfx_spr.graphics,false,TESTFLAGS);
 	}
 	
 	public inline function renderBlitter()
 	{
 		grid.blitFromGrid(board.result, bmp.bitmapData, true);
-		sprite.draw_blitter(bmp_spr.bitmapData, 0);	
+		sprite.draw_blitter(bmp_spr.bitmapData, 0, false, TESTFLAGS);
 	}
 	
 	public var animtest : Int;
 	
 	public function render(_)
 	{
+		TESTFLAGS = 0;
 		for (n in 0...64)
-			sprite.addName(n*8, animtest, 0, "8x16", n);
+			sprite.addName(n*8, animtest, 0, "8x16", n, 0.5,1.0,1.0,2.0,(Math.PI*animtest)/256,1.0);
+		//	sprite.addName(16, 16, 0, "8x16", 2, 0.5,0.5,1.0,2.0,(Math.PI*animtest)/256,1.0);
+		grid.red = 1. - (animtest/200);
+		//grid.red = 0.5;
 		animtest = (animtest + 1) % 200;
 		
-		//renderTiles();
-		renderBlitter();
+		//renderBlitter();
+		renderTiles();
 	}
 	
 	public function doOver(?event : KeyboardEvent)
@@ -102,8 +106,8 @@ class Tilemapping
 			board.set2wrap(x, y, 1);
 		}
 		board.recacheAll();
-		grid.blitFromGrid(board.result, bmp.bitmapData, false);
-		//grid.renderFromGrid(board.result, gfx.graphics, false);
+		//grid.blitFromGrid(board.result, bmp.bitmapData, false);
+		grid.renderFromGrid(board.result, gfx.graphics, false);
 	}
 	
 }
