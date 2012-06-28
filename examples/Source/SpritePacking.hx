@@ -1,5 +1,6 @@
 import com.ludamix.triad.render.TilePack;
 import com.ludamix.triad.render.GraphicsResource;
+import com.ludamix.triad.render.XTilesheet;
 import flash.display.BitmapData;
 import nme.display.Bitmap;
 import nme.Assets;
@@ -29,14 +30,14 @@ class SpritePacking
 	
 	public function doInitial()
 	{
-		var infos = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, "assets/");
+		var infos = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, true, "assets/");
 		
 		//bmp.bitmapData = infos.tilesheet.nmeBitmap;
 		
 		var spr = new Sprite();
 		var g = spr.graphics;
-		var ts : Tilesheet = infos.tilesheet;
-		ts.drawTiles(g, [0., 0., 20.]);
+		var ts : XTilesheet = infos.tilesheet;
+		//ts.drawTiles(g, [0., 0., 20.]);
 		
 		Lib.current.addChild(spr);
 		
@@ -45,7 +46,7 @@ class SpritePacking
 	public function doOver(?event : KeyboardEvent)
 	{
 		var pack = new TilePack();
-		for (n in 0...160)
+		for (n in 0...140)
 		pack.add(
 			new BitmapData(Std.int(Math.random() * 30 + 4), Std.int(Math.random() * 30 + 4), 
 			//new BitmapData(16,16,
@@ -57,7 +58,7 @@ class SpritePacking
 			n.bitmapdata.setPixel32(0, n.bitmapdata.height-1, 0xFF000000);
 			n.bitmapdata.setPixel32(n.bitmapdata.width-1, n.bitmapdata.height-1, 0xFF000000);
 		}
-		bmp.bitmapData = pack.compute(256).bitmapdata;
+		bmp.bitmapData = pack.compute(256, true).bitmapdata;
 	}
 	
 }

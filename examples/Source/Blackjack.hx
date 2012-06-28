@@ -1,11 +1,14 @@
 import com.ludamix.triad.cards.BlittableDeck52;
 import com.ludamix.triad.geom.AABB;
+import com.ludamix.triad.render.GraphicsResource;
+import com.ludamix.triad.render.SpriteRenderer;
 import com.ludamix.triad.ui.CascadingText;
 import com.ludamix.triad.ui.Helpers;
 import com.ludamix.triad.ui.layout.LayoutBuilder;
 import com.ludamix.triad.ui.Rect9;
 import com.ludamix.triad.ui.Button;
 import nme.display.Bitmap;
+import nme.display.BitmapData;
 import nme.display.Sprite;
 import nme.events.Event;
 import nme.events.MouseEvent;
@@ -22,7 +25,9 @@ import nme.text.TextField;
 class Blackjack
 {
 	
-	public var blitter : Blitter;
+	public var bmp : Bitmap;
+	public var gr : GraphicsResource;
+	public var render : SpriteRenderer;
 	public var cardRect : AABB;
 	public var game : BlackjackGame;
 	public var deck : BlittableDeck52;
@@ -34,16 +39,25 @@ class Blackjack
 	
 	public static inline var SPRW = 74;
 	public static inline var SPRH = 98;
+	public static inline var BGCOLOR = 0x036564;
 	
 	public function new()
 	{
-		blitter = new Blitter(Main.W, Main.H, false, 0x228833);
-		Lib.current.addChild(blitter);
+		
+		bmp = new Bitmap(new BitmapData(Main.W, Main.H, false, BGCOLOR));
+		Lib.current.addChild(bmp);
+		
+		var gr = GraphicsResource.read(Assets.getText("assets/cards.tc"), 1024, false, "assets/");
+		
+		render = new SpriteRenderer(gr.sprite, gr.tilesheet);
+		var card_info = render.defs_names.get("cards");
+		for (n in 0...card_info.frames)
+		{
+			render.aliases.set(Card52.spriteNaming(n), { def:card_info, frame:n } );
+		}
 		
 		cardRect = AABB.centerFromInt(SPRW, SPRH);
 		
-		blitter.storeTiles(Assets.getBitmapData("assets/cards.png"), SPRW, SPRH,
-			Card52.spriteNaming);
 		game = new BlackjackGame();
 		deck = new BlittableDeck52([ 
 			{ hand:"deck", x : 64., y : 20.+SPRH/2, spacing : 0., max : 0., func : BlittableDeck52.renderPile },
@@ -85,8 +99,9 @@ class Blackjack
 	
 	public function updateDisplay()
 	{
-		deck.renderDeck(game, blitter, cardRect);
-		blitter.update();
+		deck.renderDeck(game, render, cardRect);
+		render.draw_blitter(bmp.bitmapData, BGCOLOR);
+		
 		message.text = game.stateText();
 	}
 	

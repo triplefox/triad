@@ -31,10 +31,11 @@ class SpriteRenderer
 
 	public var defs : Array<SpriteDef>;
 	public var defs_names : Hash<SpriteDef>;
+	public var aliases : Hash<{def:SpriteDef,frame:Int}>;
 	public var sheet : XTilesheet;
 	public var sprite_queue : Array<SpriteXYZ>;
 	private var queue_ptr : Int;
-	private var backbuffer : Array<Float>;
+	private var clear_buffer : Array<{flags:Int,data:Array<Float>}>;
 
 	public function new(defs : Array<SpriteDef>, sheet : XTilesheet, ?poolsize=0)
 	{
@@ -43,8 +44,9 @@ class SpriteRenderer
 		defs_names = new Hash();
 		for (n in defs)
 			defs_names.set(n.name, n);
+		this.aliases = new Hash();
 		sprite_queue = new Array();
-		backbuffer = new Array();
+		clear_buffer = new Array();
 		queue_ptr = 0;
 		for (n in 0...poolsize)
 		{
@@ -56,6 +58,13 @@ class SpriteRenderer
 		?red = 1.0, ?green = 1.0, ?blue = 1.0, ?rotation=0.,?scale=1.0) 
 	{ 
 		_addRaw(x, y, z, defs_names.get(name).idx + frame, alpha, red, green, blue, rotation, scale); 
+	}
+	
+	public inline function addAlias(x, y, z, name, ?alpha = 1.0, 
+		?red = 1.0, ?green = 1.0, ?blue = 1.0, ?rotation=0.,?scale=1.0) 
+	{ 
+		var a = aliases.get(name);
+		_addRaw(x, y, z, a.def.idx + a.frame, alpha, red, green, blue, rotation, scale); 
 	}
 	
 	public inline function addIdx(x, y, z, idx, ?frame = 0, ?alpha = 1.0, 
@@ -92,38 +101,67 @@ class SpriteRenderer
 	
 	private function zsort(a : SpriteXYZ, b : SpriteXYZ) {return Std.int(b.z - a.z);}
 	
-	public inline function calcTileData(flags : Int) : Array<Float>
+	public inline function calcTileData() : Array<{data:Array<Float>,flags:Int}>
 	{
-		backbuffer = new Array<Float>();
-		for (n in 0...queue_ptr)
+		// 1: make runs from sorted data
+		sprite_queue.sort(zsort);
+		var runs = new Array<{flags:Int,run:Array<SpriteXYZ>}>();
+		var run_type = 0;
+		var cur_run = new Array<SpriteXYZ>();
+		for (i in 0...queue_ptr)
 		{
-			var spr = sprite_queue[n];
-			backbuffer.push(spr.x);
-			backbuffer.push(spr.y);
-			backbuffer.push(spr.idx);
-			if ((flags & Tilesheet.TILE_SCALE)>0) backbuffer.push(spr.scale);
-			if ((flags & Tilesheet.TILE_ROTATION)>0) backbuffer.push(spr.rotation);
-			if ((flags & Tilesheet.TILE_RGB)>0) 
-				{ backbuffer.push(spr.red); backbuffer.push(spr.green); backbuffer.push(spr.blue); }
-			if ((flags & Tilesheet.TILE_ALPHA)>0) backbuffer.push(spr.alpha);			
+			var n = sprite_queue[i];
+			var spr_type = 0;
+			if (n.alpha != 1.) spr_type += Tilesheet.TILE_ALPHA;
+			if (n.red != 1. || n.green != 1. || n.blue != 1.) spr_type += Tilesheet.TILE_RGB;
+			if (n.scale != 1.) spr_type += Tilesheet.TILE_SCALE;
+			if (n.rotation != 1.) spr_type += Tilesheet.TILE_ROTATION;
+			if (spr_type != run_type)
+			{
+				if (cur_run.length > 0) { runs.push({flags:spr_type,run:cur_run});  cur_run = new Array(); }
+				run_type = spr_type;
+			}
+			cur_run.push(n);
 		}
+		if (cur_run.length > 0) { runs.push( { flags:run_type, run:cur_run } ); }
 		queue_ptr = 0;
-		return backbuffer;		
+		// 2: translate SpriteXYZ+flag runs to float+flag runs
+		var result = new Array<{flags:Int,data:Array<Float>}>();
+		for (r in runs)
+		{
+			var draw_buffer = new Array<Float>();
+			result.push({flags:r.flags,data:draw_buffer});
+			for (spr in r.run)
+			{
+				draw_buffer.push(spr.x);
+				draw_buffer.push(spr.y);
+				draw_buffer.push(spr.idx);
+				
+				if ((r.flags & Tilesheet.TILE_SCALE)>0) draw_buffer.push(spr.scale);
+				if ((r.flags & Tilesheet.TILE_ROTATION)>0) draw_buffer.push(spr.rotation);
+				if ((r.flags & Tilesheet.TILE_RGB)>0) 
+					{ draw_buffer.push(spr.red); draw_buffer.push(spr.green); draw_buffer.push(spr.blue); }
+				if ((r.flags & Tilesheet.TILE_ALPHA)>0) draw_buffer.push(spr.alpha);			
+			}
+		}
+		return result;
 	}
 	
-	public inline function draw_blitter(bd : BitmapData, bg_color : Int, ?smooth : Bool, ?flags : Int=0)
+	public inline function draw_blitter(bd : BitmapData, bg_color : Int, ?smooth : Bool)
 	{
-		sprite_queue.sort(zsort);
-		// TODO: rather than pass in flags, we should derive them from each sprite instance...
-		// ...and then create an optimal run for each group.
-		sheet.clear(bd, backbuffer, flags, bg_color);
-		sheet.blit(bd, calcTileData(flags), smooth, flags);
+		for (r in clear_buffer)
+			sheet.clear(bd, r.data, r.flags, bg_color);
+		clear_buffer = calcTileData();
+		for (r in clear_buffer)
+			sheet.blit(bd, r.data, smooth, r.flags);
 	}
 
-	public inline function draw_tiles(gfx : Graphics, ?smooth : Bool, ?flags : Int=0)
+	public inline function draw_tiles(gfx : Graphics, ?smooth : Bool)
 	{
 		sprite_queue.sort(zsort);
-		sheet.drawTiles(gfx, calcTileData(flags), smooth, flags);
+		clear_buffer = calcTileData();
+		for (r in clear_buffer)
+			sheet.drawTiles(gfx, r.data, smooth, r.flags);
 	}
 	
 }

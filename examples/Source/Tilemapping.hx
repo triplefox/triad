@@ -1,5 +1,6 @@
 import com.ludamix.triad.grid.AutotileBoard;
 import com.ludamix.triad.grid.IntGrid;
+import com.ludamix.triad.render.GraphicsResource;
 import com.ludamix.triad.render.SpriteRenderer;
 import com.ludamix.triad.render.TilesheetGrid;
 import com.ludamix.triad.render.TilePack;
@@ -28,7 +29,7 @@ class Tilemapping
 		
 		var pop = new Array<Int>(); for (n in 0...32 * 32) pop.push( -1);
 		
-		var gr = com.ludamix.triad.render.GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, "assets/");
+		var gr = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, true, "assets/");
 		
 		grid = new TilesheetGrid(gr.tilesheet, 32, 32, 8, 8, pop);
 		
@@ -58,38 +59,38 @@ class Tilemapping
 		render(null);
 	}
 	
-	public static var TESTFLAGS = Tilesheet.TILE_ALPHA +
-			Tilesheet.TILE_RGB + Tilesheet.TILE_ROTATION + Tilesheet.TILE_SCALE;
-	
 	public inline function renderTiles()
 	{
 		gfx.graphics.clear();
 		gfx_spr.graphics.clear();
 		
 		grid.renderFromGrid(board.result, gfx.graphics, true);
-		sprite.draw_tiles(gfx_spr.graphics,false,TESTFLAGS);
+		sprite.draw_tiles(gfx_spr.graphics,false);
 	}
 	
 	public inline function renderBlitter()
 	{
 		grid.blitFromGrid(board.result, bmp.bitmapData, true);
-		sprite.draw_blitter(bmp_spr.bitmapData, 0, false, TESTFLAGS);
+		sprite.draw_blitter(bmp_spr.bitmapData, 0, false);
 	}
 	
 	public var animtest : Int;
 	
 	public function render(_)
 	{
-		TESTFLAGS = 0;
-		for (n in 0...64)
-			sprite.addName(n*8, animtest, 0, "8x16", n, 0.5,1.0,1.0,2.0,(Math.PI*animtest)/256,1.0);
+		for (n in 0...16)
+			sprite.addName(n*8+8, animtest, 0, "8x16", n, 0.5,1.0,1.0,2.0,(Math.PI*animtest)/256,1.0);
+		for (n in 0...16)
+			sprite.addName(n*8+8, animtest+32, 0, "8x16", n+16, 1.0,1.0,1.0,1.0,0.,1.0);
+		for (n in 0...8)
+			sprite.addName(n*8+8, animtest+64, 0, "8x16", n+32, 0.5,animtest/200,1.0,2.0,-(Math.PI*animtest)/256,1.0);
 		//	sprite.addName(16, 16, 0, "8x16", 2, 0.5,0.5,1.0,2.0,(Math.PI*animtest)/256,1.0);
-		grid.red = 1. - (animtest/200);
+		//grid.red = 1. - (animtest/200);
 		//grid.red = 0.5;
 		animtest = (animtest + 1) % 200;
 		
-		//renderBlitter();
-		renderTiles();
+		renderBlitter();
+		//renderTiles();
 	}
 	
 	public function doOver(?event : KeyboardEvent)
@@ -106,8 +107,8 @@ class Tilemapping
 			board.set2wrap(x, y, 1);
 		}
 		board.recacheAll();
-		//grid.blitFromGrid(board.result, bmp.bitmapData, false);
-		grid.renderFromGrid(board.result, gfx.graphics, false);
+		grid.blitFromGrid(board.result, bmp.bitmapData, false);
+		//grid.renderFromGrid(board.result, gfx.graphics, false);
 	}
 	
 }

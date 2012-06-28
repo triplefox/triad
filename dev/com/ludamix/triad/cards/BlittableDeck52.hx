@@ -1,10 +1,10 @@
 package com.ludamix.triad.cards;
-import com.ludamix.triad.blitter.Blitter;
 import com.ludamix.triad.cards.Card52;
 import com.ludamix.triad.cards.Hand;
 import com.ludamix.triad.geom.AABB;
 import com.ludamix.triad.geom.SubINode;
 import com.ludamix.triad.geom.SubIPoint;
+import com.ludamix.triad.render.SpriteRenderer;
 import nme.geom.Point;
 
 typedef HandDef = { hand:String, x : Float, y : Float, spacing : Float, max : Float, func : Dynamic };
@@ -75,7 +75,7 @@ class BlittableDeck52 extends SubINode
 		return new Point( x, y + basePos - centerLine);
 	}
 	
-	public inline function renderDeck(deck : Deck, blitter : Blitter, card_rect : AABB)
+	public inline function renderDeck(deck : Deck, render : SpriteRenderer, card_rect : AABB)
 	{
 		var r = rect(card_rect);
 		for (hdef in hands)
@@ -88,7 +88,7 @@ class BlittableDeck52 extends SubINode
 				spt.x += r.cx();
 				spt.y += r.cy();
 				renderCard(cast(hand.cards[n], Card52), 
-					spt, blitter, Std.int(Math.min(blitter.sprite_queue.length-1, n)));
+					spt, render, Std.int(Math.min(render.sprite_queue.length-1, n)));
 			}			
 		}
 	}
@@ -113,7 +113,7 @@ class BlittableDeck52 extends SubINode
 		return results;
 	}
 	
-	public inline function renderCard(card : Card52, spt : SubIPoint, blitter : Blitter, z : Int)
+	public inline function renderCard(card : Card52, spt : SubIPoint, render : SpriteRenderer, z : Int)
 	{
 		var name = "card_back";
 		if (!card.hidden)
@@ -121,7 +121,7 @@ class BlittableDeck52 extends SubINode
 			name = "card_" + card.idx;
 		}
 		
-		blitter.queueName(name, spt.xi(), spt.yi(), z);		
+		render.addAlias(spt.xi(), spt.yi(), z, name);
 
 	}
 	

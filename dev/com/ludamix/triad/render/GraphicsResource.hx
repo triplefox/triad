@@ -26,7 +26,8 @@ class GraphicsResource
 	//	align=<tl, tr, bl, br, center>; alignoffset=[int;int]
 	//  rect=[int,int,int,int]; | rectx=int; | recty=int; | rectw=int; | recth=int;
 	
-	public static function read(file : String, sheetsize : Int, ?prepend : String) : GraphicsResourceData
+	public static function read(file : String, sheetsize : Int, 
+		sheet_border : Bool, ?prepend : String) : GraphicsResourceData
 	{
 		var data : Array<Dynamic> = TriadConfig.parse(file, TCPReject);
 		
@@ -196,7 +197,7 @@ class GraphicsResource
 		var tp = new TilePack();
 		for (n in sheet_bitmaps)
 			tp.add(n.bd,n.offx,n.offy);
-		var infos = tp.compute(sheetsize);
+		var infos = tp.compute(sheetsize, sheet_border);
 		
 		var nodes : Array<PackerNode> = infos.nodes;		
 		var ts = new XTilesheet(infos.bitmapdata);
