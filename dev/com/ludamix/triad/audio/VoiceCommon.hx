@@ -32,6 +32,7 @@ class VoiceCommon
 	public static inline var FILTER_LP = 1;
 	public static inline var FILTER_HP = 2;
 	public static inline var FILTER_BP = 3;
+	public static inline var FILTER_BR = 4;
 	
 	public static inline var AS_PITCH_ADD = 0;
 	public static inline var AS_PITCH_MUL = 1;

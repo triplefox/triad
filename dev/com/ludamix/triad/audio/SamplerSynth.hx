@@ -576,6 +576,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(1, "mirror", ["highpass_filter","interp_drop"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(1, "mirror", ["bandpass_filter","interp_drop"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(1, "mirror", ["bandreject_filter","interp_drop"], "loop");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
 				{
@@ -587,6 +589,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(4, "mirror", ["highpass_filter","interp_cubic"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","interp_cubic"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(4, "mirror", ["bandreject_filter","interp_cubic"], "loop");
 				}
 				else // linear mono
 				{
@@ -598,6 +602,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(2, "mirror", ["highpass_filter","interp_linear"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","interp_linear"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","interp_linear"], "loop");
 				}
 			}
 			else
@@ -612,6 +618,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(1, "split", ["highpass_filter","interp_drop"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(1, "split", ["bandpass_filter","interp_drop"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(1, "split", ["bandreject_filter","interp_drop"], "loop");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
 				{
@@ -623,6 +631,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(4, "split", ["highpass_filter","interp_cubic"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(4, "split", ["bandpass_filter","interp_cubic"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(4, "split", ["bandreject_filter","interp_cubic"], "loop");
 				}
 				else // linear stereo
 				{
@@ -634,6 +644,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(2, "split", ["highpass_filter","interp_linear"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(2, "split", ["bandpass_filter","interp_linear"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(2, "split", ["bandreject_filter","interp_linear"], "loop");
 				}
 			}
 			return pos;
@@ -672,6 +684,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(1, "mirror", ["highpass_filter","interp_drop"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(1, "mirror", ["bandpass_filter","interp_drop"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(1, "mirror", ["bandreject_filter","interp_drop"], "cut");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
 				{
@@ -683,6 +697,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(4, "mirror", ["highpass_filter","interp_cubic"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","interp_cubic"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(4, "mirror", ["bandreject_filter","interp_cubic"], "cut");
 				}
 				else // linear mono
 				{
@@ -694,6 +710,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(2, "mirror", ["highpass_filter","interp_linear"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","interp_linear"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","interp_linear"], "cut");
 				}
 			}
 			else
@@ -708,6 +726,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(1, "split", ["highpass_filter","interp_drop"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(1, "split", ["bandpass_filter","interp_drop"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(1, "split", ["bandreject_filter","interp_drop"], "cut");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
 				{
@@ -719,6 +739,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(4, "split", ["highpass_filter","interp_cubic"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(4, "split", ["bandpass_filter","interp_cubic"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(4, "split", ["bandreject_filter","interp_cubic"], "cut");
 				}
 				else // linear stereo
 				{
@@ -730,6 +752,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(2, "split", ["highpass_filter","interp_linear"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BP)
 						CopyLoop.copyLoop(2, "split", ["bandpass_filter","interp_linear"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BR)
+						CopyLoop.copyLoop(2, "split", ["bandreject_filter","interp_linear"], "cut");
 				}
 			}
 			return pos;
@@ -739,6 +763,7 @@ class SamplerSynth implements SoftSynth
 	public inline function lowpass_filter(a : Float) { return common.filter.getLP(a); }
 	public inline function highpass_filter(a : Float) { return common.filter.getHP(a); }
 	public inline function bandpass_filter(a : Float) { return common.filter.getBP(a); }
+	public inline function bandreject_filter(a : Float) { return common.filter.getBR(a); }
 	
 	public inline function interp_drop(a : Float) { return a; }
 	

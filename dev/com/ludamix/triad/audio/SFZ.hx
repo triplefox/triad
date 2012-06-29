@@ -112,7 +112,19 @@ class SFZGroup
 					Math.pow(2, directives.get("volume") / 10);  }
 				
 				if (directives.exists("cutoff")) { sampler_patch.cutoff_frequency = directives.get("cutoff"); }
-				// todo: reso, more filter modes
+				if (directives.exists("resonance")) { sampler_patch.resonance_level = directives.get("resonance"); }
+				if (directives.exists("fil_type"))
+				{
+					var fil_type = directives.get("fil_type");
+					if (fil_type == "lpf_1p") sampler_patch.filter_mode = VoiceCommon.FILTER_LP;
+					else if (fil_type == "lpf_2p") sampler_patch.filter_mode = VoiceCommon.FILTER_LP;
+					else if (fil_type == "hpf_1p") sampler_patch.filter_mode = VoiceCommon.FILTER_HP;
+					else if (fil_type == "hpf_2p") sampler_patch.filter_mode = VoiceCommon.FILTER_HP;
+					else if (fil_type == "bpf_1p") sampler_patch.filter_mode = VoiceCommon.FILTER_BP;
+					else if (fil_type == "bpf_2p") sampler_patch.filter_mode = VoiceCommon.FILTER_BP;
+					else if (fil_type == "brf_1p") sampler_patch.filter_mode = VoiceCommon.FILTER_BR;
+					else if (fil_type == "brf_2p") sampler_patch.filter_mode = VoiceCommon.FILTER_BR;
+				}
 				
 			}
 			
