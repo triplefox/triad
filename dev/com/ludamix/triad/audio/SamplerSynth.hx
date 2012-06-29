@@ -570,22 +570,34 @@ class SamplerSynth implements SoftSynth
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(1, "mirror", ["interp_drop"], "loop");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(1, "mirror", ["lowpass_filter","interp_drop"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(1, "mirror", ["highpass_filter","interp_drop"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(1, "mirror", ["bandpass_filter","interp_drop"], "loop");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(4, "mirror", ["interp_cubic"], "loop");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(4, "mirror", ["lowpass_filter","interp_cubic"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(4, "mirror", ["highpass_filter","interp_cubic"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","interp_cubic"], "loop");
 				}
 				else // linear mono
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(2, "mirror", ["interp_linear"], "loop");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","interp_linear"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(2, "mirror", ["highpass_filter","interp_linear"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","interp_linear"], "loop");
 				}
 			}
 			else
@@ -594,22 +606,34 @@ class SamplerSynth implements SoftSynth
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(1, "split", ["interp_drop"], "loop");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(1, "split", ["lowpass_filter","interp_drop"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(1, "split", ["highpass_filter","interp_drop"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(1, "split", ["bandpass_filter","interp_drop"], "loop");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(4, "split", ["interp_cubic"], "loop");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(4, "split", ["lowpass_filter","interp_cubic"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(4, "split", ["highpass_filter","interp_cubic"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(4, "split", ["bandpass_filter","interp_cubic"], "loop");
 				}
 				else // linear stereo
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(2, "split", ["interp_linear"], "loop");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(2, "split", ["lowpass_filter","interp_linear"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(2, "split", ["highpass_filter","interp_linear"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(2, "split", ["bandpass_filter","interp_linear"], "loop");
 				}
 			}
 			return pos;
@@ -642,22 +666,34 @@ class SamplerSynth implements SoftSynth
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(1, "mirror", ["interp_drop"], "cut");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(1, "mirror", ["lowpass_filter","interp_drop"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(1, "mirror", ["highpass_filter","interp_drop"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(1, "mirror", ["bandpass_filter","interp_drop"], "cut");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(4, "mirror", ["interp_cubic"], "cut");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(4, "mirror", ["lowpass_filter","interp_cubic"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(4, "mirror", ["highpass_filter","interp_cubic"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","interp_cubic"], "cut");
 				}
 				else // linear mono
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(2, "mirror", ["interp_linear"], "cut");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","interp_linear"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(2, "mirror", ["highpass_filter","interp_linear"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","interp_linear"], "cut");
 				}
 			}
 			else
@@ -666,22 +702,34 @@ class SamplerSynth implements SoftSynth
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(1, "split", ["interp_drop"], "cut");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(1, "split", ["lowpass_filter","interp_drop"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(1, "split", ["highpass_filter","interp_drop"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(1, "split", ["bandpass_filter","interp_drop"], "cut");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(4, "split", ["interp_cubic"], "cut");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(4, "split", ["lowpass_filter","interp_cubic"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(4, "split", ["highpass_filter","interp_cubic"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(4, "split", ["bandpass_filter","interp_cubic"], "cut");
 				}
 				else // linear stereo
 				{
 					if (common.filter_mode == VoiceCommon.FILTER_OFF)
 						CopyLoop.copyLoop(2, "split", ["interp_linear"], "cut");
-					else
+					else if (common.filter_mode == VoiceCommon.FILTER_LP)
 						CopyLoop.copyLoop(2, "split", ["lowpass_filter","interp_linear"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_HP)
+						CopyLoop.copyLoop(2, "split", ["highpass_filter","interp_linear"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_BP)
+						CopyLoop.copyLoop(2, "split", ["bandpass_filter","interp_linear"], "cut");
 				}
 			}
 			return pos;
@@ -689,6 +737,8 @@ class SamplerSynth implements SoftSynth
 	}
 	
 	public inline function lowpass_filter(a : Float) { return common.filter.getLP(a); }
+	public inline function highpass_filter(a : Float) { return common.filter.getHP(a); }
+	public inline function bandpass_filter(a : Float) { return common.filter.getBP(a); }
 	
 	public inline function interp_drop(a : Float) { return a; }
 	

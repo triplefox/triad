@@ -30,6 +30,8 @@ class VoiceCommon
 	
 	public static inline var FILTER_OFF = 0;
 	public static inline var FILTER_LP = 1;
+	public static inline var FILTER_HP = 2;
+	public static inline var FILTER_BP = 3;
 	
 	public static inline var AS_PITCH_ADD = 0;
 	public static inline var AS_PITCH_MUL = 1;
@@ -176,7 +178,7 @@ class VoiceCommon
 			updateLFO(patch, channel, follower);
 			
 			filter_mode = patch.filter_mode;
-			if (filter_mode!=FILTER_OFF)
+			if (filter_mode != FILTER_OFF)
 				filter.set(frame_frequency_adjust, frame_resonance_adjust);
 			
 			freq = seq_event.data.freq;
