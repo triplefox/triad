@@ -28,20 +28,20 @@ typedef HString = StringTools;
 
 class SFZGroup
 {
-	
+
 	// store region and groups
-	
+
 	public var group_opcodes : Hash<Dynamic>;
 	public var regions : Array<Hash<Dynamic>>;
 	public var region_cache : Array<{region:Hash<Dynamic>,patch:SamplerPatch}>;
-	
+
 	public function new():Void 
 	{
 		group_opcodes = new Hash();
 		regions = new Array();
 		regions.push(new Hash<Dynamic>()); // the empty region, representing group-global
 	}
-	
+
 	public function getSamples()
 	{
 		var set = new Array<String>();
@@ -58,7 +58,7 @@ class SFZGroup
 		}
 		return set;
 	}
-	
+
 	public function cacheRegions(seq : Sequencer, samples : Hash<SamplerPatch>)
 	{
 		region_cache = new Array();
@@ -70,12 +70,12 @@ class SFZGroup
 			else if (group_opcodes.exists('sample'))
 				sampler_patch = Reflect.copy(samples.get(group_opcodes.get('sample')));
 			if (sampler_patch == null) continue; // no sample found...
-			
+
 			// ampeg directives are all in % and seconds.
 			var amp_vals = [0., 0., 0., 0., 0., 1., 0.];			
 			var fil_vals = [0., 0., 0., 0., 0., 1., 0.];
 			var fil_depth = 0.;
-			
+
 			var midinote : Float = 60.0;
 			for (directives in [group_opcodes, region])
 			{
@@ -84,7 +84,7 @@ class SFZGroup
 				if (directives.exists("tune")) { midinote -= (directives.get("tune")/100); }
 				if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
 				sampler_patch.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
-				
+
 				if (directives.exists("ampeg_delay")) { amp_vals[0] = directives.get("ampeg_delay"); }
 				if (directives.exists("ampeg_start")) { amp_vals[1] = directives.get("ampeg_start") / 100; }
 				if (directives.exists("ampeg_attack")) { amp_vals[2] = directives.get("ampeg_attack"); }
@@ -92,7 +92,7 @@ class SFZGroup
 				if (directives.exists("ampeg_decay")) { amp_vals[4] = directives.get("ampeg_decay"); }
 				if (directives.exists("ampeg_sustain")) { amp_vals[5] = directives.get("ampeg_sustain") / 100; }
 				if (directives.exists("ampeg_release")) { amp_vals[6] = directives.get("ampeg_release"); }
-				
+
 				if (directives.exists("fileg_delay")) { fil_vals[0] = directives.get("fileg_delay"); }
 				if (directives.exists("fileg_start")) { fil_vals[1] = directives.get("fileg_start") / 100; }
 				if (directives.exists("fileg_attack")) { fil_vals[2] = directives.get("fileg_attack"); }
@@ -101,7 +101,7 @@ class SFZGroup
 				if (directives.exists("fileg_sustain")) { fil_vals[5] = directives.get("fileg_sustain") / 100; }
 				if (directives.exists("fileg_release")) { fil_vals[6] = directives.get("fileg_release"); }
 				if (directives.exists("fileg_depth")) { fil_depth = directives.get("fileg_depth"); }
-				
+
 				if (directives.exists("loop_mode")) {
 					switch(directives.get("loop_mode"))
 					{
@@ -111,17 +111,17 @@ class SFZGroup
 						case "loop_sustain": sampler_patch.loop_mode = SamplerSynth.SUSTAIN_FORWARD;						
 					}
 				}
-				
+
 				if (directives.exists("loop_start")) { sampler_patch.loop_start = directives.get("loop_start"); }
 				if (directives.exists("loop_end")) { sampler_patch.loop_end = directives.get("loop_end"); }
-				
+
 				if (directives.exists("pan")) { sampler_patch.pan = ((directives.get("pan")/100)+1)/2; }
 				if (directives.exists("volume")) { sampler_patch.volume = 1.0 *
 					//1.0; }
 					// in the sfz spec: "+6db = power*2, -6db = power/2"
 					// but I am using "real" dbs (+/- 10db = power*/2) here because it seems a little better.
 					Math.pow(2, directives.get("volume") / 10);  }
-				
+
 				if (directives.exists("cutoff")) { sampler_patch.cutoff_frequency = directives.get("cutoff"); }
 				if (directives.exists("resonance")) { sampler_patch.resonance_level = directives.get("resonance"); }
 				if (directives.exists("fil_type"))
@@ -136,9 +136,9 @@ class SFZGroup
 					else if (fil_type == "brf_1p") sampler_patch.filter_mode = VoiceCommon.FILTER_BR;
 					else if (fil_type == "brf_2p") sampler_patch.filter_mode = VoiceCommon.FILTER_BR;
 				}
-				
+
 			}
-			
+
 			// create envelopes
 			var ampeg = Envelope2.DSAHDSHR(seq.secondsToFrames, amp_vals[0], amp_vals[1], amp_vals[2], amp_vals[3],
 				amp_vals[4], amp_vals[5], 0., amp_vals[6], 1., 1., 1., [VoiceCommon.AS_VOLUME_ADD]);
@@ -149,24 +149,24 @@ class SFZGroup
 					fil_vals[4], fil_vals[5], 0., fil_vals[6], 1., 1., 1., [VoiceCommon.AS_FREQUENCY_ADD_CENTS]);
 				sampler_patch.envelope_profiles.push(fileg);
 			}
-			
+
 			// set default filter mode
 			if ((fil_depth != 0 || sampler_patch.cutoff_frequency != 0.) && 
 				sampler_patch.filter_mode == VoiceCommon.FILTER_OFF)
 				sampler_patch.filter_mode == VoiceCommon.FILTER_LP;
-			
+
 			region_cache.push( { region:region, patch:sampler_patch } );
 		}
 	}
-	
+
 	public function query(ev : SequencerEvent, seq : Sequencer) : Array<PatchEvent>
 	{
-		
+
 		// currently only some region thingies are supported...
-		
+
 		var note = 0.;
 		var velocity = 0;
-		
+
 		switch(ev.type)
 		{
 			case SequencerEvent.NOTE_ON, SequencerEvent.NOTE_OFF:
@@ -175,7 +175,7 @@ class SFZGroup
 			default:
 				return null;
 		}
-		
+
 		var result = new Array<PatchEvent>();
 		for (r_c in region_cache)
 		{
@@ -192,9 +192,9 @@ class SFZGroup
 					r_c.patch));
 			}
 		}
-		
+
 		return result;
-		
+
 	}
 
 	public function toString()
@@ -215,15 +215,15 @@ class SFZGroup
 		}
 		return Std.string(result);
 	}
-	
+
 }
 
 class SFZ
 {
-	
+
 	public static function interpret_type(seq : Sequencer, key : String, value : String) : Dynamic
 	{
-		
+
 		// note name mapping?
 		var tuning = seq.tuning;
 		var ct = 0;
@@ -233,26 +233,95 @@ class SFZ
 			if (upper == n) { return ct; }
 			ct++;
 		}
-		
+
 		return TString.parseIntFloatString(value);
 	}
-	
+    
+    private static function readString(file:ByteArray, len:Int) : String
+    {
+        var s = new StringBuf();
+        
+        for (i in 0 ... len)
+        {
+            s.addChar(file.readByte());
+        }
+        
+        return s.toString();
+    }
+    
+    public static function loadCompressed(seq:Sequencer, file : ByteArray, programs:Array<Int> = null) : SFZBank
+    {
+        var sfzBank = new SFZBank(seq);
+        
+        file.position = 0;
+        
+        var groups:Array<SFZGroup> = new Array<SFZGroup>();
+        var waves:Hash<WAVE> = new Hash<WAVE>();
+        
+        // read all SFZDefinitionBlocks
+        var blockCount = file.readInt();
+        for (i in 0 ... blockCount)
+        {
+            var sfzSize = file.readInt();
+            var sfz = readString(file, sfzSize);
+            groups.push(loadFromData(seq, sfz)[0]);
+        }
+        
+        // read all WaveFileBlocks
+        blockCount = file.readInt();
+        for (i in 0 ... blockCount)
+        {
+            var nameLength = file.readInt();
+            var name = readString(file, nameLength);
+            
+            var byteCount = file.readInt();
+            var bytes = new ByteArray();
+            file.readBytes(bytes, 0, byteCount);
+            
+            waves.set(name, WAV.read(bytes));
+        }
+        
+        // assign groups to bank
+        for (i in 0 ... groups.length)
+        {
+            var groupPrograms:Array<Int>;
+            if (programs != null)
+            {
+                groupPrograms = programs;
+            }
+            else
+            {
+                groupPrograms = [i];
+            }
+            sfzBank.assignSFZ(groups[i], groupPrograms, function(n) : PatchGenerator {
+                var header = waves.get(n);
+                return SamplerSynth.ofWAVE(seq.tuning, header, n);
+            });
+        }
+        
+        return sfzBank;
+    }
+
 	public static function load(seq : Sequencer, file : ByteArray) : Array<SFZGroup>
-	{
+    {
 		file.position = 0;
-		var str = file.readUTFBytes(file.length);
+		return loadFromData(seq, file.readUTFBytes(file.length));
+    }
+    
+	public static function loadFromData(seq : Sequencer, str:String) : Array<SFZGroup>
+	{
 		var lines = str.split("\n");
-		
+
 		var HEAD = 0;
 		var GROUP = 1;
 		var REGION = 2;
-		
+
 		var groups = new Array<SFZGroup>();
-		
+
 		var ctx = HEAD;
 		var cur_group : SFZGroup = null;
 		var cur_region : Hash<Dynamic> = null;
-		
+
 		for (l in lines)
 		{
 			l = HString.trim(l);
@@ -278,40 +347,37 @@ class SFZ
 				}
 			}
 		}
-		
+
 		return groups;
-		
+
 	}
-	
+
 }
 
 class SFZBank
 {
-	
+
 	public var samples : Hash<SamplerPatch>;
 	public var sfz_programs : IntHash<SFZGroup>;
 	public var seq : Sequencer;
-	public var path : String;
-	
+
 	// This is a toolbox to grab and allocate samples that SFZ instances are requesting.
-	
-	public function new(seq, path)
+
+	public function new(seq)
 	{
 		this.seq = seq;
-		this.path = path;
 		samples = new Hash();
 		sfz_programs = new IntHash();
 	}
-	
-	public function assignSFZ(sfz : SFZGroup, programs : Array<Int>, ?recache : Bool=true)
+
+	public function assignSFZ(sfz : SFZGroup, programs : Array<Int>, patchGenerator : String -> PatchGenerator, ?recache : Bool=true)
 	{
 		var req_samples = sfz.getSamples();
 		for (n in req_samples)
 		{
 			if (!samples.exists(n))
 			{
-				var header = WAV.read(Assets.getBytes(path + n), path+n);
-				var content : PatchGenerator = SamplerSynth.ofWAVE(seq.tuning, header, n);
+				var content : PatchGenerator = patchGenerator(n);
 				samples.set(n, content.settings);
 			}
 		}
@@ -320,19 +386,19 @@ class SFZBank
 		if (recache)
 			sfz.cacheRegions(seq, samples);
 	}
-	
+
 	public function getProgramOfEvent(ev : SequencerEvent, number : Int) : Array<PatchEvent>
 	{
 		if (sfz_programs.exists(number))
 			return sfz_programs.get(number).query(ev, seq);
 		else return null;
 	}
-	
+
 	public function getGenerator()
 	{
 		return new PatchGenerator(this, function(settings, seq, seq_event) : Array<PatchEvent> { 
 			return getProgramOfEvent(seq_event, seq.channels[seq_event.channel].patch_id);
 		} );
 	}
-	
+
 }
