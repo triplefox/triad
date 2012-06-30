@@ -4,6 +4,7 @@ import com.ludamix.triad.audio.SMFParser;
 import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.TableSynth;
+import com.ludamix.triad.format.WAV;
 import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.ui.HSlider6;
@@ -35,16 +36,16 @@ import nme.Vector;
 
 class ADSRUI
 {
-	
+
 	public static function make(seq : Sequencer)
 	{
 		var attack : HSlider6 = null;		
 		var decay : HSlider6 = null;		
 		var sustain : HSlider6 = null;		
 		var release : HSlider6 = null;
-		
+
 		// now have the synths take a template from the channel...
-		
+
 		var update = function() { 
 			var envelopes = SynthTools.interpretADSR(seq.secondsToFrames, attack.highlighted, decay.highlighted,
 				sustain.highlighted, release.highlighted, SynthTools.CURVE_POW, SynthTools.CURVE_SQR, SynthTools.CURVE_POW);
@@ -70,12 +71,12 @@ class ADSRUI
 				LDDisplayObject(release, LAC(0,0), "release"),
 			])));
 	}
-	
+
 }
 
 class SynthTest
 {
-	
+
 	var seq : Sequencer;	
 	var events : Array<SequencerEvent>;
 	var song_count : Int;
@@ -84,7 +85,7 @@ class SynthTest
 	var infos2 : TextField;
 	var melodic : SFZBank;
 	var percussion : SFZBank;
-	
+
 	#if debug
 		public static inline var VOICES = 4;
 		public static inline var CHANNEL_POLYPHONY = 4;
@@ -94,7 +95,7 @@ class SynthTest
 		public static inline var CHANNEL_POLYPHONY = 64;
 		public static inline var PERCUSSION_VOICES = 8;
 	#end
-	
+
 	private function resetSamplerSynth()
 	{
 		var voices = new Array<SoftSynth>();
@@ -111,17 +112,17 @@ class SynthTest
 		for (n in 0...16)
 		{
 			var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
-			
+
 			if (n == 9)
 				seq.addChannel([vgroup], percussion.getGenerator());
 			else
 				seq.addChannel([vgroup], melodic.getGenerator());
-			
+
 			/*seq.addChannel([vgroup], SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
-			
+
 		}				
 	}
-	
+
 	private function resetTableSynth()
 	{
 		var voices = new Array<SoftSynth>();
@@ -155,10 +156,10 @@ class SynthTest
 				var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
 				seq.addChannel([vgroup], TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
 			}
-			
+
 		}		
 	}
-	
+
 	public function hardReset()
 	{
 		seq.synths = new Array();
@@ -167,7 +168,7 @@ class SynthTest
 		resetSamplerSynth();
 		//resetTableSynth();
 	}
-	
+
 	public function queueFunction(func : Dynamic)
 	{
 		// uses closures to run all the events with a frame of gap.
@@ -191,22 +192,22 @@ class SynthTest
 			}
 		});
 	}
-	
+
 	public function startQueue() { queue.shift()(Lib.getTimer()); }
-	
+
 	public var queue : Array<Dynamic>;
 	public var loader_gui : LayoutResult;
-	
+
 	public function new()
 	{
-		
+
 		Audio.init({Volume:{vol:1.0,on:true}},true);
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
 		seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 1200, 1.0, 1.0, 0.83, 780, 1024));
 		//seq = new Sequencer(Std.int(44100), 4096,8);
-		
+
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 
 			LayoutBuilder.create(0, 0, Main.W, Main.H, LDRect9(new Rect9(CommonStyle.rr, Main.W, Main.H, true), LAC(0, 0), null,
@@ -214,34 +215,42 @@ class SynthTest
 					LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "Text Infos"),LAC(0,0),"infos"),
 				])));
 		Lib.current.stage.addChild(loader_gui.sprite);
-		
-		melodic = new SFZBank(seq, "sfz/");
+        
+        var sfzPath = "sfz/";
+        var patchGenerator = function(n) {
+            var header = WAV.read(Assets.getBytes(sfzPath + n), sfzPath + n);
+            var content : PatchGenerator=  SamplerSynth.ofWAVE(seq.tuning, header, n);
+            return content;
+        }
+        
+        
+		melodic = new SFZBank(seq);
 		for (n in 0...128)
 		{
 			queueFunction(function(){
-				var sfz_loadable = SFZ.load(seq, Assets.getBytes("sfz/" + Std.string(n+1) + ".sfz"));
-				melodic.assignSFZ(sfz_loadable[0], [n]);
+				var sfz_loadable = SFZ.load(seq, Assets.getBytes(sfzPath + Std.string(n+1) + ".sfz"));
+				melodic.assignSFZ(sfz_loadable[0], [n], patchGenerator);
 				loader_gui.keys.infos.text = "Loaded instrument " + Std.string(n + 1);
 				loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 			});
 
 		}
-		
+
 		queueFunction(function(){
-			percussion = new SFZBank(seq, "sfz/");
-			var sfz_data = SFZ.load(seq, Assets.getBytes("sfz/kit-standard.sfz"));
+			percussion = new SFZBank(seq);
+			var sfz_data = SFZ.load(seq, Assets.getBytes(sfzPath + "kit-standard.sfz"));
 			var assign = new Array<Int>();
 			for (n in 0...128)
 				assign.push(n);
-			percussion.assignSFZ(sfz_data[0], assign);
+			percussion.assignSFZ(sfz_data[0], assign, patchGenerator);
 			loader_gui.keys.infos.text = "Loaded percussion";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});
-		
+
 		queueFunction(function(){
-			
+
 			//Lib.current.stage.addChild(ADSRUI.make(seq).sprite);
-			
+
 			var gui_data = 
 			LayoutBuilder.create(0, 0, Main.W, Main.H, LDRect9(new Rect9(CommonStyle.rr, Main.W, Main.H, true), LAC(0, 0), null,
 				LDPackV(LPMMinimum, LAC(0, 0), null, [
@@ -253,10 +262,10 @@ class SynthTest
 					LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "Text Infos"),LAC(0,0),"infos"),
 					LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "0/0"),LAC(0,0),"infos2"),
 				])));
-			
+
 			infos = gui_data.keys.infos;
 			infos2 = gui_data.keys.infos2;
-			
+
 			gui_data.keys.settings.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
 				CommonStyle.settings.visible = true; }
 				);
@@ -272,11 +281,11 @@ class SynthTest
 			gui_data.keys.prev_group.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
 				hardReset(); decGroup(); loadSong(); }
 				);
-			
+
 			Lib.current.stage.addChild(gui_data.sprite);
 			Lib.current.stage.addChild(CommonStyle.settings);
 			CommonStyle.settings.visible = false;
-			
+
 			songs = Json.parse(Assets.getText("assets/smf/song_db.json"));
 			song_count = 0;
 			for (n in songs)
@@ -291,23 +300,23 @@ class SynthTest
 				}
 				incSong();
 			}
-			
+
 			hardReset();
 			loadSong();
 		});
-		
+
 		queueFunction(function(){
 			seq.play("synth", "Volume");
 			Lib.current.stage.addEventListener(Event.ENTER_FRAME, doLoop);
-			
+
 			//drawDebugwaveform();
-			
+
 		});
-		
+
 		startQueue();
-		
+
 	}
-	
+
 	public function drawDebugwaveform()
 	{
 		var wf = TableSynth.pulseWavetable[0][0];
@@ -326,18 +335,18 @@ class SynthTest
 		spr.scaleX *= Main.W / spr.width;
 		spr.alpha = 0.5;
 	}
-	
+
 	public function decSong()
 	{
 		song_count = (song_count - 1);
 		if (song_count < 0) song_count = songs.length - 1;
 	}
-	
+
 	public function incSong()
 	{
 		song_count = (song_count + 1) % songs.length;
 	}
-	
+
 	public function incGroup()
 	{
 		var cur_group = songs[song_count];
@@ -346,7 +355,7 @@ class SynthTest
 			incSong();
 		}
 	}
-	
+
 	public function decGroup()
 	{
 		var cur_group = songs[song_count];
@@ -355,24 +364,24 @@ class SynthTest
 			decSong();
 		}
 	}
-	
+
 	public function loadSong()
 	{
 		// output of toByteArray isn't rhythm-exact yet...
 		//events = SMFParser.load(seq, SMF.read(Assets.getBytes(songs[song_count][1])).toByteArray());
 		events = SMFParser.load(seq, Assets.getBytes(songs[song_count][1]));
-		
+
 		/*for (e in events)
 		{
 			if (e.type == SequencerEvent.SET_PATCH)
 				e.data = 47;
 		}*/
-		
+
 		seq.pushEvents(events.copy());
 		infos.text = "playing " + songs[song_count][1];
 		infos.x = Main.W / 2 - infos.width / 2;
 	}
-	
+
 	public function doLoop(_)
 	{
 		if (seq.events.length<1)
@@ -397,7 +406,7 @@ class SynthTest
 		infos2.text = Std.string(cc) + "/" + Std.string(seq.synths.length) + " playing. Programs: "+prog_str;
 		infos2.x = Main.W / 2 - infos2.width / 2;
 	}
-	
-	
-	
+
+
+
 }
