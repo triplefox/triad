@@ -15,6 +15,7 @@ class SFZCompressor
     public static function compressList(path:String, count:Int, target:String)
     {
         var output:FileOutput = File.write(target);
+        output.bigEndian = false;
         
         if (!StringTools.endsWith(path, "/")) 
         {
@@ -30,6 +31,7 @@ class SFZCompressor
         }
         
         // Waves
+        output.writeInt31(samples.length);
         for (s in samples)
         {
             writeWaveFileBlock(s, path, output);
@@ -47,8 +49,17 @@ class SFZCompressor
             path += "/";
         }
         
+
+        // Definitions
         output.writeInt31(1);
-        writeSfzDefinitionBlock(path + name + ".sfz", path, output);
+        var samples:Array<String> = writeSfzDefinitionBlock(path + name + ".sfz", path, output);
+        
+        // Waves
+        output.writeInt31(samples.length);
+        for (s in samples)
+        {
+            writeWaveFileBlock(s, path, output);
+        }
         
         output.close();
     }
