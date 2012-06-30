@@ -49,7 +49,9 @@ class EDatabase
 	private function getFreeId()
 	{
 		while (rows.exists(id_increment))
-			id_increment++;
+		{
+			id_increment++; if (id_increment < 0) id_increment = 0;
+		}
 		return id_increment;
 	}
 	

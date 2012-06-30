@@ -15,6 +15,17 @@ import haxe.io.BytesInput;
 typedef TString = com.ludamix.triad.tools.StringTools;
 typedef HString = StringTools;
 
+/*
+ * Something I want to do eventually:
+ * 		Shift from "SFZ programs" into a generic opcode executor much as I've separated the MIDI from
+ * 		the internal sequencer implementation.
+ * 
+ * This will aid in new synth development by providing an abstract mechanism for common functionality of the engine:
+ * 		envelope, LFO, filter, etc.
+ * 		All I'd have to add in is elements unique to each synth.
+ * 
+ * */
+
 class SFZGroup
 {
 	
