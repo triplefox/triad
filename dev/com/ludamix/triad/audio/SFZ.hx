@@ -262,7 +262,6 @@ class SFZ
         var blockCount = file.readInt();
         for (i in 0 ... blockCount)
         {
-            trace("Def " + Std.string(i) + "/"  + Std.string(blockCount));
             var sfzSize = file.readInt();
             var sfz = readString(file, sfzSize);
             groups.push(loadFromData(seq, sfz)[0]);
@@ -272,7 +271,6 @@ class SFZ
         blockCount = file.readInt();
         for (i in 0 ... blockCount)
         {
-            trace("WAV " + Std.string(i) + "/"  + Std.string(blockCount));
             var nameLength = file.readInt();
             var name = readString(file, nameLength);
             
