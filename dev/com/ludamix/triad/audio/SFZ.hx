@@ -236,11 +236,82 @@ class SFZ
 
 		return TString.parseIntFloatString(value);
 	}
+    
+    private static function readString(file:ByteArray, len:Int) : String
+    {
+        var s = new StringBuf();
+        
+        for (i in 0 ... len)
+        {
+            s.addChar(file.readByte());
+        }
+        
+        return s.toString();
+    }
+    
+    public static function loadCompressed(seq:Sequencer, file : ByteArray, programs:Array<Int> = null) : SFZBank
+    {
+        var sfzBank = new SFZBank(seq);
+        
+        file.position = 0;
+        
+        var groups:Array<SFZGroup> = new Array<SFZGroup>();
+        var waves:Hash<WAVE> = new Hash<WAVE>();
+        
+        // read all SFZDefinitionBlocks
+        var blockCount = file.readInt();
+        for (i in 0 ... blockCount)
+        {
+            trace("Def " + Std.string(i) + "/"  + Std.string(blockCount));
+            var sfzSize = file.readInt();
+            var sfz = readString(file, sfzSize);
+            groups.push(loadFromData(seq, sfz)[0]);
+        }
+        
+        // read all WaveFileBlocks
+        blockCount = file.readInt();
+        for (i in 0 ... blockCount)
+        {
+            trace("WAV " + Std.string(i) + "/"  + Std.string(blockCount));
+            var nameLength = file.readInt();
+            var name = readString(file, nameLength);
+            
+            var byteCount = file.readInt();
+            var bytes = new ByteArray();
+            file.readBytes(bytes, 0, byteCount);
+            
+            waves.set(name, WAV.read(bytes));
+        }
+        
+        // assign groups to bank
+        for (i in 0 ... groups.length)
+        {
+            var groupPrograms:Array<Int>;
+            if (programs != null)
+            {
+                groupPrograms = programs;
+            }
+            else
+            {
+                groupPrograms = [i];
+            }
+            sfzBank.assignSFZ(groups[i], groupPrograms, function(n) : PatchGenerator {
+                var header = waves.get(n);
+                return SamplerSynth.ofWAVE(seq.tuning, header, n);
+            });
+        }
+        
+        return sfzBank;
+    }
 
 	public static function load(seq : Sequencer, file : ByteArray) : Array<SFZGroup>
-	{
+    {
 		file.position = 0;
-		var str = file.readUTFBytes(file.length);
+		return loadFromData(seq, file.readUTFBytes(file.length));
+    }
+    
+	public static function loadFromData(seq : Sequencer, str:String) : Array<SFZGroup>
+	{
 		var lines = str.split("\n");
 
 		var HEAD = 0;
