@@ -21,6 +21,8 @@ class SFZCompressor
             path += "/";
         }
         
+        output.writeInt31(count);
+        
         for (i in 0 ... count) 
         {
             writeSfzDefinitionBlock(path + Std.string(i + 1) + ".sfz", path, output);
@@ -38,6 +40,7 @@ class SFZCompressor
             path += "/";
         }
         
+        output.writeInt31(1);
         writeSfzDefinitionBlock(path + name + ".sfz", path, output);
         
         output.close();
