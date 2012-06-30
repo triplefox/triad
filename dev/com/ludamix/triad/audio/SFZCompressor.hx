@@ -21,11 +21,18 @@ class SFZCompressor
             path += "/";
         }
         
+        // Definitions
         output.writeInt31(count);
-        
+        var samples:Array<String> = new Array<String>();
         for (i in 0 ... count) 
         {
-            writeSfzDefinitionBlock(path + Std.string(i + 1) + ".sfz", path, output);
+            samples = samples.concat(writeSfzDefinitionBlock(path + Std.string(i + 1) + ".sfz", path, output));
+        }
+        
+        // Waves
+        for (s in samples)
+        {
+            writeWaveFileBlock(s, path, output);
         }
         
         output.close();
@@ -46,7 +53,7 @@ class SFZCompressor
         output.close();
     }
     
-    private static function writeSfzDefinitionBlock(sfzFile:String, path:String, output:FileOutput)
+    private static function writeSfzDefinitionBlock(sfzFile:String, path:String, output:FileOutput) : Array<String>
     {
         var sfzDefinition = File.getContent(sfzFile);
 
@@ -54,7 +61,8 @@ class SFZCompressor
         output.writeInt31(sfzDefinition.length);
         output.writeString(sfzDefinition);
         
-        // search for all sample properties and write file then 
+        // search for all sample properties and write file then
+        var samples:Array<String> = new Array<String>();
         var lines = sfzDefinition.split("\n");
         for (l in lines)
         {
@@ -62,17 +70,20 @@ class SFZCompressor
             {
                 var parts = l.split("=");
                 parts[1] = StringTools.trim(parts[1].split("//")[0]);
-            
-                var waveFile = path + parts[1];
-                
-                writeWaveFileBlock(waveFile, output);
+                samples.push(parts[1]);
             }
         }
+        
+        return samples;
     }
     
-    private static function writeWaveFileBlock(waveFilePath:String, output:FileOutput)
+    private static function writeWaveFileBlock(filename:String, path:String, output:FileOutput)
     {
+        var waveFilePath = path + filename;
         var waveFile = File.getBytes(waveFilePath);
+        
+        output.writeInt31(filename.length);
+        output.writeString(filename);
         
         output.writeInt31(waveFile.length);
         output.writeBytes(waveFile, 0, waveFile.length);

@@ -4,30 +4,26 @@ Description:
     
 
 Compressed SFZ
-    A compressed SFZ is a list of SFZ Definition blocks
+    A compressed SFZ is a list of SFZ Definition blocks followed by the wave samples
     
     4 Bytes     - The count of definition blocks following  
     # Bytes     - SFZDefinitionBlock01
     # Bytes     - SFZDefinitionBlock02
-    # Bytes     - SFZDefinitionBlock03
-    # Bytes     - SFZDefinitionBlock04
-    # Bytes     - SFZDefinitionBlock05
+    4 Bytes     - THe cound of wave blocks following
+    # Bytes     - WaveFileBlock01
+    # Bytes     - WaveFileBlock02
+    # Bytes     - WaveFileBlock03
     ...
     
 SFZ Definition Block:
         
     4 Bytes     - String length of upcoming SFZ definition file encoded as integer 
     # Bytes     - The SFZ Definition File as string
-    # Bytes     - A wave file block
-    # Bytes     - A wave file block
-    # Bytes     - A wave file block
-    # Bytes     - A wave file block
-    ...
-    
-    The amount of wave file definition blocks is determined by the amount of regions defined in the SFZ file. 
     
 Wave File Block:
     
+    4 Bytes     - String length of upcoming Wave name
+    # Bytes     - The name of the wave file
     4 Bytes     - The byte count of the wave file encoded as integer 
     # Bytes     - The bytes of the wave file itself. 
     
