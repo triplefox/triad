@@ -63,6 +63,11 @@ class AABB
 	public inline function tf(?plus = 0.) { return SubIPoint.unshiftF(y + SubIPoint.shiftF(plus)); }
 	public inline function bf(?plus = 0.) { return SubIPoint.unshiftF(y + h + SubIPoint.shiftF(plus)); }
 	
+	public inline function setxf(x : Float) { this.x = SubIPoint.shiftF(x); }
+	public inline function setyf(y : Float) { this.y = SubIPoint.shiftF(y); }
+	public inline function setxi(y : Int) { this.x = SubIPoint.shift(y); }
+	public inline function setyi(y : Int) { this.y = SubIPoint.shift(y); }
+	
 	// left, right, top, bottom (times percentage)
 	
 	public inline function lp(?pct = 0.) { return x + Std.int(pct*w); }
@@ -141,6 +146,16 @@ class AABB
 	public inline function intersectsAABB(other : AABB)
 	{
 		return (!((this.r() < other.l()) || (this.l() > other.r()) || (this.b() < other.t()) || (this.t() > other.b())));
+	}
+	
+	public inline function intersectsAABBVert(other : AABB)
+	{
+		return (!((this.b() < other.t()) || (this.t() > other.b())));
+	}
+	
+	public inline function intersectsAABBHoriz(other : AABB)
+	{
+		return (!((this.r() < other.l()) || (this.l() > other.r())));
 	}
 	
 }

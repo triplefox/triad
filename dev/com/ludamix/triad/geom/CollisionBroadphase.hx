@@ -47,13 +47,14 @@ class CollisionBroadphase
 		
 	}
 	
-	public function add(point : SubINode, aabb : AABB, id : Int, mask : Int) : BroadphaseNode
+	public function add(point : SubINode, aabb : AABB, id : Int, masksend : Int, maskrecieve : Int) : BroadphaseNode
 	{
 		var n : BroadphaseNode = null;
 		if (nodes_pool.length > 0)
-			{ n = nodes_pool.pop(); n.aabb = aabb; n.point = point; n.id = id; n.mask = mask; }
+			{ n = nodes_pool.pop(); n.aabb = aabb; n.point = point; n.id = id;
+			  n.maskrecieve = maskrecieve; n.masksend = masksend; }
 		else
-			n = new BroadphaseNode(point, aabb, id, mask);
+			n = new BroadphaseNode(point, aabb, id, masksend, maskrecieve);
 		nodes.push(n);
 		return n;
 	}
@@ -68,14 +69,16 @@ class CollisionBroadphase
 	
 	private inline function getContact() 
 	{
-		if (contacts_pool.length > 0) return contacts.pop();
+		if (contacts_pool.length > 0) return contacts_pool.pop();
 		else return new BroadphaseContact();
 	}
 	
-	private function emptyTest(a : AABB) : Array<Int> { return null; }
+	private static function emptyTest(a : AABB) : Array<Int> { return null; }
 	
-	public function update(?additional_test : AABB->Array<Int> = emptyTest) : Array<BroadphaseContact>
+	public function update(?additional_test : AABB->Array<Int> = null) : Array<BroadphaseContact>
 	{
+		if (additional_test == null) additional_test = emptyTest;
+	
 		contacts_pool.concat(contacts);
 		contacts = new Array();
 		
@@ -83,24 +86,28 @@ class CollisionBroadphase
 		
 		nodes.sort(nodeSorter);
 		
-		var temp_rect = new AABB(0, 0, 1, 1);
-		var temp_rect_2 = new AABB(0, 0, 1, 1);
+		var pivot_rect = new AABB(0, 0, 1, 1);
+		var compare_rect = new AABB(0, 0, 1, 1);
 		var temp_point = new SubIPoint(0,0);
 		
-		for (idx in 0...nodes.length)
+		for (idx in 0...nodes.length-1)
 		{
 			var n : BroadphaseNode = nodes[idx];
-			var pivot_rect : AABB = n.point.rectNoAlloc(n.aabb, temp_rect, temp_point);
-			var test_result = emptyTest(pivot_rect);
-			for (r in test_result)
+			n.point.rectNoAlloc(n.aabb, pivot_rect, temp_point);
+			var test_result = additional_test(pivot_rect);
+			if (test_result != null) 
 			{
-				var contact = getContact(); contact.a = n.id; contact.b = r;
-				contacts.push(contact);
+				for (r in test_result)
+				{
+					var contact = getContact(); contact.a = n.id; contact.b = r;
+					contacts.push(contact);
+				}
 			}
-			for (lookahead in idx...nodes.length)
+			var lookahead = idx + 1;
+			while(lookahead < nodes.length)
 			{
 				var m = nodes[lookahead];
-				var compare_rect : AABB = m.point.rectNoAlloc(m.aabb, temp_rect_2, temp_point);
+				m.point.rectNoAlloc(m.aabb, compare_rect, temp_point);
 				if (compare_rect.l() <= pivot_rect.r())
 				{
 					if ((m.maskrecieve & n.masksend) > 0 && compare_rect.intersectsAABB(pivot_rect))
@@ -110,9 +117,11 @@ class CollisionBroadphase
 					}
 				}
 				else break;
+				lookahead++;
 			}
 		}
 		
+		return contacts;
 	}
 
 }

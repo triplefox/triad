@@ -38,7 +38,7 @@ class SubINode extends SubIPoint
 		return new SubINode(SubIPoint.shift(x), SubIPoint.shift(y), parent);		
 	}
 	
-	public static override function fromFloat(x:Int, y:Int, ?parent : SubINode = null)
+	public static override function fromFloat(x:Float, y:Float, ?parent : SubINode = null)
 	{
 		return new SubINode(SubIPoint.shiftF(x), SubIPoint.shiftF(y), parent);		
 	}

@@ -57,6 +57,11 @@ class SubIPoint
 		this.y = sp.y;
 	}
 	
+	public inline function setxf(x : Float) { this.x = shiftF(x); }
+	public inline function setyf(y : Float) { this.y = shiftF(y); }
+	public inline function setxi(y : Int) { this.x = shift(y); }
+	public inline function setyi(y : Int) { this.y = shift(y); }
+	
 	public inline function add(p : SubIPoint)
 	{
 		x += p.x;
