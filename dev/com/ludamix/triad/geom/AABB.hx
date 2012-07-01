@@ -158,4 +158,33 @@ class AABB
 		return (!((this.r() < other.l()) || (this.l() > other.r())));
 	}
 	
+	public inline function separatingAxis(other : AABB) : AABB
+	{
+		// this SAT implementation tries to find exactly one axis of the AABB to prefer.
+		// It will bias in the case where you achieve full overlap.
+		// If testing reveals weaknesses I'll go back and make it stronger.
+		
+		var lx = this.x;
+		if (intersectsAABBHoriz(other))
+		{
+			if (this.l() < other.l()) // push negative
+				lx = this.x + (this.l(-other.l()));
+			else // push positive
+				lx = this.x - (this.l(-other.r()));
+		}
+		var ly = this.y;
+		if (intersectsAABBVert(other))
+		{
+			if (this.t() < other.t()) // push negative
+				ly = this.y + (this.t(-other.t()));
+			else // push positive
+				ly = this.y - (this.t(-other.b()));
+		}
+		
+		if (Math.abs(lx - this.x) < Math.abs(ly - this.y))
+			return new AABB(lx, this.y, w, h);
+		else
+			return new AABB(this.x, ly, w, h);
+	}
+	
 }

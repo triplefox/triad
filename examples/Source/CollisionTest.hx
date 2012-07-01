@@ -32,10 +32,10 @@ class CollisionTest
 		bc = new CollisionBroadphase();
 		cursor = bc.add(
 			SubINode.fromFloat(Math.random() * Main.W, Math.random() * Main.H), 
-			AABB.centerFromFloat(32, 32), 0, 1, 1);
+			AABB.centerFromFloat(32, 32), new SubIPoint(0,0), 0, 1, 1, 0);
 		for (n in 1...32)
 			bc.add(SubINode.fromFloat(Math.random() * Main.W, Math.random() * Main.H), 
-			AABB.centerFromFloat(32, 32), n, 1, 1);
+			AABB.centerFromFloat(32, 32), new SubIPoint(0,0), n, 1, 1, 0);
 		
 		Lib.current.addEventListener(nme.events.Event.ENTER_FRAME, render);
 		

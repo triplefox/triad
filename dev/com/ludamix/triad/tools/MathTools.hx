@@ -1,4 +1,5 @@
 package com.ludamix.triad.tools;
+import nme.geom.Point;
 
 class MathTools
 {
@@ -81,5 +82,5 @@ class MathTools
 		var ratio = bdist / adist;
 		return bmin + (aval - amin) * ratio;
 	}
-	
+		
 }
