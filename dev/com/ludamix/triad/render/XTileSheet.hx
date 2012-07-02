@@ -33,6 +33,7 @@ class XTilesheet
 	{
 		var ptr = 0;
 		var src : BitmapData = sheet.nmeBitmap;
+		bitmap.lock();
 		var pt = new Point(0., 0.);
 		if (flags == 0)
 		{		
@@ -58,7 +59,8 @@ class XTilesheet
 			{
 				pt.x = tileData[ptr]; ptr++;
 				pt.y = tileData[ptr]; ptr++;
-				var rect : Rectangle = rects[Std.int(tileData[ptr])]; ptr++;
+				var offset : Point = points[Std.int(tileData[ptr])];
+				var rect : Rectangle = rects[Std.int(tileData[ptr])]; ptr++;				
 				var scale = 1.;
 				var rotation = 0.;
 				var red = 1.;
@@ -73,11 +75,15 @@ class XTilesheet
 				tb.scrollRect = rect;
 				var ct = new ColorTransform(red, green, blue, alpha);
 				var mtx = new Matrix();
-				mtx.createBox(scale, scale, rotation, pt.x, pt.y);
+				mtx.translate(-offset.x, -offset.y);
+				mtx.scale(scale, scale);
+				mtx.rotate(rotation);
+				mtx.translate(pt.x+offset.x, pt.y+offset.y);
 				
 				bitmap.draw(tb,mtx,ct);
 			}
 		}
+		bitmap.unlock();
 	}
 	
 	public inline function clear(bitmap : BitmapData, tileData : Array<Float>, ?flags = 0, ?color = 0)
@@ -101,6 +107,7 @@ class XTilesheet
 			{
 				r.x = tileData[ptr]; ptr++;
 				r.y = tileData[ptr]; ptr++;
+				var offset : Point = points[Std.int(tileData[ptr])];
 				var rect : Rectangle = rects[Std.int(tileData[ptr])]; ptr++;
 				var scale = 1.;
 				if (useScale) { scale = tileData[ptr]; ptr++; }

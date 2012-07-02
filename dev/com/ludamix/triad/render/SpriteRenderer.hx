@@ -101,7 +101,7 @@ class SpriteRenderer
 	
 	private function zsort(a : SpriteXYZ, b : SpriteXYZ) {return Std.int(b.z - a.z);}
 	
-	public inline function calcTileData() : Array<{data:Array<Float>,flags:Int}>
+	public inline function calcTileData(add_offsets : Bool) : Array<{data:Array<Float>,flags:Int}>
 	{
 		// 1: make runs from sorted data
 		sprite_queue.sort(zsort);
@@ -115,10 +115,10 @@ class SpriteRenderer
 			if (n.alpha != 1.) spr_type += Tilesheet.TILE_ALPHA;
 			if (n.red != 1. || n.green != 1. || n.blue != 1.) spr_type += Tilesheet.TILE_RGB;
 			if (n.scale != 1.) spr_type += Tilesheet.TILE_SCALE;
-			if (n.rotation != 1.) spr_type += Tilesheet.TILE_ROTATION;
+			if (n.rotation != 0.) spr_type += Tilesheet.TILE_ROTATION;
 			if (spr_type != run_type)
 			{
-				if (cur_run.length > 0) { runs.push({flags:spr_type,run:cur_run});  cur_run = new Array(); }
+				if (cur_run.length > 0) { runs.push({flags:run_type,run:cur_run});  cur_run = new Array(); }
 				run_type = spr_type;
 			}
 			cur_run.push(n);
@@ -133,8 +133,16 @@ class SpriteRenderer
 			result.push({flags:r.flags,data:draw_buffer});
 			for (spr in r.run)
 			{
-				draw_buffer.push(spr.x);
-				draw_buffer.push(spr.y);
+				if (add_offsets)
+				{
+					draw_buffer.push(spr.x - sheet.points[spr.idx].x);
+					draw_buffer.push(spr.y - sheet.points[spr.idx].y);
+				}
+				else
+				{
+					draw_buffer.push(spr.x);
+					draw_buffer.push(spr.y);
+				}
 				draw_buffer.push(spr.idx);
 				
 				if ((r.flags & Tilesheet.TILE_SCALE)>0) draw_buffer.push(spr.scale);
@@ -151,7 +159,7 @@ class SpriteRenderer
 	{
 		for (r in clear_buffer)
 			sheet.clear(bd, r.data, r.flags, bg_color);
-		clear_buffer = calcTileData();
+		clear_buffer = calcTileData(true);
 		for (r in clear_buffer)
 			sheet.blit(bd, r.data, smooth, r.flags);
 	}
@@ -159,7 +167,7 @@ class SpriteRenderer
 	public inline function draw_tiles(gfx : Graphics, ?smooth : Bool)
 	{
 		sprite_queue.sort(zsort);
-		clear_buffer = calcTileData();
+		clear_buffer = calcTileData(false);
 		for (r in clear_buffer)
 			sheet.drawTiles(gfx, r.data, smooth, r.flags);
 	}

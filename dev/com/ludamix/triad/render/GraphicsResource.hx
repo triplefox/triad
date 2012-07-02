@@ -30,6 +30,8 @@ class GraphicsResource
 		sheet_border : Bool, ?prepend : String) : GraphicsResourceData
 	{
 		var data : Array<Dynamic> = TriadConfig.parse(file, TCPReject);
+		if (data[0] == file)
+			throw "you input the filename, not the file";
 		
 		var idx = 0;
 		var group_opcodes = new Hash<Dynamic>();
@@ -163,11 +165,11 @@ class GraphicsResource
 						if (opcodes.exists("alignoffset")) alignoffset = opcodes.get("alignoffset");
 						switch align
 						{
-							case "center": alignoffset[0] -= slice_w >> 1; alignoffset[1] -= slice_h >> 1;
+							case "center": alignoffset[0] += slice_w >> 1; alignoffset[1] += slice_h >> 1;
 							case "tl":
-							case "tr": alignoffset[0] -= slice_w;
-							case "bl": alignoffset[1] -= slice_h;
-							case "br": alignoffset[0] -= slice_w; alignoffset[1] -= slice_h;
+							case "tr": alignoffset[0] += slice_w;
+							case "bl": alignoffset[1] += slice_h;
+							case "br": alignoffset[0] += slice_w; alignoffset[1] += slice_h;
 							default: throw "invalid align "+align+" in "+id;
 						}
 						
@@ -210,7 +212,12 @@ class GraphicsResource
 	
 	private static function getFile(fname : String) : BitmapData
 	{
-		return Assets.getBitmapData(fname);
+		var z : BitmapData = null;
+		try {
+			z = Assets.getBitmapData(fname);
+		}
+		catch (d:Dynamic) { throw "couldn't find " + fname; }
+		return z;
 	}
 	
 	private static function slice(img : BitmapData, rect : Rectangle, slice_w : Int, slice_h : Int) : Array<BitmapData>
