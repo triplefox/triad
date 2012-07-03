@@ -1,0 +1,7 @@
+-lib nme
+-lib hxJson2
+-lib format
+-lib hscript
+-cp ../../dev
+-main com.ludamix.triad.audio.SFZCompressor
+-neko SFZCompressor.n

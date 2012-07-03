@@ -1,0 +1,1 @@
+Use the compression tool to generate these assets.
