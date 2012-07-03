@@ -149,8 +149,9 @@ class TilesheetGrid
 					if (n != grid.world[idx])
 					{
 						set1(idx, n);
-						var pt = new Point(cache[idx], cache[idx + 1]); idx += 2;
-						var rect = sheet.rects[Std.int(cache[idx])]; idx++;
+						var cidx = idx * 7;
+						var pt = new Point(cache[cidx], cache[cidx + 1]);
+						var rect = sheet.rects[Std.int(cache[cidx+2])];
 						tb.scrollRect = rect;
 						if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, rect.width, rect.height), 0);
 						var ct = new ColorTransform(red, green, blue, alpha);
@@ -168,9 +169,10 @@ class TilesheetGrid
 					if (n != grid.world[idx])
 					{
 						set1(idx, n);
-						var pt = new Point(cache[idx], cache[idx + 1]); var rect = sheet.rects[Std.int(cache[idx + 2])];
-						var a = cache[idx + 3]; 
-						var r = cache[idx + 4]; var g = cache[idx + 5]; var b = cache[idx + 6];
+						var cidx = idx * 3;
+						var pt = new Point(cache[cidx], cache[cidx + 1]); var rect = sheet.rects[Std.int(cache[cidx + 2])];
+						var a = cache[cidx + 3]; 
+						var r = cache[cidx + 4]; var g = cache[cidx + 5]; var b = cache[cidx + 6];
 						if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, rect.width, rect.height), 0);
 						gfx.copyPixels(src, rect, pt);
 					}

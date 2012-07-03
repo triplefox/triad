@@ -37,19 +37,28 @@ class AutotileBoard
 		}
 	}
 	
+	public inline function getFallback(x : Int, y : Int) : Int
+	{
+		if (x < 0) x = 0;
+		else if (x >= source.worldW) x = source.worldW - 1;
+		if (y < 0) y = 0;
+		else if (y >= source.worldH) y = source.worldH - 1;
+		
+		return source.c2t(x, y);
+	}
+	
 	public inline function recachePartial(idx : Int)
 	{
 		var p = source.c1p(idx);
-		var fallback = source.c1t(idx);
-		p.x -= 1; p.y -= 1; rewriteAutoTiling(p, fallback);
-		p.x += 1; rewriteAutoTiling(p, fallback);
-		p.x += 1; rewriteAutoTiling(p, fallback);
-		p.y += 1; p.x -= 2; rewriteAutoTiling(p, fallback);
-		p.x += 1; rewriteAutoTiling(p, fallback);
-		p.x += 1; rewriteAutoTiling(p, fallback);
-		p.y += 1; p.x -= 2; rewriteAutoTiling(p, fallback);
-		p.x += 1; rewriteAutoTiling(p, fallback);
-		p.x += 1; rewriteAutoTiling(p, fallback);
+		p.x -= 1; p.y -= 1; rewriteAutoTiling(p, getFallback(p.x, p.y));
+		p.x += 1; rewriteAutoTiling(p, getFallback(p.x, p.y));
+		p.x += 1; rewriteAutoTiling(p, getFallback(p.x, p.y));
+		p.y += 1; p.x -= 2; rewriteAutoTiling(p, getFallback(p.x, p.y));
+		p.x += 1; rewriteAutoTiling(p, getFallback(p.x, p.y));
+		p.x += 1; rewriteAutoTiling(p, getFallback(p.x, p.y));
+		p.y += 1; p.x -= 2; rewriteAutoTiling(p, getFallback(p.x, p.y));
+		p.x += 1; rewriteAutoTiling(p, getFallback(p.x, p.y));
+		p.x += 1; rewriteAutoTiling(p, getFallback(p.x, p.y));
 	}
 	
 	private inline function c2tSafe(x : Int, y : Int, fallback) : Int
@@ -62,31 +71,38 @@ class AutotileBoard
 	{
 		// build the mask information
 		
-		var center = defs[c2tSafe(p.x    , p.y    , fallback)];
-		
-		var m_c = center.maskrecieve;
-		
-		var m_tl = (defs[c2tSafe(p.x - 1, p.y - 1, fallback)].masksend & m_c)>0;
-		var m_t  = (defs[c2tSafe(p.x    , p.y - 1, fallback)].masksend & m_c)>0;
-		var m_tr = (defs[c2tSafe(p.x + 1, p.y - 1, fallback)].masksend & m_c)>0;
-		var m_l  = (defs[c2tSafe(p.x - 1, p.y    , fallback)].masksend & m_c)>0;
-		var m_r  = (defs[c2tSafe(p.x + 1, p.y    , fallback)].masksend & m_c)>0;
-		var m_bl = (defs[c2tSafe(p.x - 1, p.y + 1, fallback)].masksend & m_c)>0;
-		var m_b  = (defs[c2tSafe(p.x    , p.y + 1, fallback)].masksend & m_c)>0;
-		var m_br = (defs[c2tSafe(p.x + 1, p.y + 1, fallback)].masksend & m_c) > 0;
-		
-		// get and assign the indexes for each subtile.
-		
-		var si = center.indexes;
-		
-		var idx_tl = result.c21(p.x * 2, p.y * 2);
-		var idx_bl = result.c21(p.x * 2, p.y * 2 + 1);
-		result.world[idx_tl]     = si[computeMask(m_l, m_t, m_tl, 0)];		
-		result.world[idx_tl + 1] = si[computeMask(m_r, m_t, m_tr, 1)];		
-		result.world[idx_bl]     = si[computeMask(m_l, m_b, m_bl, 2)];
-		result.world[idx_bl + 1] = si[computeMask(m_r, m_b, m_br, 3)];
-		
-		return result;
+		if (p.x >= 0 && p.x < source.worldW && p.y >= 0 && p.y < source.worldH)
+		{
+			var center = defs[c2tSafe(p.x    , p.y    , fallback)];
+			
+			var m_c = center.maskrecieve;
+			
+			var m_tl = (defs[c2tSafe(p.x - 1, p.y - 1, fallback)].masksend & m_c)>0;
+			var m_t  = (defs[c2tSafe(p.x    , p.y - 1, fallback)].masksend & m_c)>0;
+			var m_tr = (defs[c2tSafe(p.x + 1, p.y - 1, fallback)].masksend & m_c)>0;
+			var m_l  = (defs[c2tSafe(p.x - 1, p.y    , fallback)].masksend & m_c)>0;
+			var m_r  = (defs[c2tSafe(p.x + 1, p.y    , fallback)].masksend & m_c)>0;
+			var m_bl = (defs[c2tSafe(p.x - 1, p.y + 1, fallback)].masksend & m_c)>0;
+			var m_b  = (defs[c2tSafe(p.x    , p.y + 1, fallback)].masksend & m_c)>0;
+			var m_br = (defs[c2tSafe(p.x + 1, p.y + 1, fallback)].masksend & m_c) > 0;
+			
+			// get and assign the indexes for each subtile.
+			
+			var si = center.indexes;
+			
+			var idx_tl = result.c21(p.x * 2, p.y * 2);
+			var idx_bl = result.c21(p.x * 2, p.y * 2 + 1);
+			result.world[idx_tl]     = si[computeMask(m_l, m_t, m_tl, 0)];		
+			result.world[idx_tl + 1] = si[computeMask(m_r, m_t, m_tr, 1)];		
+			result.world[idx_bl]     = si[computeMask(m_l, m_b, m_bl, 2)];
+			result.world[idx_bl + 1] = si[computeMask(m_r, m_b, m_br, 3)];
+			
+			return result;
+		}
+		else
+		{
+			return result;
+		}
 	}
 	
 	// given this arrangement of tiles in a single continuous strip 0-20:
