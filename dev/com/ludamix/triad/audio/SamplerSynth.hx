@@ -765,7 +765,7 @@ class SamplerSynth implements SoftSynth
 	public inline function bandpass_filter(a : Float) { return common.filter.getBP(a); }
 	public inline function bandreject_filter(a : Float) { return common.filter.getBR(a); }
 	
-	public inline function interp_drop(a : Float) { return a; }
+	public function interp_drop(a : Float) { return a; }
 	
 	public inline function interp_linear(a : Float, b : Float, x : Float)
 	{ return (a * (1. -x) + b * x); }

@@ -30,6 +30,7 @@ import com.ludamix.triad.ui.layout.LayoutBuilder;
 import com.ludamix.triad.ui.Rect9;
 import com.ludamix.triad.ui.Helpers;
 import nme.text.TextField;
+import nme.utils.Endian;
 import nme.Vector;
 
 // Not for use outside Flash.
@@ -74,7 +75,7 @@ class ADSRUI
 
 }
 
-class SynthTest
+class CompressedSynthTest
 {
 
 	var seq : Sequencer;	
@@ -200,7 +201,6 @@ class SynthTest
 
 	public function new()
 	{
-
 		Audio.init({Volume:{vol:1.0,on:true}},true);
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
@@ -216,35 +216,27 @@ class SynthTest
 				])));
 		Lib.current.stage.addChild(loader_gui.sprite);
         
-        var sfzPath = "sfz/";
-        var patchGenerator = function(n) {
-            var header = WAV.read(Assets.getBytes(sfzPath + n), sfzPath + n);
-            var content : PatchGenerator=  SamplerSynth.ofWAVE(seq.tuning, header, n);
-            return content;
-        }
+        var sfzPath = "sfzcompressed/";
         
-		melodic = new SFZBank(seq);
-		for (n in 0...128)
-		{
-			queueFunction(function(){
-				var sfz_loadable = SFZ.load(seq, Assets.getBytes(sfzPath + Std.string(n+1) + ".sfz"));
-				melodic.assignSFZ(sfz_loadable[0], [n], patchGenerator);
-				loader_gui.keys.infos.text = "Loaded instrument " + Std.string(n + 1);
-				loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
-			});
-
-		}
-
-		queueFunction(function(){
-			percussion = new SFZBank(seq);
-			var sfz_data = SFZ.load(seq, Assets.getBytes(sfzPath + "kit-standard.sfz"));
-			var assign = new Array<Int>();
+        queueFunction(function() {
+            var melodicData = Assets.getBytes(sfzPath + "melody.sfc");
+            melodicData.endian = Endian.LITTLE_ENDIAN;
+            melodic = SFZ.loadCompressed(seq, melodicData);
+            loader_gui.keys.infos.text = "Loaded all instruments ";
+            loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
+        });
+                
+        
+        queueFunction(function() {
+            var assign = new Array<Int>();
 			for (n in 0...128)
 				assign.push(n);
-			percussion.assignSFZ(sfz_data[0], assign, patchGenerator);
+            var percussionData = Assets.getBytes(sfzPath + "percussion.sfc");
+            percussionData.endian = Endian.LITTLE_ENDIAN;
+            percussion = SFZ.loadCompressed(seq, percussionData, assign);
 			loader_gui.keys.infos.text = "Loaded percussion";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
-		});
+        });
 
 		queueFunction(function(){
 

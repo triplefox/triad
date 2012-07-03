@@ -18,12 +18,13 @@
 	<haxelib name="hxJson2" />
 	<haxelib name="format" />
 	<haxelib name="hscript" />
-	
+
 	<classpath name="../dev" />
 	
-	<assets path="Assets" rename="assets" include="*" exclude="nme.svg|smf|sfz|build_script.py" />
+	<assets path="Assets" rename="assets" include="*" exclude="nme.svg|smf|sfz|sfzcompressed|build_script.py" />
 	<assets path="Assets/smf" rename="assets/smf" include="*" type="binary" />
 	<assets path="Assets/sfz" rename="sfz" include="*" type="binary" />
+	<assets path="Assets/sfzcompressed" rename="sfzcompressed" include="*" type="binary" />
 	
 	<icon name="Assets/nme.svg" />
 	

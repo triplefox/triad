@@ -2,6 +2,7 @@
 //typedef MyExample = Blackjack;
 //typedef MyExample = ASCIITest;
 //typedef MyExample = SynthTest;
+typedef MyExample = CompressedSynthTest;
 //typedef MyExample = Tilemapping;
 //typedef MyExample = SpritePacking;
 //typedef MyExample = Keyjammer;
@@ -9,7 +10,6 @@
 //typedef MyExample = Assistant;
 //typedef MyExample = Raycast;
 //typedef MyExample = TriadConfigTest;
-typedef MyExample = CollisionTest;
 
 class Main
 {
