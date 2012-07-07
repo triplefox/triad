@@ -39,8 +39,8 @@ class XTilesheet
 		{		
 			while (ptr < tileData.length)
 			{
-				pt.x = tileData[ptr];
-				pt.y = tileData[ptr + 1];
+				pt.x = Math.round(tileData[ptr]);
+				pt.y = Math.round(tileData[ptr + 1]);
 				var rect : Rectangle = rects[Std.int(tileData[ptr + 2])];
 				
 				bitmap.copyPixels(src, rect, pt, src, new Point(rect.x,rect.y),true);

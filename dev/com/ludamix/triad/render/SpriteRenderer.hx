@@ -73,7 +73,15 @@ class SpriteRenderer
 		_addRaw(x, y, z, defs[idx].idx + frame, alpha, red, green, blue, rotation, scale); 
 	}
 	
+	public inline function addRaw(x, y, z, idx, ?frame = 0, ?alpha = 1.0, 
+		?red = 1.0, ?green = 1.0, ?blue = 1.0, ?rotation=0.,?scale=1.0)
+	{ 
+		_addRaw(x, y, z, idx + frame, alpha, red, green, blue, rotation, scale); 
+	}
+	
 	public inline function getFrames(name) { return defs_names.get(name).frames;  }
+	public inline function getIdx(name) { return defs_names.get(name).idx;  }
+	public inline function getDef(name) { return defs_names.get(name);  }
 	
 	public inline function _addRaw(x:Float, y:Float, z:Int, idx:Int, alpha:Float,
 		red:Float,green:Float,blue:Float,rotation:Float,scale:Float)
