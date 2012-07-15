@@ -3,6 +3,11 @@ package com.ludamix.triad.render;
 import nme.display.BitmapData;
 import nme.display.Graphics;
 import nme.display.Tilesheet;
+
+#if stage3d
+import flash.display3D.Context3D;
+#end
+
 typedef SpriteDef = {name:String, idx:Int, frames:Int, xoff:Int, yoff:Int, w:Int, h:Int};
 
 class SpriteXYZ
@@ -172,6 +177,12 @@ class SpriteRenderer
 			sheet.blit(bd, r.data, smooth, r.flags);
 	}
 
+	#if stage3d
+	
+		// ... make draw_tiles take the context3d
+		// and then draw our own polys.
+	
+	#else
 	public inline function draw_tiles(gfx : Graphics, ?smooth : Bool)
 	{
 		sprite_queue.sort(zsort);
@@ -179,5 +190,7 @@ class SpriteRenderer
 		for (r in clear_buffer)
 			sheet.drawTiles(gfx, r.data, smooth, r.flags);
 	}
+	
+	#end
 	
 }
