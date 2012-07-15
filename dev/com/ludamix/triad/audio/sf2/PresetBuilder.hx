@@ -9,12 +9,11 @@
 package com.ludamix.triad.audio.sf2;
 
 import nme.utils.ByteArray;
-
 using com.ludamix.triad.audio.sf2.ArrayExtensions;
 
 class PresetBuilder extends StructureBuilder<Preset>
 {
-    private var _lastPreset:Preset;
+    private var last_preset:Preset;
     public var presets:IntHash<Preset>;
     
     public function new()
@@ -33,30 +32,30 @@ class PresetBuilder extends StructureBuilder<Preset>
         var p = new Preset();
         var s = d.readString(20);
         p.name = s;
-        p.patchNumber = d.readShort();
+        p.patch_number = d.readShort();
         p.bank = d.readShort();
-        p.startPresetZoneIndex = d.readShort();
+        p.start_preset_zoneindex = d.readShort();
         p.library = d.readInt();
         p.genre = d.readInt();
         p.morphology = d.readInt();			
-        if(_lastPreset != null)
-            _lastPreset.endPresetZoneIndex =  (p.startPresetZoneIndex - 1);
+        if(last_preset != null)
+            last_preset.end_preset_zoneindex =  (p.start_preset_zoneindex - 1);
         data.push(p);
-        presets.set(p.patchNumber, p);
-        _lastPreset = p;
+        presets.set(p.patch_number, p);
+        last_preset = p;
         return p;
     } 
     
-    public function loadZones(presetZones:Array<Zone>)
+    public function loadZones(preset_zones:Array<Zone>)
     {
         // don't do the last preset, which is simply EOP
         for (preset in 0 ... (data.length - 1))
         {
             var p = data[preset];
             p.zones = new Array<Zone>();
-            for (i in 0 ... (p.endPresetZoneIndex - p.startPresetZoneIndex + 1))
+            for (i in 0 ... (p.end_preset_zoneindex - p.start_preset_zoneindex + 1))
             {
-                p.zones[i] = presetZones[p.startPresetZoneIndex + i];
+                p.zones[i] = preset_zones[p.start_preset_zoneindex + i];
             }
         }
         // we can get rid of the EOP record now

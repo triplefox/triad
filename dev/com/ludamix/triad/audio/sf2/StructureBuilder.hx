@@ -14,7 +14,7 @@ class StructureBuilder<T>
 {
     public var data:Array<T>;
     
-    function new()
+    private function new()
     {
         reset();
     }

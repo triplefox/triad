@@ -13,10 +13,10 @@ import com.ludamix.triad.audio.Sequencer;
 class Preset 
 {
     public var name:String;
-    public var patchNumber:Int;
+    public var patch_number:Int;
     public var bank:Int;
-    public var startPresetZoneIndex:Int;
-    public var endPresetZoneIndex:Int;
+    public var start_preset_zoneindex:Int;
+    public var end_preset_zoneindex:Int;
     public var library:Int;
     public var genre:Int;
     public var morphology:Int;
@@ -25,39 +25,4 @@ class Preset
     public function new() 
     {        
     }
-    
-    public function query(ev : SequencerEvent, seq : Sequencer) : Array<PatchEvent>
-	{
-		var note = 0.;
-		var velocity = 0;
-
-		switch(ev.type)
-		{
-			case SequencerEvent.NOTE_ON, SequencerEvent.NOTE_OFF:
-				note = seq.tuning.frequencyToMidiNote(ev.data.freq);
-				velocity = ev.data.velocity;
-			default:
-				return null;
-		}
-        
-		var result = new Array<PatchEvent>();
-		for (r_c in region_cache)
-		{
-			var r = r_c.region;
-			if (
-				(!r.exists("lokey") || r.get("lokey") <= note) &&				
-				(!r.exists("hikey") || r.get("hikey") >= note) &&
-				(!r.exists("lovel") || r.get("lovel") <= velocity) &&
-				(!r.exists("hivel") || r.get("hivel") >= velocity)
-			)
-			{
-				result.push(new PatchEvent(
-					new SequencerEvent(ev.type, ev.data, ev.channel, ev.id, ev.frame, ev.priority),
-					r_c.patch));
-			}
-		}
-
-		return result;
-
-	}    
 }

@@ -12,7 +12,8 @@ import nme.utils.ByteArray;
 
 class SampleDataChunk 
 {
-    public var sampleData:ByteArray;
+    public var sample_data:ByteArray;
+    
     public function new(chunk:RiffChunk) 
     {
         var header = chunk.readChunkID();
@@ -20,7 +21,6 @@ class SampleDataChunk
         {
             throw "Not a sample data chunk (" + header + ")";
         }
-        sampleData = chunk.getData();
+        sample_data = chunk.getData();
     }
-    
 }

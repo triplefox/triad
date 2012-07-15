@@ -13,10 +13,10 @@ using com.ludamix.triad.audio.sf2.ArrayExtensions;
 
 class RiffChunk
 {
-    public var chunkID:String;
-    public var chunkSize:Int;
-    public var dataOffset:UInt; // data offset in the file
-    public var riffFile:ByteArray;
+    public var chunk_id:String;
+    public var chunk_size:Int;
+    public var data_offset:UInt; // data offset in the file
+    public var riff_file:ByteArray;
 
     public static function getTopLevelChunk(file:ByteArray) : RiffChunk
     {
@@ -27,29 +27,29 @@ class RiffChunk
 
     private function new(file:ByteArray) 
     {
-        riffFile = file;
-        chunkID = "????";
-        chunkSize = 0;
-        dataOffset = 0;
+        riff_file = file;
+        chunk_id = "????";
+        chunk_size = 0;
+        data_offset = 0;
     }
 
     public function readChunkID() : String
     {
-        return riffFile.readString(4);
+        return riff_file.readString(4);
     }
 
     private function readChunk() 
     {
-        this.chunkID = readChunkID();
-        this.chunkSize = riffFile.readInt(); 
-        this.dataOffset = riffFile.position;
+        this.chunk_id = readChunkID();
+        this.chunk_size = riff_file.readInt(); 
+        this.data_offset = riff_file.position;
     }
 
     public function getNextSubChunk() : RiffChunk
     {
-        if(riffFile.position + 8 < dataOffset + chunkSize) 
+        if(riff_file.position + 8 < data_offset + chunk_size) 
         {
-            var chunk:RiffChunk = new RiffChunk(riffFile);
+            var chunk:RiffChunk = new RiffChunk(riff_file);
             chunk.readChunk();
             return chunk;
         }
@@ -58,10 +58,10 @@ class RiffChunk
 
     public function getData() : ByteArray
     {
-        riffFile.position = dataOffset;
+        riff_file.position = data_offset;
         var data:ByteArray = new ByteArray();
-        riffFile.readBytes(data, 0, chunkSize);
-        if(cast(data.length,Int) != chunkSize) 
+        riff_file.readBytes(data, 0, chunk_size);
+        if(cast(data.length,Int) != chunk_size) 
         {
             throw "Couldn't read chunk's data Chunk";
         }
@@ -88,26 +88,26 @@ class RiffChunk
 
     public function getDataAsStructure<T>(s:StructureBuilder<T>) : T
     {
-        riffFile.position = dataOffset;
-        if(s.getLength() != chunkSize) 
+        riff_file.position = data_offset;
+        if(s.getLength() != chunk_size) 
         {
-            throw "Chunk size is: " + chunkSize + " so can't read structure of: " + s.getLength();
+            throw "Chunk size is: " + chunk_size + " so can't read structure of: " + s.getLength();
         }
-        return s.read(riffFile);
+        return s.read(riff_file);
     }
 
     public function getDataAsStructureArray<T>(s:StructureBuilder<T>) : Array<T>
     {
-        riffFile.position = dataOffset;
-        if(chunkSize % s.getLength() != 0) 
+        riff_file.position = data_offset;
+        if(chunk_size % s.getLength() != 0) 
         {
-            throw "Chunk size is: " + chunkSize + " not a multiple of structure size: " + s.getLength();
+            throw "Chunk size is: " + chunk_size + " not a multiple of structure size: " + s.getLength();
         }
-        var structuresToRead:Int = Std.int(chunkSize / s.getLength());
+        var structures_to_read:Int = Std.int(chunk_size / s.getLength());
         var a:Array<T> = new Array<T>();
-        for (n in 0 ... structuresToRead)
+        for (n in 0 ... structures_to_read)
         {
-            a.push(s.read(riffFile));
+            a.push(s.read(riff_file));
         }
         return a;
     }

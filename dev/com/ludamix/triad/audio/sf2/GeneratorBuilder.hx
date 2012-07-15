@@ -25,8 +25,8 @@ class GeneratorBuilder extends StructureBuilder<Generator>
     public override function read(d:ByteArray) : Generator
     {
         var g = new Generator();
-        g.generatorType = Type.createEnumIndex(GeneratorEnum, d.readShort());
-        g.rawAmount = d.readShort();
+        g.generator_type = Type.createEnumIndex(GeneratorEnum, d.readShort());
+        g.raw_amount = d.readShort();
         data.push(g);
         return g;
     } 
@@ -35,20 +35,20 @@ class GeneratorBuilder extends StructureBuilder<Generator>
     {
         for(g in data)
         {
-            if(g.generatorType == GeneratorEnum.Instrument)
+            if(g.generator_type == GeneratorEnum.Instrument)
             {
-                g.instrument = instruments[g.rawAmount];
+                g.instrument = instruments[g.raw_amount];
             }
         }
     }
 
-    public function loadSampleHeaders(sampleHeaders:Array<SampleHeader>)
+    public function loadSampleHeaders(sample_headers:Array<SampleHeader>)
     {
         for(g in data)
         {
-            if(g.generatorType == GeneratorEnum.SampleID)
+            if(g.generator_type == GeneratorEnum.SampleID)
             {
-                g.sampleHeader = sampleHeaders[g.rawAmount];
+                g.sample_header = sample_headers[g.raw_amount];
             }
         }
     }

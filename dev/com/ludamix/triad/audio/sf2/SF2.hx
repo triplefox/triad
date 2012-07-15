@@ -14,39 +14,38 @@ import nme.utils.ByteArray;
 class SF2 
 {
     public var info:InfoChunk;
-    public var presetsChunk:PresetsChunk;
-    public var sampleData:SampleDataChunk;
+    public var presets_chunk:PresetsChunk;
+    public var sample_data:SampleDataChunk;
 
     public function new() 
     {
-         
     }
     
     public static function load(data:ByteArray) : SF2
     {
         var sf2 = new SF2();
         var riff:RiffChunk = RiffChunk.getTopLevelChunk(data);
-        if(riff.chunkID == "RIFF") 
+        if(riff.chunk_id == "RIFF") 
         {
-            var formHeader:String = riff.readChunkID();
-            if(formHeader != "sfbk") 
+            var form_header:String = riff.readChunkID();
+            if(form_header != "sfbk") 
             {
-                throw "Not a SoundFont (" + formHeader + ")";
+                throw "Not a SoundFont (" + form_header + ")";
             }
             var list:RiffChunk = riff.getNextSubChunk();
-            if(list.chunkID == "LIST") 
+            if(list.chunk_id == "LIST") 
             {
                 sf2.info = new InfoChunk(list);
 
                 var r:RiffChunk = riff.getNextSubChunk();
-                sf2.sampleData = new SampleDataChunk(r);
+                sf2.sample_data = new SampleDataChunk(r);
 
                 r = riff.getNextSubChunk();
-                sf2.presetsChunk = new PresetsChunk(r);
+                sf2.presets_chunk = new PresetsChunk(r);
             }
             else 
             {
-                throw "Not info list found (" + list.chunkID + ")";
+                throw "Not info list found (" + list.chunk_id + ")";
             }
         }
         else
@@ -60,14 +59,7 @@ class SF2
     public function getGenerator() : PatchGenerator
     {
 		return new PatchGenerator(this, function(settings, seq, seq_event) : Array<PatchEvent> { 
-			return getProgramOfEvent(seq_event, seq.channels[seq_event.channel].patch_id);
+			return null; // TODO: Find a way to get the events
 		} );
-    }
-    
-	public function getProgramOfEvent(ev : SequencerEvent, number : Int) : Array<PatchEvent>
-	{
-		if (presetsChunk.presetHeaders.presets.exists(number))
-			return presetsChunk.presetHeaders.presets.get(number).query(ev, seq);
-		else return null;
-	}    
+    } 
 }

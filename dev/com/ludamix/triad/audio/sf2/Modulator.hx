@@ -10,16 +10,13 @@ package com.ludamix.triad.audio.sf2;
 
 class Modulator 
 {
-    public var sourceModulationData:ModulatorType;
-    public var destinationGenerator:GeneratorEnum;
+    public var source_modulation_data:ModulatorType;
+    public var destination_generator:GeneratorEnum;
     public var amount:Int;
-    public var sourceModulationAmount:ModulatorType;
-    public var sourceTransform:TransformEnum;
-
+    public var source_modulation_amount:ModulatorType;
+    public var source_transform:TransformEnum;
 
     public function new() 
     {
-        
     }
-    
 }

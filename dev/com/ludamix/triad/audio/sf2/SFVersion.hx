@@ -15,6 +15,5 @@ class SFVersion
     
     public function new() 
     {
-        
     }
 }

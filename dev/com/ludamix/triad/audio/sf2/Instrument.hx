@@ -11,12 +11,11 @@ package com.ludamix.triad.audio.sf2;
 class Instrument 
 {
     public var name:String;
-    public var startInstrumentZoneIndex:Int;
-    public var endInstrumentZoneIndex:Int;
+    public var start_instrument_zoneindex:Int;
+    public var end_instrument_zoneindex:Int;
     public var zones:Array<Zone>;
 
     public function new() 
     {
-        
     }
 }

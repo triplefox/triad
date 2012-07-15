@@ -12,12 +12,10 @@ import nme.utils.ByteArray;
 
 class ModulatorBuilder extends StructureBuilder<Modulator>
 {
-
     public function new() 
     {
         super();
     }
-    
     
     public override function getLength() : Int
     {
@@ -27,11 +25,11 @@ class ModulatorBuilder extends StructureBuilder<Modulator>
     public override function read(d:ByteArray) : Modulator
     {
         var m = new Modulator();
-        m.sourceModulationData = new ModulatorType(d.readShort());
-        m.destinationGenerator = Type.createEnumIndex(GeneratorEnum, d.readShort());
+        m.source_modulation_data = new ModulatorType(d.readShort());
+        m.destination_generator = Type.createEnumIndex(GeneratorEnum, d.readShort());
         m.amount = d.readShort();
-        m.sourceModulationAmount = new ModulatorType(d.readShort());
-        m.sourceTransform = Type.createEnumIndex(TransformEnum, d.readShort());
+        m.source_modulation_amount = new ModulatorType(d.readShort());
+        m.source_transform = Type.createEnumIndex(TransformEnum, d.readShort());
         data.push(m);
         return m;
     } 

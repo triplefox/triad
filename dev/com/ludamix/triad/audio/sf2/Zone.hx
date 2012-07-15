@@ -10,10 +10,10 @@ package com.ludamix.triad.audio.sf2;
 
 class Zone 
 {
-    public var generatorIndex:Int;
-    public var modulatorIndex:Int;
-    public var generatorCount:Int;
-    public var modulatorCount:Int;
+    public var generator_index:Int;
+    public var modulator_index:Int;
+    public var generator_count:Int;
+    public var modulator_count:Int;
     public var modulators:Array<Modulator>;
     public var generators:Array<Generator>;
 

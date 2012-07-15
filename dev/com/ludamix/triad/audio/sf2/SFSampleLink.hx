@@ -10,12 +10,12 @@ package com.ludamix.triad.audio.sf2;
 
 class SFSampleLink 
 {
-    public static var MonoSample = 1;
-    public static var RightSample = 2;
-    public static var LeftSample = 4;
-    public static var LinkedSample = 8;
-    public static var RomMonoSample = 0x8001;
-    public static var RomRightSample = 0x8002;
-    public static var RomLeftSample = 0x8004;
-    public static var RomLinkedSample = 0x8008;
+    public static var MONO_SAMPLE = 1;
+    public static var RIGHT_SAMPLE = 2;
+    public static var LEFT_SAMPLE = 4;
+    public static var LINKED_SAMPLE = 8;
+    public static var ROM_MONO_SAMPLE = 0x8001;
+    public static var ROM_RIGHT_SAMPLE = 0x8002;
+    public static var ROM_LEFT_SAMPLE = 0x8004;
+    public static var ROM_LINKED_SAMPLE = 0x8008;
 }

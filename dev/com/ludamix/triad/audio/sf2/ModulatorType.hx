@@ -10,42 +10,40 @@ package com.ludamix.triad.audio.sf2;
 
 class ControllerSourceEnum 
 {
-    public static inline var NoController = 0;
-    public static inline var NoteOnVelocity = 2;
-    public static inline var NoteOnKeyNumber = 3;
-    public static inline var PolyPressure = 10;
-    public static inline var ChannelPressure = 13;
-    public static inline var PitchWheel = 14;
-    public static inline var PitchWheelSensitivity = 16;
+    public static inline var NO_CONTROLLER = 0;
+    public static inline var NOTE_ON_VELOCITY = 2;
+    public static inline var NOTE_ON_KEY_NUMBER = 3;
+    public static inline var POLY_PRESSURE = 10;
+    public static inline var CHANNEL_PRESSURE = 13;
+    public static inline var PITCH_WHEEL = 14;
+    public static inline var PITCH_WHEEL_SENSITIVITY = 16;
 }
 
 class SourceTypeEnum 
 {
-    public static inline var Linear = 0;
-    public static inline var Concave = 1;
-    public static inline var Convex = 2;
-    public static inline var Switch = 3;
+    public static inline var LINEAR = 0;
+    public static inline var CONCAVE = 1;
+    public static inline var CONVEC = 2;
+    public static inline var SWITCH = 3;
 }
     
 class ModulatorType 
 {
     public var polarity:Bool;
     public var direction:Bool;
-    public var midiContinuousController:Bool;
-    public var controllerSource:Int;
-    public var sourceType:Int;
-    public var midiContinuousControllerNumber:Int;
+    public var midi_continuous_controller:Bool;
+    public var controller_source:Int;
+    public var source_type:Int;
+    public var midi_continuous_controller_number:Int;
 
     public function new(raw:Int) 
     {
         polarity = ((raw & 0x0200) == 0x0200);
         direction = ((raw & 0x0100) == 0x0100);
-        midiContinuousController = ((raw & 0x0080) == 0x0080);
-        sourceType = ((raw & (0xFC00)) >> 10);
+        midi_continuous_controller = ((raw & 0x0080) == 0x0080);
+        source_type = ((raw & (0xFC00)) >> 10);
 
-        controllerSource = (raw & 0x007F);
-        midiContinuousControllerNumber = (raw & 0x007F);
-
+        controller_source = (raw & 0x007F);
+        midi_continuous_controller_number = (raw & 0x007F);
     }
-    
 }

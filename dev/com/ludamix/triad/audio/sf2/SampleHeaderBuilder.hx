@@ -26,21 +26,21 @@ class SampleHeaderBuilder extends StructureBuilder<SampleHeader>
     public override function read(d:ByteArray) : SampleHeader
     {
         var sh = new SampleHeader();
-        sh.sampleName = d.readString(20);
+        sh.sample_name = d.readString(20);
         sh.start = d.readInt();
         sh.end = d.readInt();
-        sh.startLoop = d.readInt();
-        sh.endLoop = d.readInt();
-        sh.sampleRate = d.readInt();
-        sh.originalPitch = d.readByte();
-        sh.pitchCorrection = d.readSignedByte();
-        sh.sampleLink = d.readShort();
-        sh.sFSampleLink = d.readShort();
+        sh.start_loop = d.readInt();
+        sh.end_loop = d.readInt();
+        sh.sample_rate = d.readInt();
+        sh.original_pitch = d.readByte();
+        sh.pitch_correction = d.readSignedByte();
+        sh.sample_link = d.readShort();
+        sh.sf_sample_link = d.readShort();
         data.push(sh);
         return sh;
     }     
     public function removeEOS()
     {
-        data.removeAt(data.length-1);
+        data.removeAt(data.length - 1);
     }
 }

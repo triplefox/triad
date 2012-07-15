@@ -10,23 +10,23 @@ package com.ludamix.triad.audio.sf2;
 
 class InfoChunk
 {
-    public var verSoundFont:SFVersion;
-    public var waveTableSoundEngine:String;
-    public var bankName:String;
-    public var dataROM:String;
-    public var creationDate:String;
+    public var soundfont_version:SFVersion;
+    public var wavetable_soundengine:String;
+    public var bank_name:String;
+    public var data_rom:String;
+    public var creation_date:String;
     public var author:String;
-    public var targetProduct:String;
+    public var target_product:String;
     public var copyright:String;
     public var comments:String;
     public var tools:String;
-    public var verROM:SFVersion;
+    public var rom_version:SFVersion;
 
     public function new(chunk:RiffChunk) 
     {
-        var ifilPresent = false;
-        var isngPresent = false;
-        var INAMPresent = false;
+        var ifil_present = false;
+        var isng_present = false;
+        var inam_present = false;
         if(chunk.readChunkID() != "INFO") 
         {
             throw "Not an INFO chunk";
@@ -34,27 +34,27 @@ class InfoChunk
         var c:RiffChunk;
         while((c = chunk.getNextSubChunk()) != null) 
         {
-            switch(c.chunkID) 
+            switch(c.chunk_id) 
             {
                 case "ifil":
-                    ifilPresent = true;
-                    verSoundFont = c.getDataAsStructure(new SFVersionBuilder());
+                    ifil_present = true;
+                    soundfont_version = c.getDataAsStructure(new SFVersionBuilder());
                 case "isng":
-                    isngPresent = true;
-                    waveTableSoundEngine = c.getDataAsString();
+                    isng_present = true;
+                    wavetable_soundengine = c.getDataAsString();
                 case "INAM":
-                    INAMPresent = true;
-                    bankName = c.getDataAsString();
+                    inam_present = true;
+                    bank_name = c.getDataAsString();
                 case "irom":
-                    dataROM = c.getDataAsString();
+                    data_rom = c.getDataAsString();
                 case "iver":
-                    verROM = c.getDataAsStructure(new SFVersionBuilder());
+                    rom_version = c.getDataAsStructure(new SFVersionBuilder());
                 case "ICRD":
-                    creationDate = c.getDataAsString();
+                    creation_date = c.getDataAsString();
                 case "IENG":
                     author = c.getDataAsString();
                 case "IPRD":
-                    targetProduct = c.getDataAsString();
+                    target_product = c.getDataAsString();
                 case "ICOP":
                     copyright = c.getDataAsString();
                 case "ICMT":
@@ -62,18 +62,18 @@ class InfoChunk
                 case "ISFT":
                     tools = c.getDataAsString();
                 default:
-                    throw "Unknown chunk type " + c.chunkID;
+                    throw "Unknown chunk type " + c.chunk_id;
             }
         }
-        if(!ifilPresent) 
+        if(!ifil_present) 
         {
             throw "Missing SoundFont version information";
         }
-        if(!isngPresent) 
+        if(!isng_present) 
         {
             throw "Missing wavetable sound engine information";
         }
-        if(!INAMPresent) 
+        if(!inam_present) 
         {
             throw "Missing SoundFont name information";
         }

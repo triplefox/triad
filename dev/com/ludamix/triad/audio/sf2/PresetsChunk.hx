@@ -10,27 +10,27 @@ package com.ludamix.triad.audio.sf2;
 
 class PresetsChunk
 {
-    public var presetHeaders:PresetBuilder;
-    public var presetZones:ZoneBuilder;
-    public var presetZoneModulators:ModulatorBuilder;
-    public var presetZoneGenerators:GeneratorBuilder;
+    public var preset_headers:PresetBuilder;
+    public var preset_zones:ZoneBuilder;
+    public var preset_zone_modulators:ModulatorBuilder;
+    public var preset_zone_generators:GeneratorBuilder;
     public var instruments:InstrumentBuilder;
-    public var instrumentZones:ZoneBuilder;
-    public var instrumentZoneModulators : ModulatorBuilder;
-    public var instrumentZoneGenerators : GeneratorBuilder;
-    public var sampleHeaders : SampleHeaderBuilder;
+    public var instrument_zones:ZoneBuilder;
+    public var instrument_zone_modulators : ModulatorBuilder;
+    public var instrument_zone_generators : GeneratorBuilder;
+    public var sample_headers : SampleHeaderBuilder;
     
     public function new(chunk:RiffChunk) 
     {
-        presetHeaders = new PresetBuilder();
-        presetZones = new ZoneBuilder();
-        presetZoneModulators = new ModulatorBuilder();
-        presetZoneGenerators = new GeneratorBuilder();
+        preset_headers = new PresetBuilder();
+        preset_zones = new ZoneBuilder();
+        preset_zone_modulators = new ModulatorBuilder();
+        preset_zone_generators = new GeneratorBuilder();
         instruments = new InstrumentBuilder();
-        instrumentZones = new ZoneBuilder();
-        instrumentZoneModulators = new ModulatorBuilder();
-        instrumentZoneGenerators = new GeneratorBuilder();
-        sampleHeaders = new SampleHeaderBuilder();
+        instrument_zones = new ZoneBuilder();
+        instrument_zone_modulators = new ModulatorBuilder();
+        instrument_zone_generators = new GeneratorBuilder();
+        sample_headers = new SampleHeaderBuilder();
         
         var header = chunk.readChunkID();
         if(header != "pdta") 
@@ -41,46 +41,46 @@ class PresetsChunk
         var c:RiffChunk;
         while((c = chunk.getNextSubChunk()) != null) 
         {
-            switch(c.chunkID) {
+            switch(c.chunk_id) {
                 case "PHDR":
                 case "phdr":
-                    c.getDataAsStructureArray(presetHeaders);
+                    c.getDataAsStructureArray(preset_headers);
                 case "PBAG":
                 case "pbag":			
-                    c.getDataAsStructureArray(presetZones);
+                    c.getDataAsStructureArray(preset_zones);
                 case "PMOD":
                 case "pmod":
-                    c.getDataAsStructureArray(presetZoneModulators);
+                    c.getDataAsStructureArray(preset_zone_modulators);
                 case "PGEN":
                 case "pgen":
-                    c.getDataAsStructureArray(presetZoneGenerators);
+                    c.getDataAsStructureArray(preset_zone_generators);
                 case "INST":
                 case "inst":
                     c.getDataAsStructureArray(instruments);
                 case "IBAG":
                 case "ibag":
-                    c.getDataAsStructureArray(instrumentZones);
+                    c.getDataAsStructureArray(instrument_zones);
                 case "IMOD":
                 case "imod":
-                    c.getDataAsStructureArray(instrumentZoneModulators);
+                    c.getDataAsStructureArray(instrument_zone_modulators);
                 case "IGEN":
                 case "igen":
-                    c.getDataAsStructureArray(instrumentZoneGenerators);
+                    c.getDataAsStructureArray(instrument_zone_generators);
                 case "SHDR":
                 case "shdr":
-                    c.getDataAsStructureArray(sampleHeaders); 
+                    c.getDataAsStructureArray(sample_headers); 
                 default:
-                    throw "Unknown chunk type " + c.chunkID;
+                    throw "Unknown chunk type " + c.chunk_id;
             }
         }
 
         // now link things up
-        instrumentZoneGenerators.loadSampleHeaders(sampleHeaders.data);
-        instrumentZones.load(instrumentZoneModulators.data,instrumentZoneGenerators.data);
-        instruments.loadZones(instrumentZones.data);
-        presetZoneGenerators.loadInstruments(instruments.data);
-        presetZones.load(presetZoneModulators.data,presetZoneGenerators.data);
-        presetHeaders.loadZones(presetZones.data);
-        sampleHeaders.removeEOS();
+        instrument_zone_generators.loadSampleHeaders(sample_headers.data);
+        instrument_zones.load(instrument_zone_modulators.data, instrument_zone_generators.data);
+        instruments.loadZones(instrument_zones.data);
+        preset_zone_generators.loadInstruments(instruments.data);
+        preset_zones.load(preset_zone_modulators.data, preset_zone_generators.data);
+        preset_headers.loadZones(preset_zones.data);
+        sample_headers.removeEOS();
     }
 }

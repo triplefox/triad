@@ -10,20 +10,18 @@ package com.ludamix.triad.audio.sf2;
 
 class SampleHeader 
 {
-    public var sampleName:String;
+    public var sample_name:String;
     public var start:Int;
     public var end:Int;
-    public var startLoop:Int;
-    public var endLoop:Int;
-    public var sampleRate:Int;
-    public var originalPitch:Int;
-    public var pitchCorrection:Int;
-    public var sampleLink:Int;
-    public var sFSampleLink:Int;
+    public var start_loop:Int;
+    public var end_loop:Int;
+    public var sample_rate:Int;
+    public var original_pitch:Int;
+    public var pitch_correction:Int;
+    public var sample_link:Int;
+    public var sf_sample_link:Int;
 
     public function new() 
     {
-        
     }
-    
 }

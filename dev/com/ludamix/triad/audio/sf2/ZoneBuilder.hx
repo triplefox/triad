@@ -13,7 +13,7 @@ import nme.utils.ByteArray;
 
 class ZoneBuilder extends StructureBuilder<Zone>
 {
-    private var _lastZone:Zone;
+    private var last_zone:Zone;
     
     public function new() 
     {
@@ -28,15 +28,15 @@ class ZoneBuilder extends StructureBuilder<Zone>
     public override function read(d:ByteArray)
     {
         var z = new Zone();
-        z.generatorIndex = d.readShort();
-        z.modulatorIndex = d.readShort();
-        if(_lastZone != null)
+        z.generator_index = d.readShort();
+        z.modulator_index = d.readShort();
+        if(last_zone != null)
         {
-            _lastZone.generatorCount = (z.generatorIndex - _lastZone.generatorIndex);
-            _lastZone.modulatorCount = (z.modulatorIndex - _lastZone.modulatorIndex);
+            last_zone.generator_count = (z.generator_index - last_zone.generator_index);
+            last_zone.modulator_count = (z.modulator_index - last_zone.modulator_index);
         }
         data.push(z);
-        _lastZone = z;
+        last_zone = z;
         return z;
     } 
     
@@ -47,14 +47,14 @@ class ZoneBuilder extends StructureBuilder<Zone>
         {
             var z = data[zone];
             z.generators = new Array<Generator>();
-            for (i in 0 ... z.generatorCount)
+            for (i in 0 ... z.generator_count)
             {
-                z.generators[i] = generators[z.generatorIndex + i];
+                z.generators[i] = generators[z.generator_index + i];
             }
             z.modulators = new Array<Modulator>();
-            for (i in 0 ... z.modulatorCount)
+            for (i in 0 ... z.modulator_count)
             {
-                z.modulators[i] = modulators[z.modulatorIndex + i];
+                z.modulators[i] = modulators[z.modulator_index + i];
             }
         }
         // we can get rid of the EOP record now

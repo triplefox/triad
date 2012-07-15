@@ -10,13 +10,12 @@ package com.ludamix.triad.audio.sf2;
 
 class Generator 
 {
-    public var generatorType:GeneratorEnum;
-    public var rawAmount:Int;
+    public var generator_type:GeneratorEnum;
+    public var raw_amount:Int;
     public var instrument:Instrument;
-    public var sampleHeader:SampleHeader;
+    public var sample_header:SampleHeader;
 
     public function new()
     {
-        
     }
 }
