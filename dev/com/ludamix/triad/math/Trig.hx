@@ -2,6 +2,7 @@ package com.ludamix.triad.math;
 
 import com.ludamix.triad.geom.IPoint;
 import com.ludamix.triad.geom.SubIPoint;
+import com.ludamix.triad.tools.MathTools;
 import nme.geom.Point;
 
 class Trig
