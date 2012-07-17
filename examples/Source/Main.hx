@@ -17,11 +17,13 @@ class Main
 	
 	public static var example : MyExample;
 	
-	public static inline var W = 720;
-	public static inline var H = 400;
+	public static var W = 720;
+	public static var H = 400;
 	
 	public static function main()
 	{
+		W = nme.Lib.current.stage.stageWidth;
+		H = nme.Lib.current.stage.stageHeight;
 		example = new MyExample();		
 	}
 	

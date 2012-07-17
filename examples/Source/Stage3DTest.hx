@@ -1,3 +1,5 @@
+import flash.display.Bitmap;
+import flash.display.BitmapData;
 import flash.events.Event;
 import flash.display.Stage3D;
 import flash.display3D.Context3D;
@@ -6,37 +8,30 @@ import flash.display3D.Context3DRenderMode;
 import flash.display3D.Context3DTextureFormat;
 import flash.geom.Matrix3D;
 import flash.Lib;
+import flash.Vector;
 import format.agal.Tools;
-import com.ludamix.triad.render.stage3d.UV;
-import com.ludamix.triad.render.stage3d.Camera;
-import com.ludamix.triad.render.stage3d.Polygon;
-import com.ludamix.triad.render.stage3d.Cube;
-import com.ludamix.triad.render.stage3d.Vector;
 import nme.Assets;
 
 typedef K = flash.ui.Keyboard;
 typedef FV = flash.Vector<Float>;
-
-// (This is derived from the Molehill tutorial Nicolas made.)
+typedef Quad = { left:Float, top:Float, right:Float, bottom:Float, tleft:Float, ttop:Float, tright:Float, tbottom:Float };
 
 // The next steps are:
 
-// create an orthographic projection that matches drawTiles
-// create a textured quad renderer that can correctly utilize packed sheets
-// test shader modes with alpha and colorization
+// add shader modes for alpha and colorization - test against displaylist alpha and colorTransform
+// add rotation and scaling (use a matrix to pretransform each quad)
 // create an API over this for the sprite and tile renderers.
 
 class Stage3DTest
 {
+
 	var stage : flash.display.Stage;
 	var s : flash.display.Stage3D;
 	var c : flash.display3D.Context3D;
-	var shader : TextureShader;
-	var pol : Polygon;
+	var shader : Texture2DShader;
 	var keys : Array<Bool>;
 	var texture : flash.display3D.textures.Texture;
-
-	var camera : Camera;
+	var bt : Bitmap;
 
 	public function new() {
 		haxe.Log.setColor(0xFF0000);
@@ -59,48 +54,72 @@ class Stage3DTest
 		c.enableErrorChecking = true;
 		c.configureBackBuffer( stage.stageWidth, stage.stageHeight, 0, true );
 
-		shader = new TextureShader(c);
-		camera = new Camera();
-
-		/*pol = new Cube();
-		pol.unindex();
-		pol.addNormals();
-		pol.addTCoords();
-		pol.alloc(c);*/
+		shader = new Texture2DShader(c);
 		
-		// this appears to draw a quad correctly...but scale is still an unknown
-		pol = new Polygon([new Vector(0.,0.),new Vector(1.,0.),new Vector(1.,1.),new Vector(0.,1.)],[0,1,2,0,2,3]);
-		pol.unindex();
-		pol.addNormals();
-		{
-			var z = new UV(0, 0);
-			var x = new UV(1, 0);
-			var y = new UV(0, 1);
-			var o = new UV(1, 1);
-			pol.tcoords = [z,x,o,z,o,y];
-		}		
-		pol.alloc(c);
-		
-		var bmp = Assets.getBitmapData("assets/Stone-Wall-Texture-17.jpg");
+		var bmp = SpritePacking.makePack();
+		//var bmp = new BitmapData(256, 256, false, 0xFFFFFF);
+		//bmp.noise(43);
 		texture = c.createTexture(bmp.width, bmp.height, flash.display3D.Context3DTextureFormat.BGRA, false);
 		texture.uploadFromBitmapData(bmp);		
+		bt = new Bitmap(bmp); bt.x = 100; bt.y = 100; Lib.current.addChild(bt);
+	}
+
+	public inline function writeVert(buf : Vector<Float>, idx : Vector<UInt>, 
+		x : Float, y : Float, z : Float, u : Float, v : Float)
+	{
+		buf.push(x);
+		buf.push(y);
+		buf.push(z);
+		buf.push(u);
+		buf.push(v);
+		idx.push(idx.length);
+	}
+	
+	public inline function writeQuad(buf : Vector<Float>, idx : Vector<UInt>, 
+		left, top, right, bottom, tleft, ttop, tright, tbottom)
+	{
+		writeVert(buf, idx, left, top, 0., tleft, ttop);
+		writeVert(buf, idx, right, top, 0., tright, ttop);
+		writeVert(buf, idx, right, bottom, 0., tright, tbottom);
+		writeVert(buf, idx, left, top, 0., tleft, ttop);
+		writeVert(buf, idx, right, bottom, 0., tright, tbottom);
+		writeVert(buf, idx, left, bottom, 0., tleft, tbottom);
+	}
+	
+	public inline function doUpload(quads : Array<Quad>)
+	{
+		var idx = new Vector<UInt>();
+		var buf = new Vector<Float>();
+		var points = quads.length * 6;
+		for (q in quads) writeQuad(buf, idx, q.left, q.top, q.right, q.bottom, q.tleft, q.ttop, q.tright, q.tbottom);
+		var ibuf = c.createIndexBuffer(idx.length); ibuf.uploadFromVector(idx, 0, idx.length);
+		var vbuf = c.createVertexBuffer(points, 5); vbuf.uploadFromVector(buf, 0, points);
+		return { idx:ibuf, vertex:vbuf };
 	}
 
 	private function createOrthographicProjectionMatrix(viewWidth : Float, viewHeight : Float, near : Float, far : Float):Matrix3D
 	{
-   // this is a projection matrix that gives us an orthographic view of the world (meaning there's no perspective effect)
-   // the view is defined with (0,0) being in the middle,
-   //	(-viewWidth / 2, -viewHeight / 2) at the top left,
-   // 	(viewWidth / 2, viewHeight / 2) at the bottom right,
-   //	and 'near' and 'far' giving limits to the range of z values for objects to appear.
-   return new Matrix3D(
-   (FV.ofArray([
-    2./viewWidth, 0, 0, 0,
-    0, -2/viewHeight, 0, 0,
-    0, 0, 1/(far-near), -near/(far-near),
-    0, 0, 0, 1
-   ])));
-  }
+		var left = 0.;
+		var top = 0.;
+		var right = viewWidth;
+		var bottom = viewHeight;
+		var add_rl = right + left;
+		var sub_rl = right - left;
+		var add_tb = top + bottom;
+		var sub_tb = top - bottom;
+		var add_fn = far + near;
+		var sub_fn = far - near;
+		var mtx = new Matrix3D(
+		(FV.ofArray([
+			2 / sub_rl, 0, 0,  0,
+			0,  2 / sub_tb, 0, 0,
+			0,  0, 1 / sub_fn,   0,
+			-add_rl/sub_rl, -add_tb/sub_tb, -add_fn/sub_fn, 1
+		])));
+		return mtx;
+	}
+	
+	public static var alpha = 1.;
   
 	function update(_) {
 		if( c == null ) return;
@@ -109,38 +128,32 @@ class Stage3DTest
 		c.setDepthTest( true, flash.display3D.Context3DCompareMode.LESS_EQUAL );
 		c.setCulling(flash.display3D.Context3DTriangleFace.BACK);
 
-		if( keys[K.UP] )
-			camera.moveAxis(0,-0.1);
-		if( keys[K.DOWN] )
-			camera.moveAxis(0,0.1);
-		if( keys[K.LEFT] )
-			camera.moveAxis(-0.1,0);
-		if( keys[K.RIGHT] )
-			camera.moveAxis(0.1, 0);
-		if( keys[109] )
-			camera.zoom /= 1.05;
-		if( keys[107] )
-			camera.zoom *= 1.05;
-		camera.update();
-		
-		var project = camera.m.toMatrix();
-		
-		var light = new flash.geom.Vector3D(1.,0.,0.);
-		light.normalize();
+		//var light = new flash.geom.Vector3D(1.,0.,0.);
+		//light.normalize();
 
-		// the quad is not showing up now. Why? Is the projection/scaling false?
-		// At this point it may be appropriate to reference GL/DX tutorials for 2d renderers...
-		// or frameworks like Starling.
-		// I'm only looking for how to scale it properly right now.
-
+		var frustum = new Matrix3D(); frustum.identity();
+		
 		shader.init(
-			{ mpos : new flash.geom.Matrix3D(), mproj : createOrthographicProjectionMatrix(800.,600.,-100.,100.), light : light },
+			{ mpos : frustum, mproj : createOrthographicProjectionMatrix(Main.W, Main.H, -1., 1.), 
+			 }, //light : light },
 			{ tex : texture }
 		);
 
-		shader.bind(pol.vbuf);
-		c.drawTriangles(pol.ibuf);
+		var q = { left:100., top:100., right: 100 + 256., bottom: 100 + 256., tleft:0., tright:1., ttop:0., tbottom:1. };
+		
+		var buf = doUpload([q]);
+		
+		shader.bind(buf.vertex);
+		c.drawTriangles(buf.idx);
 		c.present();
+		
+		buf.vertex.dispose();
+		buf.idx.dispose();
+		
+		bt.alpha = alpha;
+		alpha -= 0.01;
+		if (alpha <= 0.) alpha = 1.;
+		
 	}
 
 }
@@ -163,24 +176,46 @@ class ColorShader extends format.hxsl.Shader {
 
 }
 
-class TextureShader extends format.hxsl.Shader {
+class Texture2DShader extends format.hxsl.Shader {
 
 	static var SRC = {
 		var input : {
 			pos : Float3,
-			norm : Float3,
 			uv : Float2,
 		};
 		var tuv : Float2;
-		var lpow : Float;
-		function vertex( mpos : M44, mproj : M44, light : Float3 ) {
+		function vertex( mpos : M44, mproj : M44 ) {
 			out = pos.xyzw * mpos * mproj;
-			var tnorm = (norm * mpos).normalize();
-			lpow = light.dot(tnorm).max(0);
 			tuv = uv;
 		}
 		function fragment( tex : Texture ) {
-			out = tex.get(tuv) * (lpow * 0.8 + 0.2);
+			out = tex.get(tuv);
+		}
+	};
+
+}
+
+class Texture2DColorShader extends format.hxsl.Shader {
+
+	// so... we need to adjust the poly drawing routine to account for this batch type
+	// this invalidates the simplicity of what I had before, oh well.
+
+	static var SRC = {
+		var input : {
+			pos : Float3,
+			uv : Float2,
+			rgb : Float3,
+			alpha : Float1
+		};
+		var tuv : Float2;
+		var trgb : Float3;
+		var talpha : Float1;
+		function vertex( mpos : M44, mproj : M44 ) {
+			out = pos.xyzw * mpos * mproj;
+			tuv = uv;
+		}
+		function fragment( tex : Texture ) {
+			out = tex.get(tuv);
 		}
 	};
 
