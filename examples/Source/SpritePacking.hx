@@ -45,6 +45,11 @@ class SpritePacking
 	
 	public function doOver(?event : KeyboardEvent)
 	{
+		bmp.bitmapData = makePack();
+	}
+	
+	public static function makePack() : BitmapData
+	{
 		var pack = new TilePack();
 		for (n in 0...140)
 		pack.add(
@@ -58,7 +63,8 @@ class SpritePacking
 			n.bitmapdata.setPixel32(0, n.bitmapdata.height-1, 0xFF000000);
 			n.bitmapdata.setPixel32(n.bitmapdata.width-1, n.bitmapdata.height-1, 0xFF000000);
 		}
-		bmp.bitmapData = pack.compute(256, true).bitmapdata;
+		var bd = pack.compute(256, true).bitmapdata;
+		return bd;	
 	}
 	
 }

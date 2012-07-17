@@ -1,3 +1,5 @@
+package com.ludamix.triad.math;
+
 class Probability
 {
 	
