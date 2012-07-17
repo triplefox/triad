@@ -8,30 +8,27 @@ import flash.display3D.Context3DRenderMode;
 import flash.display3D.Context3DTextureFormat;
 import flash.geom.Matrix3D;
 import flash.Lib;
+import flash.Vector;
 import format.agal.Tools;
-import com.ludamix.triad.render.stage3d.UV;
-import com.ludamix.triad.render.stage3d.Polygon;
-import com.ludamix.triad.render.stage3d.Cube;
-import com.ludamix.triad.render.stage3d.Vector;
 import nme.Assets;
 
 typedef K = flash.ui.Keyboard;
 typedef FV = flash.Vector<Float>;
+typedef Quad = { left:Float, top:Float, right:Float, bottom:Float, tleft:Float, ttop:Float, tright:Float, tbottom:Float };
 
 // The next steps are:
 
-// shift from Polygon to a custom vertex batch
 // add shader modes for alpha and colorization - test against displaylist alpha and colorTransform
-// add rotation and scaling
+// add rotation and scaling (use a matrix to pretransform each quad)
 // create an API over this for the sprite and tile renderers.
 
 class Stage3DTest
 {
+
 	var stage : flash.display.Stage;
 	var s : flash.display.Stage3D;
 	var c : flash.display3D.Context3D;
 	var shader : Texture2DShader;
-	var pol : Polygon;
 	var keys : Array<Bool>;
 	var texture : flash.display3D.textures.Texture;
 	var bt : Bitmap;
@@ -58,14 +55,6 @@ class Stage3DTest
 		c.configureBackBuffer( stage.stageWidth, stage.stageHeight, 0, true );
 
 		shader = new Texture2DShader(c);
-
-		/*pol = new Cube();
-		pol.unindex();
-		pol.addNormals();
-		pol.addTCoords();
-		pol.alloc(c);*/
-		
-		drawPoly(100., 100., 100+256.,100+256.);
 		
 		var bmp = SpritePacking.makePack();
 		//var bmp = new BitmapData(256, 256, false, 0xFFFFFF);
@@ -74,21 +63,38 @@ class Stage3DTest
 		texture.uploadFromBitmapData(bmp);		
 		bt = new Bitmap(bmp); bt.x = 100; bt.y = 100; Lib.current.addChild(bt);
 	}
-	
-	private inline function drawPoly(left, top, right, bottom)
+
+	public inline function writeVert(buf : Vector<Float>, idx : Vector<UInt>, 
+		x : Float, y : Float, z : Float, u : Float, v : Float)
 	{
-		pol = new Polygon([new Vector(left, top), new Vector(right, top), new Vector(right, bottom), 
-			new Vector(left, top), new Vector(right, bottom), new Vector(left, bottom)]);
-		var uleft = 0.;
-		var uright = 1.;
-		var utop = 0.;
-		var ubottom = 1.;
-		var z = new UV(uleft, utop);
-		var x = new UV(uright, utop);
-		var y = new UV(uleft, ubottom);
-		var o = new UV(uright, ubottom);
-		pol.tcoords = [z,x,o,z,o,y];
-		pol.alloc(c);	
+		buf.push(x);
+		buf.push(y);
+		buf.push(z);
+		buf.push(u);
+		buf.push(v);
+		idx.push(idx.length);
+	}
+	
+	public inline function writeQuad(buf : Vector<Float>, idx : Vector<UInt>, 
+		left, top, right, bottom, tleft, ttop, tright, tbottom)
+	{
+		writeVert(buf, idx, left, top, 0., tleft, ttop);
+		writeVert(buf, idx, right, top, 0., tright, ttop);
+		writeVert(buf, idx, right, bottom, 0., tright, tbottom);
+		writeVert(buf, idx, left, top, 0., tleft, ttop);
+		writeVert(buf, idx, right, bottom, 0., tright, tbottom);
+		writeVert(buf, idx, left, bottom, 0., tleft, tbottom);
+	}
+	
+	public inline function doUpload(quads : Array<Quad>)
+	{
+		var idx = new Vector<UInt>();
+		var buf = new Vector<Float>();
+		var points = quads.length * 6;
+		for (q in quads) writeQuad(buf, idx, q.left, q.top, q.right, q.bottom, q.tleft, q.ttop, q.tright, q.tbottom);
+		var ibuf = c.createIndexBuffer(idx.length); ibuf.uploadFromVector(idx, 0, idx.length);
+		var vbuf = c.createVertexBuffer(points, 5); vbuf.uploadFromVector(buf, 0, points);
+		return { idx:ibuf, vertex:vbuf };
 	}
 
 	private function createOrthographicProjectionMatrix(viewWidth : Float, viewHeight : Float, near : Float, far : Float):Matrix3D
@@ -133,9 +139,16 @@ class Stage3DTest
 			{ tex : texture }
 		);
 
-		shader.bind(pol.vbuf);
-		c.drawTriangles(pol.ibuf);
+		var q = { left:100., top:100., right: 100 + 256., bottom: 100 + 256., tleft:0., tright:1., ttop:0., tbottom:1. };
+		
+		var buf = doUpload([q]);
+		
+		shader.bind(buf.vertex);
+		c.drawTriangles(buf.idx);
 		c.present();
+		
+		buf.vertex.dispose();
+		buf.idx.dispose();
 		
 		bt.alpha = alpha;
 		alpha -= 0.01;
@@ -163,29 +176,6 @@ class ColorShader extends format.hxsl.Shader {
 
 }
 
-class TextureShader extends format.hxsl.Shader {
-
-	static var SRC = {
-		var input : {
-			pos : Float3,
-			norm : Float3,
-			uv : Float2,
-		};
-		var tuv : Float2;
-		var lpow : Float;
-		function vertex( mpos : M44, mproj : M44, light : Float3 ) {
-			out = pos.xyzw * mpos * mproj;
-			var tnorm = (norm * mpos).normalize();
-			lpow = light.dot(tnorm).max(0);
-			tuv = uv;
-		}
-		function fragment( tex : Texture ) {
-			out = tex.get(tuv) * (lpow * 0.8 + 0.2);
-		}
-	};
-
-}
-
 class Texture2DShader extends format.hxsl.Shader {
 
 	static var SRC = {
@@ -194,6 +184,32 @@ class Texture2DShader extends format.hxsl.Shader {
 			uv : Float2,
 		};
 		var tuv : Float2;
+		function vertex( mpos : M44, mproj : M44 ) {
+			out = pos.xyzw * mpos * mproj;
+			tuv = uv;
+		}
+		function fragment( tex : Texture ) {
+			out = tex.get(tuv);
+		}
+	};
+
+}
+
+class Texture2DColorShader extends format.hxsl.Shader {
+
+	// so... we need to adjust the poly drawing routine to account for this batch type
+	// this invalidates the simplicity of what I had before, oh well.
+
+	static var SRC = {
+		var input : {
+			pos : Float3,
+			uv : Float2,
+			rgb : Float3,
+			alpha : Float1
+		};
+		var tuv : Float2;
+		var trgb : Float3;
+		var talpha : Float1;
 		function vertex( mpos : M44, mproj : M44 ) {
 			out = pos.xyzw * mpos * mproj;
 			tuv = uv;
