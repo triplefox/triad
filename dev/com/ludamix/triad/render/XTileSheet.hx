@@ -11,6 +11,10 @@ import nme.geom.Matrix;
 import nme.geom.Point;
 import nme.geom.Rectangle;
 
+#if flash11
+import flash.display3D.Context3D;
+#end
+
 class XTilesheet
 {
 
@@ -28,6 +32,64 @@ class XTilesheet
 	public inline function drawTiles(graphics : Graphics, tileData : Array<Float>, 
 		?smooth : Bool=false, ?flags : Int=0)
 	{ sheet.drawTiles(graphics, tileData, smooth, flags); }
+	
+	#if flash11
+	// I need something more sophisticated than Context3D to pull this off.
+	// For example, a "Stage3DScene" that contains the shaders etc.
+	public inline function drawStage3D(c : Context3D, tileData : Array<Float>, ?smooth : Bool = false, ?flags : Int = 0)
+	{
+		var ptr = 0;
+		var src : BitmapData = sheet.nmeBitmap;
+		var pt = new Point(0., 0.);
+		if (flags == 0)
+		{		
+			while (ptr < tileData.length)
+			{
+				pt.x = Math.round(tileData[ptr]);
+				pt.y = Math.round(tileData[ptr + 1]);
+				var rect : Rectangle = rects[Std.int(tileData[ptr + 2])];
+				
+				// drawing with the basic shader goes here
+				
+				ptr+=3;
+			}
+		}
+		else
+		{
+			var useAlpha = (flags & Tilesheet.TILE_ALPHA) > 0;
+			var useRGB = (flags & Tilesheet.TILE_RGB) > 0;
+			var useScale = (flags & Tilesheet.TILE_SCALE) > 0;
+			var useRotate = (flags & Tilesheet.TILE_ROTATION) > 0;
+			var tb = temp_bitmap;
+			tb.bitmapData = src;
+			while (ptr < tileData.length)
+			{
+				pt.x = tileData[ptr]; ptr++;
+				pt.y = tileData[ptr]; ptr++;
+				var offset : Point = points[Std.int(tileData[ptr])];
+				var rect : Rectangle = rects[Std.int(tileData[ptr])]; ptr++;				
+				var scale = 1.;
+				var rotation = 0.;
+				var red = 1.;
+				var green = 1.;
+				var blue = 1.;
+				var alpha = 1.;
+				if (useScale) { scale = tileData[ptr]; ptr++; }
+				if (useRotate) { rotation = tileData[ptr]; ptr++; }
+				if (useRGB) { red = tileData[ptr]; green = tileData[ptr + 1]; blue = tileData[ptr + 2]; ptr += 3; }
+				if (useAlpha) { alpha = tileData[ptr]; ptr++; }
+				
+				var mtx = new Matrix();
+				mtx.translate(-offset.x, -offset.y);
+				mtx.scale(scale, scale);
+				mtx.rotate(rotation);
+				mtx.translate(pt.x+offset.x, pt.y+offset.y);
+				
+				// drawing with the colorized shader goes here
+			}
+		}
+	}
+	#end
 
 	public inline function blit(bitmap : BitmapData, tileData : Array<Float>, ?smooth : Bool=false, ?flags : Int = 0)
 	{

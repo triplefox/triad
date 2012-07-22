@@ -49,7 +49,7 @@ class Blackjack
 		
 		var gr = GraphicsResource.read(Assets.getText("assets/cards.tc"), 1024, false, "assets/");
 		
-		render = new SpriteRenderer(gr.sprite, gr.tilesheet);
+		render = new SpriteRenderer(gr.sprite);
 		var card_info = render.defs_names.get("cards");
 		for (n in 0...card_info.frames)
 		{

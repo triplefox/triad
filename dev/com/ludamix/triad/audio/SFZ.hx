@@ -26,6 +26,24 @@ typedef HString = StringTools;
  * 
  * */
 
+/*
+ 
+	My first idea about the opcodes is wrong, the patch generators work well and can be run in series to
+	get the effect of layered instruments. They can stay as-is for now.
+	
+	The problem is really that my caching system needs a generalization. At the end point, the sample player is
+	going to do the same types of things to the instruments; the generalization goal is to be able to transfer 
+	the region->patch mapper into any synth technique.
+	
+	The issue is in transferring from sf2 to the groups and regions system.
+	
+	Step 1 is to get an SF2 loading and analyze how it behaves. Maybe read the spec.
+	Step 2 is to try to extract the wave data and play that like the WAV player. 
+		(On that note, WAVs can and should be included in the mapper system)
+	Step 3, we can start building opcodes.
+	
+*/
+	
 class SFZGroup
 {
 

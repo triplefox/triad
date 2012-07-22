@@ -180,7 +180,7 @@ class GraphicsResource
 						
 						var spr = { offx:alignoffset[0], offy:alignoffset[1], sheet_idx:sheet_idx, sheet_len:sheet_len,
 							id:id, file:file, group:group, slices:slices, w:slice_w, h:slice_h}; // reference
-						spritesheets.push( { name:id, idx:sheet_idx, frames:sheet_len, 
+						spritesheets.push( { name:id, idx:sheet_idx, sheet:null, frames:sheet_len, 
 							xoff:alignoffset[0], yoff:alignoffset[1], w:slice_w, h:slice_h});
 						
 						// since the sheet contains offset data, all we need is "name, index, len," I guess.
@@ -204,7 +204,12 @@ class GraphicsResource
 		var nodes : Array<PackerNode> = infos.nodes;		
 		var ts = new XTilesheet(infos.bitmapdata);
 		for (n in nodes)
-			ts.addTileRect(new Rectangle(n.x, n.y, n.w, n.h),new Point(n.contents.offx,n.contents.offy));
+		{
+			ts.addTileRect(new Rectangle(n.x, n.y, n.w, n.h), new Point(n.contents.offx, n.contents.offy));
+		}
+		// since right now we only have one sheet, that's the one we assign to
+		for (n in spritesheets)
+			n.sheet = ts;
 		
 		return { tilesheet:ts, sprite:spritesheets, autotile:autotiles };
 		

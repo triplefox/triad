@@ -45,7 +45,7 @@ class Tilemapping
 		
 		// instance spriterenderer
 		
-		sprite = new SpriteRenderer(gr.sprite, gr.tilesheet);
+		sprite = new SpriteRenderer(gr.sprite);
 		
 		// instance tilemap
 		
