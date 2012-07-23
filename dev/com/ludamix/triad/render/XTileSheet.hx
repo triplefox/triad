@@ -1,5 +1,6 @@
 package com.ludamix.triad.render;
 
+import nme.Vector;
 import nme.display.Bitmap;
 import nme.display.BitmapData;
 import nme.display.BlendMode;
@@ -13,6 +14,7 @@ import nme.geom.Rectangle;
 
 #if flash11
 import flash.display3D.Context3D;
+import flash.display3D.textures.Texture;
 #end
 
 class XTilesheet
@@ -25,7 +27,11 @@ class XTilesheet
 	private var temp_bitmap : Bitmap;
 
 	public function new(inImage : BitmapData)
-	{ sheet = new Tilesheet(inImage); nmeBitmap = inImage; rects = new Array(); points = new Array(); 
+	{ sheet = new Tilesheet(inImage); nmeBitmap = inImage; rects = new Array(); 
+	  #if flash11
+		rects_uv = new Array(); 
+	  #end
+	  points = new Array(); 
 	  temp_bitmap = new Bitmap(inImage);
 	}
 	
@@ -34,60 +40,88 @@ class XTilesheet
 	{ sheet.drawTiles(graphics, tileData, smooth, flags); }
 	
 	#if flash11
-	// I need something more sophisticated than Context3D to pull this off.
-	// For example, a "Stage3DScene" that contains the shaders etc.
-	public inline function drawStage3D(c : Context3D, tileData : Array<Float>, ?smooth : Bool = false, ?flags : Int = 0)
+	
+	public var texture : Texture;
+	public var rects_uv : Array<Rectangle>;
+	
+	public inline function drawStage3D(scene : Dynamic, tileData : Array<Float>, ?smooth : Bool = false, ?flags : Int = 0)
 	{
+		if (texture == null)
+			throw "Texture is null, add this XTilesheet to the scene first";
 		var ptr = 0;
 		var src : BitmapData = sheet.nmeBitmap;
 		var pt = new Point(0., 0.);
-		if (flags == 0)
-		{		
-			while (ptr < tileData.length)
-			{
-				pt.x = Math.round(tileData[ptr]);
-				pt.y = Math.round(tileData[ptr + 1]);
-				var rect : Rectangle = rects[Std.int(tileData[ptr + 2])];
-				
-				// drawing with the basic shader goes here
-				
-				ptr+=3;
-			}
-		}
-		else
+		
+		var useAlpha = (flags & Tilesheet.TILE_ALPHA) > 0;
+		var useRGB = (flags & Tilesheet.TILE_RGB) > 0;
+		var useScale = (flags & Tilesheet.TILE_SCALE) > 0;
+		var useRotate = (flags & Tilesheet.TILE_ROTATION) > 0;
+		var tb = temp_bitmap;
+		tb.bitmapData = src;
+		var numQuads = 0;
+		
+		var tl = new Point(0., 0.);
+		var tr = new Point(0., 0.);
+		var bl = new Point(0., 0.);
+		var br = new Point(0., 0.);
+		
+		var vert_buf = new Vector<Float>();
+		var idx_buf = new Vector<UInt>();
+		
+		while (ptr < tileData.length)
 		{
-			var useAlpha = (flags & Tilesheet.TILE_ALPHA) > 0;
-			var useRGB = (flags & Tilesheet.TILE_RGB) > 0;
-			var useScale = (flags & Tilesheet.TILE_SCALE) > 0;
-			var useRotate = (flags & Tilesheet.TILE_ROTATION) > 0;
-			var tb = temp_bitmap;
-			tb.bitmapData = src;
-			while (ptr < tileData.length)
+			pt.x = tileData[ptr]; ptr++;
+			pt.y = tileData[ptr]; ptr++;
+			var offset : Point = points[Std.int(tileData[ptr])];
+			var rect_uv : Rectangle = rects_uv[Std.int(tileData[ptr])];
+			var rect : Rectangle = rects[Std.int(tileData[ptr])]; ptr++;				
+			var scale = 1.;
+			var rotation = 0.;
+			var red = 1.;
+			var green = 1.;
+			var blue = 1.;
+			var alpha = 1.;
+			if (useScale) { scale = tileData[ptr]; ptr++; }
+			if (useRotate) { rotation = tileData[ptr]; ptr++; }
+			if (useRGB) { red = tileData[ptr]; green = tileData[ptr + 1]; blue = tileData[ptr + 2]; ptr += 3; }
+			if (useAlpha) { alpha = tileData[ptr]; ptr++; }
+			numQuads++;
+			
+			var mtx = new Matrix();
+			mtx.translate(-offset.x, -offset.y);
+			mtx.scale(scale, scale);
+			mtx.rotate(rotation);
+			mtx.translate(pt.x + offset.x, pt.y + offset.y);
+			
+			tl.x = 0.; tl.y = 0.; 
+			tr.x = rect.width; tr.y = 0.; 
+			bl.x = 0.; bl.y = rect.height;
+			br.x = rect.width; br.y = rect.height;
+			
+			tl = mtx.transformPoint(tl);
+			tr = mtx.transformPoint(tr); 
+			bl = mtx.transformPoint(bl);
+			br = mtx.transformPoint(br);
+			
+			if (useRGB || useAlpha)
 			{
-				pt.x = tileData[ptr]; ptr++;
-				pt.y = tileData[ptr]; ptr++;
-				var offset : Point = points[Std.int(tileData[ptr])];
-				var rect : Rectangle = rects[Std.int(tileData[ptr])]; ptr++;				
-				var scale = 1.;
-				var rotation = 0.;
-				var red = 1.;
-				var green = 1.;
-				var blue = 1.;
-				var alpha = 1.;
-				if (useScale) { scale = tileData[ptr]; ptr++; }
-				if (useRotate) { rotation = tileData[ptr]; ptr++; }
-				if (useRGB) { red = tileData[ptr]; green = tileData[ptr + 1]; blue = tileData[ptr + 2]; ptr += 3; }
-				if (useAlpha) { alpha = tileData[ptr]; ptr++; }
-				
-				var mtx = new Matrix();
-				mtx.translate(-offset.x, -offset.y);
-				mtx.scale(scale, scale);
-				mtx.rotate(rotation);
-				mtx.translate(pt.x+offset.x, pt.y+offset.y);
-				
-				// drawing with the colorized shader goes here
+				scene.writeColorQuad(vert_buf, idx_buf, tl, tr, bl, br, 
+					rect_uv.left, rect_uv.right, rect_uv.top, rect_uv.bottom,
+					red, green, blue, alpha);
 			}
+			else
+			{
+				scene.writeQuad(vert_buf, idx_buf, tl, tr, bl, br, 
+					rect_uv.left, rect_uv.right, rect_uv.top, rect_uv.bottom);
+			}
+			
 		}
+		
+		if (useRGB || useAlpha)
+			scene.runShader(vert_buf, idx_buf, numQuads, this);
+		else
+			scene.runColorShader(vert_buf, idx_buf, numQuads, this);
+		
 	}
 	#end
 
@@ -203,6 +237,13 @@ class XTilesheet
 	{
 		sheet.addTileRect(rectangle, centerPoint);
 		rects.push(rectangle);
+		#if flash11
+		var left = rectangle.left / nmeBitmap.width;
+		var right = rectangle.right / nmeBitmap.width;
+		var top = rectangle.top / nmeBitmap.height;
+		var bottom = rectangle.bottom / nmeBitmap.height;
+		rects_uv.push(new Rectangle(left, top, right - left, bottom - top));
+		#end
 		if (centerPoint == null)
 			points.push(new Point(0.,0.));
 		else

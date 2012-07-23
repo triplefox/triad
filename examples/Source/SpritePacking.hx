@@ -9,6 +9,7 @@ import nme.display.Sprite;
 import nme.display.Tilesheet;
 import nme.Lib;
 import nme.events.KeyboardEvent;
+import com.ludamix.triad.geom.BinPacker;
 
 class SpritePacking
 {
@@ -45,10 +46,10 @@ class SpritePacking
 	
 	public function doOver(?event : KeyboardEvent)
 	{
-		bmp.bitmapData = makePack();
+		bmp.bitmapData = makePack().bitmapdata;
 	}
 	
-	public static function makePack() : BitmapData
+	public static function makePack() : {bitmapdata:BitmapData,nodes:Array<PackerNode>}
 	{
 		var pack = new TilePack();
 		for (n in 0...140)
@@ -63,8 +64,7 @@ class SpritePacking
 			n.bitmapdata.setPixel32(0, n.bitmapdata.height-1, 0xFF000000);
 			n.bitmapdata.setPixel32(n.bitmapdata.width-1, n.bitmapdata.height-1, 0xFF000000);
 		}
-		var bd = pack.compute(256, true).bitmapdata;
-		return bd;	
+		return pack.compute(256, true);
 	}
 	
 }
