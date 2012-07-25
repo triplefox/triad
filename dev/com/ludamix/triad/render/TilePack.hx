@@ -38,7 +38,8 @@ class TilePack
 		}
 	}
 	
-	public function compute(sheet_size : Int, sheet_border : Bool) : {bitmapdata:BitmapData,nodes:Array<PackerNode>}
+	public function compute(sheet_size : Int, sheet_border : Bool,
+		skipx : Int=1) : {bitmapdata:BitmapData,nodes:Array<PackerNode>}
 	{	
 		var bd = new BitmapData(sheet_size, sheet_size, true, 0);
 		
@@ -47,7 +48,7 @@ class TilePack
 		var ar = new Array<{w:Float,h:Float,contents:Dynamic}>();
 		for (n in basis)
 			ar.push({contents:n,w:n.bitmapdata.width+add_val,h:n.bitmapdata.height+add_val});
-		var bp : BinPacker = new BinPacker(sheet_size, sheet_size, ar);
+		var bp : BinPacker = new BinPacker(sheet_size, sheet_size, ar, skipx);
 		
 		for (n in bp.nodes)
 		{

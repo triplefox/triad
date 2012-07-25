@@ -7,9 +7,17 @@ import nme.display.Tilesheet;
 #if flash11
 import flash.display3D.Context3D;
 import com.ludamix.triad.render.Stage3DScene;
+import flash.geom.Point;
+import flash.geom.Matrix;
+import flash.geom.Rectangle;
+import flash.Vector;
 #end
 
 typedef SpriteDef = {name:String, sheet:XTilesheet, idx:Int, frames:Int, xoff:Int, yoff:Int, w:Int, h:Int};
+typedef SpriteRun = { flags:Int, sheet:XTilesheet, run:Array<SpriteXYZ> };
+
+// Something supported in my stage3D renderer and not drawtiles is 4 color vertex mode.
+// This mode is actually quite good at creating fake highlights. It'd be nice to have it.
 
 class SpriteXYZ
 {
@@ -43,6 +51,8 @@ class SpriteRenderer
 	public var sprite_queue : Array<SpriteXYZ>;
 	private var queue_ptr : Int;
 	private var clear_buffer : Array<{flags:Int,sheet:XTilesheet,data:Array<Float>}>;
+	public var run_pre : Array<SpriteRun>;
+	public var run_post : Array<SpriteRun>;
 
 	public function new(defs : Array<SpriteDef>, ?poolsize=0)
 	{
@@ -121,13 +131,12 @@ class SpriteRenderer
 		queue_ptr++;
 	}
 	
-	private function zsort(a : SpriteXYZ, b : SpriteXYZ) {return Std.int(b.z - a.z);}
+	private function zsort(a : SpriteXYZ, b : SpriteXYZ) { return Std.int(b.z - a.z); }
 	
-	public inline function calcTileData(add_offsets : Bool) : Array<{data:Array<Float>,sheet:XTilesheet,flags:Int}>
+	private inline function calcRuns() : Array<SpriteRun>
 	{
-		// 1: make runs from sorted data
 		sprite_queue.sort(zsort);
-		var runs = new Array<{flags:Int,sheet:XTilesheet,run:Array<SpriteXYZ>}>();
+		var runs = new Array<SpriteRun>();
 		var cur_sheet = null;
 		var run_type = 0;
 		var cur_run = new Array<SpriteXYZ>();
@@ -152,6 +161,16 @@ class SpriteRenderer
 		}
 		if (cur_run.length > 0) { runs.push( { flags:run_type, sheet:cur_sheet, run:cur_run } ); }
 		queue_ptr = 0;
+		// add user-driven run data
+		if (run_pre != null) runs = run_pre.concat(runs);
+		if (run_post != null) runs = runs.concat(run_post);
+		return runs;
+	}
+	
+	public inline function calcTileData(add_offsets : Bool) : Array<{data:Array<Float>,sheet:XTilesheet,flags:Int}>
+	{
+		// 1: make runs from sorted data
+		var runs = calcRuns();
 		// 2: translate SpriteXYZ+sheet+flag runs to float+sheet+flag runs
 		// This could be optimized with macros someday to avoid the inner-loop ifs
 		var result = new Array<{flags:Int,sheet:XTilesheet,data:Array<Float>}>();
@@ -223,16 +242,122 @@ class SpriteRenderer
 	#if flash11
 	public inline function draw_stage3d(c : Stage3DScene, ?smooth : Bool)
 	{
-		sprite_queue.sort(zsort);
-		clear_buffer = calcTileData(false);
-		for (r in clear_buffer)
-			r.sheet.drawStage3D(c, r.data, smooth, r.flags);
+		var runs = calcRuns();
+		for (r in runs)
+			_stage3D(c, r, smooth);
+	}
+	
+	private var buffer : Stage3DBuffer;
+	
+	private inline function _stage3D(scene : Stage3DScene, 
+		r : SpriteRun, ?smooth : Bool = false)
+	{
+		var texture = r.sheet.texture;
+		var points = r.sheet.points;
+		var rects = r.sheet.rects;
+		var rects_uv = r.sheet.rects_uv;
+		
+		if (texture == null)
+			throw "Texture is null, add this XTilesheet to the scene first";
+		var src : BitmapData = r.sheet.nmeBitmap;
+		
+		var flags = r.flags;
+		
+		var useAlpha = (flags & Tilesheet.TILE_ALPHA) > 0;
+		var useRGB = (flags & Tilesheet.TILE_RGB) > 0;
+		var useScale = (flags & Tilesheet.TILE_SCALE) > 0;
+		var useRotate = (flags & Tilesheet.TILE_ROTATION) > 0;
+		
+		var ptr = 0;	
+		var tl = new Point(0., 0.);
+		var tr = new Point(0., 0.);
+		var bl = new Point(0., 0.);
+		var br = new Point(0., 0.);
+		var pt = new Point(0., 0.);
+		var offset : Point;
+		var rect_uv : Vector<Float>;
+		var rect : Rectangle;
+		var scale : Float;
+		var rotation : Float;
+		var red : Float;
+		var green : Float;
+		var blue : Float;
+		var alpha : Float;
+		var mtx = new Matrix();
+		
+		if (buffer == null) buffer = new Stage3DBuffer();
+		
+		for (sprite in r.run)
+		{
+			pt.x = sprite.x;
+			pt.y = sprite.y;
+			var uv_pos = sprite.idx;
+			offset = points[uv_pos];
+			rect_uv = rects_uv[uv_pos];
+			rect = rects[uv_pos];
+			scale = 1.;
+			rotation = 0.;
+			red = 1.;
+			green = 1.;
+			blue = 1.;
+			alpha = 1.;
+			
+			tl.x = 0.; tl.y = 0.;
+			tr.x = rect.width; tr.y = 0.;
+			bl.x = 0.; bl.y = rect.height;
+			br.x = rect.width; br.y = rect.height;
+			
+			if (useScale || useRotate) 
+			{ 
+				
+				scale = sprite.scale; 
+				rotation = sprite.rotation; 			
+				mtx.identity();
+				mtx.translate(-offset.x, -offset.y);
+				mtx.scale(scale, scale);
+				mtx.rotate(rotation);
+				mtx.translate(pt.x, pt.y);
+				
+				tl = mtx.transformPoint(tl);
+				tr = mtx.transformPoint(tr); 
+				bl = mtx.transformPoint(bl);
+				br = mtx.transformPoint(br);
+				
+			
+			}
+			else
+			{
+				pt.x -= offset.x; pt.y -= offset.y;
+				tl.x += pt.x; tl.y += pt.y;
+				tr.x += pt.x; tr.y += pt.y;
+				bl.x += pt.x; bl.y += pt.y;
+				br.x += pt.x; br.y += pt.y;
+			}
+			
+			if (useRGB || useAlpha) { 
+				red = sprite.red; green = sprite.green; blue = sprite.blue;
+				alpha = sprite.alpha;
+				buffer.writeColorQuad(tl.x, tl.y, tr.x, tr.y, bl.x, bl.y, br.x, br.y,
+				rect_uv[0], rect_uv[1], rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3],
+				red,green,blue,alpha);
+			}
+			else
+			buffer.writeQuad(tl.x, tl.y, tr.x, tr.y, bl.x, bl.y, br.x, br.y,
+				rect_uv[0], rect_uv[1], rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3]);
+			
+		}
+		
+		if (useRGB || useAlpha)
+			scene.runColorShader(r.sheet, buffer);
+		else
+			scene.runShader(r.sheet, buffer);
+		buffer.resetCounts();
+		
 	}
 	#end
 
 	public inline function draw_tiles(gfx : Graphics, ?smooth : Bool)
 	{
-		sprite_queue.sort(zsort);
 		clear_buffer = calcTileData(false);
 		for (r in clear_buffer)
 			r.sheet.drawTiles(gfx, r.data, smooth, r.flags);

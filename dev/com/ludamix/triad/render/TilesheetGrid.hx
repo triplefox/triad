@@ -10,6 +10,11 @@ import nme.display.Graphics;
 import nme.display.Tilesheet;
 import nme.geom.Point;
 import nme.geom.Rectangle;
+import nme.Vector;
+
+#if flash11
+import com.ludamix.triad.render.Stage3DScene;
+#end
 
 class TilesheetGrid
 {
@@ -26,12 +31,18 @@ class TilesheetGrid
 	private var cache : Array<Float>;
 	private var temp_bitmap : Bitmap;
 	
+	#if flash11
+	private var s3dbuffer : Stage3DBuffer;
+	public var useStage3D : Bool;
+	#end
+	
 	public function setAlpha(n:Float) { if (alpha!=n) {alpha = n; flags_changed = true;} return alpha; }
 	public function setRed(n:Float) { if (red!=n) {red = n; flags_changed = true;} return red; }
 	public function setGreen(n:Float) { if (green!=n) {green = n; flags_changed = true;} return green; }
 	public function setBlue(n:Float) { if (blue!=n) {blue = n; flags_changed = true;} return blue; }
 	
-	public function new(sheet : XTilesheet, worldw : Int, worldh : Int, twidth : Int, theight : Int, populate : Array<Int>)
+	public function new(sheet : XTilesheet, worldw : Int, worldh : Int, twidth : Int, theight : Int, populate : Array<Int>,
+		?useStage3D=false)
 	{		
 		grid = new IntGrid(worldw, worldh, twidth, theight, populate);
 		this.sheet = sheet;
@@ -41,6 +52,7 @@ class TilesheetGrid
 		this.blue = 1.0;
 		flags_changed = true;
 		temp_bitmap = new Bitmap(sheet.nmeBitmap);
+		this.useStage3D = useStage3D;
 		
 		recache();		
 	}
@@ -50,6 +62,33 @@ class TilesheetGrid
 		cache = new Array<Float>();
 		
 		var idx = 0;
+		
+		#if flash11
+		if (useStage3D)
+		{
+			if (s3dbuffer == null) s3dbuffer = new Stage3DBuffer();
+			s3dbuffer.resetCounts();
+			var offset : Point;
+			var rect : Rectangle;
+			var rect_uv : Vector<Float>;
+			var idx = 0;
+			for (y in 0...grid.worldH)
+			{
+				for (x in 0...grid.worldW)
+				{
+					var frame = grid.c1t(idx);
+					rect = sheet.rects[frame];
+					rect_uv = sheet.rects_uv[frame];
+					var px = x * grid.twidth; var py = y * grid.theight;
+					var pr = px + grid.twidth; var pb = py + grid.theight;
+					s3dbuffer.writeQuad(px, py, pr, py, px, pb, pr, pb, rect_uv[0], rect_uv[1],
+						rect_uv[2],rect_uv[1],rect_uv[0],rect_uv[3],rect_uv[2],rect_uv[3]);
+					idx++;
+				}
+			}
+			return;
+		}
+		#end
 		
 		if (useDraw())
 		{
@@ -103,16 +142,23 @@ class TilesheetGrid
 	public inline function stage3DFromGrid(input_grid : IntGrid, c : Stage3DScene, partialUpdate=true)
 	{
 		var idx = 0;
-		if (flags_changed) partialUpdate = false;
+		
+		if (!useStage3D) throw "enable stage 3d on this first";
 		
 		if (partialUpdate)
 		{
+			// someday maybe we could actually have this do a partial update on the buffer.
+			var doRecache = false;
 			for (n in input_grid.world)
 			{
 				if (n != grid.world[idx])
+				{
 					set1(idx, n);
+					doRecache = true;
+				}
 				idx++;
 			}
+			if (doRecache) recache();
 		}
 		else
 		{
@@ -123,9 +169,8 @@ class TilesheetGrid
 			}
 			recache();
 		}
-		if (useDraw())
-			sheet.drawStage3D(c, cache, false, Tilesheet.TILE_RGB+Tilesheet.TILE_ALPHA);
-		else sheet.drawStage3D(c, cache);
+		c.runShader(sheet, s3dbuffer);
+		
 		flags_changed = false;
 	}
 	#end

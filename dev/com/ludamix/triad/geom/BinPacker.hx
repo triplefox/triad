@@ -5,7 +5,7 @@ class BinPacker
 	
 	public var nodes : Array<PackerNode>;
 	
-	public function new(w:Float,h:Float,inputs: Array<{contents:Dynamic,w:Float,h:Float}>)
+	public function new(w:Float,h:Float,inputs: Array<{contents:Dynamic,w:Float,h:Float}>, ?skipx=1)
 	{
 		// take the inputs and assign ids, then sort by height(this helps pack efficiency)
 		
@@ -44,7 +44,7 @@ class BinPacker
 						var test = nodes[test_idx];
 						if (test.intersect(n))
 						{
-							{ fail = true; n.x = Math.max(n.x + 1, test.r()); 
+							{ fail = true; n.x = Math.max(n.x + skipx, test.r()); 
 							  min_y = Math.min(min_y, test.y + test.h - n.y); break; }
 						}
 					}
@@ -86,19 +86,14 @@ class PackerNode
 		this.id = id;
 	}
 	
-	public inline function l() { return x; }
-	public inline function r() { return x+w; }
-	public inline function t() { return y; }
-	public inline function b() { return y+h; }
+	@:extern public inline function l() { return x; }
+	@:extern public inline function r() { return x+w; }
+	@:extern public inline function t() { return y; }
+	@:extern public inline function b() { return y+h; }
 	
-	public inline function intersect(other : PackerNode)
+	@:extern public inline function intersect(other : PackerNode)
 	{
 		return (!((this.r() <= other.l()) || (this.l() >= other.r()) || (this.b() <= other.t()) || (this.t() >= other.b())));
-	}
-	
-	public inline function intersectVert(other : PackerNode)
-	{
-		return (!((this.b() <= other.t()) || (this.t() >= other.b())));
 	}
 	
 }

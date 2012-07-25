@@ -2,6 +2,7 @@ package com.ludamix.triad.render;
 
 import flash.Lib;
 import flash.Vector;
+import flash.geom.Vector3D;
 import flash.geom.Matrix3D;
 import flash.geom.Point;
 import flash.display.Stage;
@@ -13,10 +14,144 @@ import flash.display3D.Context3DRenderMode;
 import flash.display3D.Context3DTextureFormat;
 import flash.display3D.textures.Texture;
 import format.agal.Tools;
+import nme.display.StageScaleMode;
 import nme.utils.ByteArray;
 import nme.utils.Endian;
 
 typedef VFloat = Vector<Float>;
+
+class Stage3DBuffer
+{
+
+	public var bytebuf_vert : ByteArray;
+	public var bytebuf_idx : ByteArray;
+	public var idx_count : Int;
+	public var idx_max : Int;
+	public var quad_count : Int;
+	public var quad_max : Int;
+	
+	public function new()
+	{
+		bytebuf_vert = new ByteArray();
+		bytebuf_idx = new ByteArray();
+		bytebuf_vert.endian = Endian.LITTLE_ENDIAN;
+		bytebuf_idx.endian = Endian.LITTLE_ENDIAN;
+	}
+	
+	public inline function resetCounts()
+	{
+		idx_count = 0;
+		idx_max = 0;
+		quad_count = 0;
+		quad_max = 0;
+		bytebuf_idx.position = 0;
+		bytebuf_vert.position = 0;
+	}
+	
+	public inline function writeVert(x : Float, y :Float, u : Float, v : Float)
+	{
+		bytebuf_vert.writeFloat(x);
+		bytebuf_vert.writeFloat(y);
+		bytebuf_vert.writeFloat(u);
+		bytebuf_vert.writeFloat(v);
+		bytebuf_idx.writeShort(idx_count);
+		++idx_count;
+	}
+	
+	public inline function writeColorVert(x : Float, y :Float, u : Float, v : Float, 
+		r : Float, g : Float, b : Float, a :Float)
+	{
+		bytebuf_vert.writeFloat(x);
+		bytebuf_vert.writeFloat(y);
+		bytebuf_vert.writeFloat(u);
+		bytebuf_vert.writeFloat(v);
+		bytebuf_vert.writeFloat(r);
+		bytebuf_vert.writeFloat(g);
+		bytebuf_vert.writeFloat(b);
+		bytebuf_vert.writeFloat(a);
+		bytebuf_idx.writeShort(idx_count);
+		++idx_count;
+	}
+	
+	public inline function seekQuad(n : Int)
+	{
+		if (idx_count > idx_max) idx_max = idx_count;
+		idx_count = n;
+		bytebuf_idx.position = 6 * 2 * n;
+		bytebuf_vert.position = 6 * 4 * n;
+	}
+	
+	public inline function seekColorQuad(n : Int)
+	{
+		if (idx_count > idx_max) idx_max = idx_count;
+		idx_count = n;
+		bytebuf_idx.position = 6 * 2 * n;
+		bytebuf_vert.position = 6 * 8 * n;
+	}
+	
+	public inline function writeQuad(
+		tl_x : Float, tl_y : Float, tr_x : Float, tr_y : Float, 
+		bl_x : Float, bl_y : Float, br_x : Float, br_y : Float,
+		tluv_x : Float, tluv_y : Float, truv_x : Float, truv_y : Float,
+		bluv_x : Float, bluv_y : Float, bruv_x : Float, bruv_y : Float
+		)
+	{
+		
+		writeVert(tl_x, tl_y, tluv_x, truv_y);
+		writeVert(tr_x, tr_y, truv_x, truv_y);
+		writeVert(br_x, br_y, bruv_x, bruv_y);
+		writeVert(tl_x, tl_y, tluv_x, tluv_y);
+		writeVert(br_x, br_y, bruv_x, bruv_y);
+		writeVert(bl_x, bl_y, bluv_x, bluv_y);
+		
+		quad_count++;
+		
+	}
+	
+	public inline function writeColorQuad(
+		tl_x : Float, tl_y : Float, tr_x : Float, tr_y : Float, 
+		bl_x : Float, bl_y : Float, br_x : Float, br_y : Float,
+		tluv_x : Float, tluv_y : Float, truv_x : Float, truv_y : Float,
+		bluv_x : Float, bluv_y : Float, bruv_x : Float, bruv_y : Float,
+		r : Float, g : Float, b : Float, a : Float
+		)
+	{
+		
+		writeColorVert(tl_x, tl_y, tluv_x, truv_y, r, g, b, a);
+		writeColorVert(tr_x, tr_y, truv_x, truv_y, r, g, b, a);
+		writeColorVert(br_x, br_y, bruv_x, bruv_y, r, g, b, a);
+		writeColorVert(tl_x, tl_y, tluv_x, tluv_y, r, g, b, a);
+		writeColorVert(br_x, br_y, bruv_x, bruv_y, r, g, b, a);
+		writeColorVert(bl_x, bl_y, bluv_x, bluv_y, r, g, b, a);
+		
+		quad_count++;
+		
+	}
+	
+	public inline function write4ColorQuad(
+		tl_x : Float, tl_y : Float, tr_x : Float, tr_y : Float, 
+		bl_x : Float, bl_y : Float, br_x : Float, br_y : Float,
+		tluv_x : Float, tluv_y : Float, truv_x : Float, truv_y : Float,
+		bluv_x : Float, bluv_y : Float, bruv_x : Float, bruv_y : Float,
+		tl_r : Float, tl_g : Float, tl_b : Float, tl_a : Float,
+		tr_r : Float, tr_g : Float, tr_b : Float, tr_a : Float,
+		bl_r : Float, bl_g : Float, bl_b : Float, bl_a : Float,
+		br_r : Float, br_g : Float, br_b : Float, br_a : Float
+		)
+	{
+		
+		writeColorVert(tl_x, tl_y, tluv_x, truv_y, tl_r, tl_g, tl_b, tl_a);
+		writeColorVert(tr_x, tr_y, truv_x, truv_y, tr_r, tr_g, tr_b, tr_a);
+		writeColorVert(br_x, br_y, bruv_x, bruv_y, br_r, br_g, br_b, br_a);
+		writeColorVert(tl_x, tl_y, tluv_x, tluv_y, tl_r, tl_g, tl_b, tl_a);
+		writeColorVert(br_x, br_y, bruv_x, bruv_y, br_r, br_g, br_b, br_a);
+		writeColorVert(bl_x, bl_y, bluv_x, bluv_y, bl_r, bl_g, bl_b, bl_a);
+		
+		quad_count++;
+		
+	}
+	
+}
 
 class Stage3DScene
 {
@@ -26,13 +161,8 @@ class Stage3DScene
 	public var s : flash.display.Stage3D;
 	public var c : flash.display3D.Context3D;
 	public var shader : Texture2DShader;
-	public var shader_color : Texture2DColorShader;
+	public var color_shader : TextureColor2DShader;
 	public var tilesheets : Array<XTilesheet>;
-	public var bytebuf_vert : ByteArray;
-	public var bytebuf_idx : ByteArray;
-	public var idx_count : Int;
-	
-	public var prof : Array<{time:Float,dist:Float,name:String}>;
 	
 	public function new(stage : Stage, ?callWhenReady : flash.events.Event->Void)
 	{
@@ -41,16 +171,10 @@ class Stage3DScene
 		s.addEventListener( flash.events.Event.CONTEXT3D_CREATE, onReady );
 		if (callWhenReady!=null)
 			s.addEventListener( flash.events.Event.CONTEXT3D_CREATE, callWhenReady );
-		#if flash11_4
-		s.requestContext3D(Context3DRenderMode.AUTO, Context3DProfile.BASELINE_CONSTRAINED);
-		#else
 		s.requestContext3D("auto");
-		#end
+		
 		tilesheets = new Array();
-		bytebuf_vert = new ByteArray();
-		bytebuf_idx = new ByteArray();
-		bytebuf_vert.endian = Endian.LITTLE_ENDIAN;
-		bytebuf_idx.endian = Endian.LITTLE_ENDIAN;
+		
 	}
 	
 	function onReady( _ ) 
@@ -59,8 +183,8 @@ class Stage3DScene
 		c.enableErrorChecking = false;
 		c.configureBackBuffer( stage.stageWidth, stage.stageHeight, 0, true );
 		
-		shader = new Texture2DShader(c);
-		shader_color = new Texture2DColorShader(c);		
+		shader = new Texture2DShader(c);		
+		color_shader = new TextureColor2DShader(c);
 	}
 	
 	public function addTilesheet(ts : XTilesheet)
@@ -71,13 +195,6 @@ class Stage3DScene
 		ts.texture.uploadFromBitmapData(ts.nmeBitmap);
 	}
 	
-	private inline function resetCounts()
-	{
-		idx_count = 0;
-		bytebuf_idx.position = 0;
-		bytebuf_vert.position = 0;
-	}
-	
 	public inline function clear(r=0.,g=0.,b=0.,a=1.,depth=1.,stencil:UInt=0,mask:UInt=0xFFFFFFFF)
 	{
 		c.clear(r, g, b, a, depth, stencil, mask);		
@@ -85,29 +202,11 @@ class Stage3DScene
 		c.setCulling(flash.display3D.Context3DTriangleFace.BACK );
 		c.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
 		projection = createOrthographicProjectionMatrix(stage.stageWidth, stage.stageHeight, -1., 1.);
-		resetCounts();
-		prof = new Array();
 	}
 	
 	public inline function present()
 	{
 		c.present();
-		// profile infos
-		var s = new Array<Array<Dynamic>>();
-		for (n in prof)
-			s.push([n.dist,n.name]);
-		//trace(s);
-	}
-	
-	public inline function doProf(name:String)
-	{
-		/*if (prof.length == 0)
-			prof.push( { time:Lib.getTimer(), dist:0, name:name } );
-		else
-		{
-			var t = Lib.getTimer();
-			prof.push( { time:t, dist:t - prof[prof.length-1].time,name:name } );
-		}*/
 	}
 	
 	private function createOrthographicProjectionMatrix(viewWidth : Float, viewHeight : Float, 
@@ -133,78 +232,21 @@ class Stage3DScene
 		return mtx;
 	}
 	
-	public inline function writeVert(
-		x : Float, y : Float, u : Float, v : Float)
+	public inline function runShader(sheet : XTilesheet, buffer : Stage3DBuffer)
 	{
-		bytebuf_vert.writeFloat(x);
-		bytebuf_vert.writeFloat(y);
-		bytebuf_vert.writeFloat(u);
-		bytebuf_vert.writeFloat(v);
-		++idx_count;
-	}
-	
-	public inline function writeQuad(
-		tl_x : Float, tl_y : Float, tr_x : Float, tr_y : Float, 
-		bl_x : Float, bl_y : Float, br_x : Float, br_y : Float,
-		tleft : Float, ttop : Float, tright : Float, tbottom : Float)
-	{
-		writeVert(tl_x, tl_y, tleft, ttop);
-		writeVert(tr_x, tr_y, tright, ttop);
-		writeVert(br_x, br_y, tright, tbottom);
-		writeVert(tl_x, tl_y, tleft, ttop);
-		writeVert(br_x, br_y, tright, tbottom);
-		writeVert(bl_x, bl_y, tleft, tbottom);
-	}
-	
-	public inline function writeColorVert(
-		x : Float, y : Float, u : Float, v : Float, r : Float, g : Float, b : Float, a : Float)
-	{
-		bytebuf_vert.writeFloat(x);
-		bytebuf_vert.writeFloat(y);
-		bytebuf_vert.writeFloat(u);
-		bytebuf_vert.writeFloat(v);
-		bytebuf_vert.writeFloat(r);
-		bytebuf_vert.writeFloat(g);
-		bytebuf_vert.writeFloat(b);
-		bytebuf_vert.writeFloat(a);
-		++idx_count;
-	}
-	
-	public inline function writeColorQuad(
-		tl_x : Float, tl_y : Float, tr_x : Float, tr_y : Float, 
-		bl_x : Float, bl_y : Float, br_x : Float, br_y : Float,
-		tleft : Float, ttop : Float, tright : Float, tbottom : Float,
-		r : Float, g : Float, b : Float, a : Float)
-	{
-		writeColorVert(tl_x, tl_y, tleft, ttop, r, g, b, a);
-		writeColorVert(tr_x, tr_y, tright, ttop, r, g, b, a);
-		writeColorVert(br_x, br_y, tright, tbottom, r, g, b, a);
-		writeColorVert(tl_x, tl_y, tleft, ttop, r, g, b, a);
-		writeColorVert(br_x, br_y, tright, tbottom, r, g, b, a);
-		writeColorVert(bl_x, bl_y, tleft, tbottom, r, g, b, a);
-	}
-	
-	private inline function padIBuf()
-	{
-		while (Std.int(bytebuf_idx.length) < idx_count * 2) // fill out the index buffer with incrementing values
-		{
-			bytebuf_idx.writeShort(bytebuf_idx.position >> 1);
-		}	
-	}
-	
-	public inline function runShader(sheet : XTilesheet)
-	{
+		
 		shader.init(
 			{ mproj : projection },
 			{ tex : sheet.texture }
 		);
 		
-		padIBuf();
+		buffer.seekQuad(buffer.idx_count);
+		var idx_count = buffer.idx_max;
+		var bytebuf_idx = buffer.bytebuf_idx;
+		var bytebuf_vert = buffer.bytebuf_vert;
 		
 		var ibuf = c.createIndexBuffer(idx_count); ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
 		var vbuf = c.createVertexBuffer(idx_count, 4); vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
-		
-		resetCounts();
 		
 		shader.bind(vbuf);
 		c.drawTriangles(ibuf);
@@ -213,28 +255,33 @@ class Stage3DScene
 		
 		vbuf.dispose();
 		ibuf.dispose();
+		
 	}
 	
-	public inline function runColorShader(sheet : XTilesheet)
+	public inline function runColorShader(sheet : XTilesheet, buffer : Stage3DBuffer)
 	{
-		shader_color.init(
+		
+		color_shader.init(
 			{ mproj : projection },
 			{ tex : sheet.texture }
 		);
 		
-		padIBuf();
+		buffer.seekColorQuad(buffer.idx_count);
+		var idx_count = buffer.idx_max;
+		var bytebuf_idx = buffer.bytebuf_idx;
+		var bytebuf_vert = buffer.bytebuf_vert;
 		
 		var ibuf = c.createIndexBuffer(idx_count); ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
 		var vbuf = c.createVertexBuffer(idx_count, 8); vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
-		resetCounts();
 		
-		shader_color.bind(vbuf);
+		color_shader.bind(vbuf);
 		c.drawTriangles(ibuf);
 		
-		shader_color.unbind();
+		color_shader.unbind();
 		
 		vbuf.dispose();
 		ibuf.dispose();
+		
 	}
 	
 }
@@ -258,13 +305,13 @@ class Texture2DShader extends format.hxsl.Shader {
 
 }
 
-class Texture2DColorShader extends format.hxsl.Shader {
+class TextureColor2DShader extends format.hxsl.Shader {
 
 	static var SRC = {
 		var input : {
 			pos : Float2,
 			uv : Float2,
-			rgba : Float4,
+			rgba : Float4
 		};
 		var tuv : Float2;
 		var trgba : Float4;
