@@ -59,6 +59,8 @@ class Stage3DTest
 	{
 		scene.clear();
 		
+		// writing the whole bitmap
+		
 		var buf = new Vector<Float>();
 		var idx = new Vector<UInt>();
 		
@@ -71,6 +73,32 @@ class Stage3DTest
 		
 		scene.writeColorQuad(buf, idx, tl, tr, bl, br, 0., 0., 1., 1., 0.1, 1., 1., 1.);
 		scene.runColorShader(buf, idx, 1, ts);
+		
+		// writing individual packed rects
+		
+		var px = 0;
+		
+		var buf = new Vector<Float>();
+		var idx = new Vector<UInt>();
+		for (n in 0...10)
+		{
+			var pack = ts.rects[n];		
+			var pack_uv = ts.rects_uv[n];
+			var tl = new Point(0., 0.);
+			var tr = new Point(pack.width, 0.);
+			var bl = new Point(0., pack.height);
+			var br = new Point(pack.width, pack.height);
+			tl.x += px;
+			tr.x += px;
+			bl.x += px;
+			br.x += px;
+			
+			px += Std.int(pack.width+1);
+			
+			scene.writeQuad(buf, idx, tl, tr, bl, br, pack_uv.left, pack_uv.top, pack_uv.right, pack_uv.bottom);
+		}
+		scene.runShader(buf, idx, 10, ts);		
+		
 		//scene.writeQuad(buf, idx, tl, tr, bl, br, 0., 0., 1., 1.);
 		//scene.runShader(buf, idx, 1, ts);
 		

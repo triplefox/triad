@@ -99,6 +99,37 @@ class TilesheetGrid
 	public inline function set2(x, y, val) { var idx = grid.c21(x, y); set1(idx,val); }
 	public inline function setff(x, y, val) { var idx = grid.cff1(x, y); set1(idx,val); }
 	
+	#if flash11
+	public inline function stage3DFromGrid(input_grid : IntGrid, c : Stage3DScene, partialUpdate=true)
+	{
+		var idx = 0;
+		if (flags_changed) partialUpdate = false;
+		
+		if (partialUpdate)
+		{
+			for (n in input_grid.world)
+			{
+				if (n != grid.world[idx])
+					set1(idx, n);
+				idx++;
+			}
+		}
+		else
+		{
+			for (n in input_grid.world)
+			{
+				grid.world[idx] = n;
+				idx++;
+			}
+			recache();
+		}
+		if (useDraw())
+			sheet.drawStage3D(c, cache, false, Tilesheet.TILE_RGB+Tilesheet.TILE_ALPHA);
+		else sheet.drawStage3D(c, cache);
+		flags_changed = false;
+	}
+	#end
+	
 	public inline function renderFromGrid(input_grid : IntGrid, gfx : Graphics, partialUpdate=true)
 	{
 		var idx = 0;

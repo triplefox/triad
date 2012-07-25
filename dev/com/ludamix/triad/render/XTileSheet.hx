@@ -44,83 +44,136 @@ class XTilesheet
 	public var texture : Texture;
 	public var rects_uv : Array<Rectangle>;
 	
-	public inline function drawStage3D(scene : Dynamic, tileData : Array<Float>, ?smooth : Bool = false, ?flags : Int = 0)
+	private inline function s3dUpload(scene : Stage3DScene, tileData : Array<Float>)
+	{
+		scene.doProf("s3dstart");
+		var ptr = 0;	
+		var pt_x = 0.;
+		var pt_y = 0.;
+		
+		var offset : Point;
+		var rect_uv : Rectangle;
+		var rect : Rectangle;
+		
+		var tl_x = 0.; var tl_y = 0.; var tr_x = 0.; var tr_y = 0.;
+		var bl_x = 0.; var bl_y = 0.; var br_x = 0.; var br_y = 0.;
+		
+		while (ptr < tileData.length)
+		{
+			pt_x = tileData[ptr]; ptr++;
+			pt_y = tileData[ptr]; ptr++;
+			offset = points[Std.int(tileData[ptr])];
+			rect_uv = rects_uv[Std.int(tileData[ptr])];
+			rect = rects[Std.int(tileData[ptr])]; ptr++;
+			
+			pt_x -= offset.x;
+			pt_y -= offset.y;
+			
+			tl_x = pt_x; tl_y = pt_y;
+			tr_x = pt_x+rect.width; tr_y = pt_y;
+			bl_x = pt_x; bl_y = pt_y+rect.height;
+			br_x = pt_x+rect.width; br_y = pt_y+rect.height;			
+			
+			scene.writeQuad(tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y, 
+				rect_uv.left, rect_uv.top, rect_uv.right, rect_uv.bottom);
+		}
+		scene.doProf("quadsdone");
+		scene.runShader(this);
+		scene.doProf("s3dend");
+	}
+	
+	public inline function drawStage3D(scene : Stage3DScene, 
+		tileData : Array<Float>, ?smooth : Bool = false, ?flags : Int = 0)
 	{
 		if (texture == null)
 			throw "Texture is null, add this XTilesheet to the scene first";
-		var ptr = 0;
 		var src : BitmapData = sheet.nmeBitmap;
-		var pt = new Point(0., 0.);
 		
 		var useAlpha = (flags & Tilesheet.TILE_ALPHA) > 0;
 		var useRGB = (flags & Tilesheet.TILE_RGB) > 0;
 		var useScale = (flags & Tilesheet.TILE_SCALE) > 0;
 		var useRotate = (flags & Tilesheet.TILE_ROTATION) > 0;
-		var tb = temp_bitmap;
-		tb.bitmapData = src;
-		var numQuads = 0;
 		
-		var tl = new Point(0., 0.);
-		var tr = new Point(0., 0.);
-		var bl = new Point(0., 0.);
-		var br = new Point(0., 0.);
-		
-		var vert_buf = new Vector<Float>();
-		var idx_buf = new Vector<UInt>();
-		
-		while (ptr < tileData.length)
+		// someday in the future we might want to apply macros to cover all of these cases optimally.
+		if (!useAlpha && !useRGB && !useScale && !useRotate) // optimize the blit case
 		{
-			pt.x = tileData[ptr]; ptr++;
-			pt.y = tileData[ptr]; ptr++;
-			var offset : Point = points[Std.int(tileData[ptr])];
-			var rect_uv : Rectangle = rects_uv[Std.int(tileData[ptr])];
-			var rect : Rectangle = rects[Std.int(tileData[ptr])]; ptr++;				
-			var scale = 1.;
-			var rotation = 0.;
-			var red = 1.;
-			var green = 1.;
-			var blue = 1.;
-			var alpha = 1.;
-			if (useScale) { scale = tileData[ptr]; ptr++; }
-			if (useRotate) { rotation = tileData[ptr]; ptr++; }
-			if (useRGB) { red = tileData[ptr]; green = tileData[ptr + 1]; blue = tileData[ptr + 2]; ptr += 3; }
-			if (useAlpha) { alpha = tileData[ptr]; ptr++; }
-			numQuads++;
+			s3dUpload(scene, tileData);
+		}
+		else // generic transformed quads
+		{
+			var vert_buf = new Vector<Float>();
+			var idx_buf = new Vector<UInt>();
 			
+			var ptr = 0;	
+			var tl = new Point(0., 0.);
+			var tr = new Point(0., 0.);
+			var bl = new Point(0., 0.);
+			var br = new Point(0., 0.);
+			var pt = new Point(0., 0.);
+			var offset : Point;
+			var rect_uv : Rectangle;
+			var rect : Rectangle;
+			var scale : Float;
+			var rotation : Float;
+			var red : Float;
+			var green : Float;
+			var blue : Float;
+			var alpha : Float;
 			var mtx = new Matrix();
-			mtx.translate(-offset.x, -offset.y);
-			mtx.scale(scale, scale);
-			mtx.rotate(rotation);
-			mtx.translate(pt.x + offset.x, pt.y + offset.y);
 			
-			tl.x = 0.; tl.y = 0.; 
-			tr.x = rect.width; tr.y = 0.; 
-			bl.x = 0.; bl.y = rect.height;
-			br.x = rect.width; br.y = rect.height;
-			
-			tl = mtx.transformPoint(tl);
-			tr = mtx.transformPoint(tr); 
-			bl = mtx.transformPoint(bl);
-			br = mtx.transformPoint(br);
+			while (ptr < tileData.length)
+			{
+				pt.x = tileData[ptr]; ptr++;
+				pt.y = tileData[ptr]; ptr++;
+				offset = points[Std.int(tileData[ptr])];
+				rect_uv = rects_uv[Std.int(tileData[ptr])];
+				rect = rects[Std.int(tileData[ptr])]; ptr++;
+				scale = 1.;
+				rotation = 0.;
+				red = 1.;
+				green = 1.;
+				blue = 1.;
+				alpha = 1.;
+				if (useScale) { scale = tileData[ptr]; ptr++; }
+				if (useRotate) { rotation = tileData[ptr]; ptr++; }
+				if (useRGB) { red = tileData[ptr]; green = tileData[ptr + 1]; blue = tileData[ptr + 2]; ptr += 3; }
+				if (useAlpha) { alpha = tileData[ptr]; ptr++; } 
+				
+				mtx.identity();
+				mtx.translate(-offset.x, -offset.y);
+				mtx.scale(scale, scale);
+				mtx.rotate(rotation);
+				mtx.translate(pt.x, pt.y);
+				
+				tl.x = 0.; tl.y = 0.;
+				tr.x = rect.width; tr.y = 0.;
+				bl.x = 0.; bl.y = rect.height;
+				br.x = rect.width; br.y = rect.height;
+				
+				tl = mtx.transformPoint(tl);
+				tr = mtx.transformPoint(tr); 
+				bl = mtx.transformPoint(bl);
+				br = mtx.transformPoint(br);
+				
+				if (useRGB || useAlpha)
+				{
+					scene.writeColorQuad(tl.x, tl.y, tr.x, tr.y, bl.x, bl.y, br.x, br.y, 
+						rect_uv.left, rect_uv.top, rect_uv.right, rect_uv.bottom,
+						red, green, blue, alpha);
+				}
+				else
+				{
+					scene.writeQuad(tl.x, tl.y, tr.x, tr.y, bl.x, bl.y, br.x, br.y,
+						rect_uv.left, rect_uv.top, rect_uv.right, rect_uv.bottom);
+				}
+				
+			}
 			
 			if (useRGB || useAlpha)
-			{
-				scene.writeColorQuad(vert_buf, idx_buf, tl, tr, bl, br, 
-					rect_uv.left, rect_uv.right, rect_uv.top, rect_uv.bottom,
-					red, green, blue, alpha);
-			}
+				scene.runColorShader(this);
 			else
-			{
-				scene.writeQuad(vert_buf, idx_buf, tl, tr, bl, br, 
-					rect_uv.left, rect_uv.right, rect_uv.top, rect_uv.bottom);
-			}
-			
+				scene.runShader(this);
 		}
-		
-		if (useRGB || useAlpha)
-			scene.runShader(vert_buf, idx_buf, numQuads, this);
-		else
-			scene.runColorShader(vert_buf, idx_buf, numQuads, this);
 		
 	}
 	#end

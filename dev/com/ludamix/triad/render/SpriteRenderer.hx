@@ -6,6 +6,7 @@ import nme.display.Tilesheet;
 
 #if flash11
 import flash.display3D.Context3D;
+import com.ludamix.triad.render.Stage3DScene;
 #end
 
 typedef SpriteDef = {name:String, sheet:XTilesheet, idx:Int, frames:Int, xoff:Int, yoff:Int, w:Int, h:Int};
@@ -152,31 +153,60 @@ class SpriteRenderer
 		if (cur_run.length > 0) { runs.push( { flags:run_type, sheet:cur_sheet, run:cur_run } ); }
 		queue_ptr = 0;
 		// 2: translate SpriteXYZ+sheet+flag runs to float+sheet+flag runs
+		// This could be optimized with macros someday to avoid the inner-loop ifs
 		var result = new Array<{flags:Int,sheet:XTilesheet,data:Array<Float>}>();
 		for (r in runs)
 		{
 			var draw_buffer = new Array<Float>();
-			result.push({flags:r.flags,sheet:r.sheet,data:draw_buffer});
-			for (spr in r.run)
+			result.push( { flags:r.flags, sheet:r.sheet, data:draw_buffer } );
+			
+			if ((r.flags & Tilesheet.TILE_SCALE) > 0 || (r.flags & Tilesheet.TILE_ROTATION) > 0 ||
+				(r.flags & Tilesheet.TILE_RGB) > 0 || (r.flags & Tilesheet.TILE_ALPHA) > 0)
+			{
+				for (spr in r.run)
+				{
+					if (add_offsets)
+					{
+						draw_buffer.push(spr.x - spr.sheet.points[spr.idx].x);
+						draw_buffer.push(spr.y - spr.sheet.points[spr.idx].y);
+					}
+					else
+					{
+						draw_buffer.push(spr.x);
+						draw_buffer.push(spr.y);
+					}
+					draw_buffer.push(spr.idx);
+					
+					if ((r.flags & Tilesheet.TILE_SCALE)>0) draw_buffer.push(spr.scale);
+					if ((r.flags & Tilesheet.TILE_ROTATION)>0) draw_buffer.push(spr.rotation);
+					if ((r.flags & Tilesheet.TILE_RGB)>0) 
+						{ draw_buffer.push(spr.red); draw_buffer.push(spr.green); draw_buffer.push(spr.blue); }
+					if ((r.flags & Tilesheet.TILE_ALPHA)>0) draw_buffer.push(spr.alpha);			
+				}
+				
+			}
+			else // optimize for the basic blit case
 			{
 				if (add_offsets)
 				{
-					draw_buffer.push(spr.x - spr.sheet.points[spr.idx].x);
-					draw_buffer.push(spr.y - spr.sheet.points[spr.idx].y);
+					for (spr in r.run)
+					{
+						draw_buffer.push(spr.x - spr.sheet.points[spr.idx].x);
+						draw_buffer.push(spr.y - spr.sheet.points[spr.idx].y);
+						draw_buffer.push(spr.idx);
+					}
 				}
 				else
 				{
-					draw_buffer.push(spr.x);
-					draw_buffer.push(spr.y);
-				}
-				draw_buffer.push(spr.idx);
-				
-				if ((r.flags & Tilesheet.TILE_SCALE)>0) draw_buffer.push(spr.scale);
-				if ((r.flags & Tilesheet.TILE_ROTATION)>0) draw_buffer.push(spr.rotation);
-				if ((r.flags & Tilesheet.TILE_RGB)>0) 
-					{ draw_buffer.push(spr.red); draw_buffer.push(spr.green); draw_buffer.push(spr.blue); }
-				if ((r.flags & Tilesheet.TILE_ALPHA)>0) draw_buffer.push(spr.alpha);			
+					for (spr in r.run)
+					{
+						draw_buffer.push(spr.x);
+						draw_buffer.push(spr.y);
+						draw_buffer.push(spr.idx);
+					}
+				}			
 			}
+			
 		}
 		return result;
 	}
@@ -191,12 +221,12 @@ class SpriteRenderer
 	}
 
 	#if flash11
-	public inline function draw_stage3d(c : Context3D, ?smooth : Bool)
+	public inline function draw_stage3d(c : Stage3DScene, ?smooth : Bool)
 	{
 		sprite_queue.sort(zsort);
 		clear_buffer = calcTileData(false);
-		for (r in clear_buffer) {}
-			//r.sheet.drawTiles(gfx, r.data, smooth, r.flags);
+		for (r in clear_buffer)
+			r.sheet.drawStage3D(c, r.data, smooth, r.flags);
 	}
 	#end
 

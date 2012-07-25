@@ -1,14 +1,20 @@
 package com.ludamix.triad.render;
 
+import flash.Lib;
 import flash.Vector;
 import flash.geom.Matrix3D;
+import flash.geom.Point;
 import flash.display.Stage;
 import flash.display.Stage3D;
 import flash.display3D.Context3D;
+import flash.display3D.Context3DBlendFactor;
 import flash.display3D.Context3DCompareMode;
 import flash.display3D.Context3DRenderMode;
 import flash.display3D.Context3DTextureFormat;
 import flash.display3D.textures.Texture;
+import format.agal.Tools;
+import nme.utils.ByteArray;
+import nme.utils.Endian;
 
 typedef VFloat = Vector<Float>;
 
@@ -16,11 +22,17 @@ class Stage3DScene
 {
 
 	public var stage : flash.display.Stage;
+	public var projection : Matrix3D;
 	public var s : flash.display.Stage3D;
 	public var c : flash.display3D.Context3D;
 	public var shader : Texture2DShader;
 	public var shader_color : Texture2DColorShader;
 	public var tilesheets : Array<XTilesheet>;
+	public var bytebuf_vert : ByteArray;
+	public var bytebuf_idx : ByteArray;
+	public var idx_count : Int;
+	
+	public var prof : Array<{time:Float,dist:Float,name:String}>;
 	
 	public function new(stage : Stage, ?callWhenReady : flash.events.Event->Void)
 	{
@@ -29,16 +41,24 @@ class Stage3DScene
 		s.addEventListener( flash.events.Event.CONTEXT3D_CREATE, onReady );
 		if (callWhenReady!=null)
 			s.addEventListener( flash.events.Event.CONTEXT3D_CREATE, callWhenReady );
-		s.requestContext3D();
+		#if flash11_4
+		s.requestContext3D(Context3DRenderMode.AUTO, Context3DProfile.BASELINE_CONSTRAINED);
+		#else
+		s.requestContext3D("auto");
+		#end
 		tilesheets = new Array();
+		bytebuf_vert = new ByteArray();
+		bytebuf_idx = new ByteArray();
+		bytebuf_vert.endian = Endian.LITTLE_ENDIAN;
+		bytebuf_idx.endian = Endian.LITTLE_ENDIAN;
 	}
 	
 	function onReady( _ ) 
 	{
 		c = s.context3D;
-		c.enableErrorChecking = true;
+		c.enableErrorChecking = false;
 		c.configureBackBuffer( stage.stageWidth, stage.stageHeight, 0, true );
-
+		
 		shader = new Texture2DShader(c);
 		shader_color = new Texture2DColorShader(c);		
 	}
@@ -51,16 +71,43 @@ class Stage3DScene
 		ts.texture.uploadFromBitmapData(ts.nmeBitmap);
 	}
 	
-	public inline function clear()
+	private inline function resetCounts()
 	{
-		c.clear(0, 0, 0, 1);
+		idx_count = 0;
+		bytebuf_idx.position = 0;
+		bytebuf_vert.position = 0;
+	}
+	
+	public inline function clear(r=0.,g=0.,b=0.,a=1.,depth=1.,stencil:UInt=0,mask:UInt=0xFFFFFFFF)
+	{
+		c.clear(r, g, b, a, depth, stencil, mask);		
 		c.setDepthTest( true, flash.display3D.Context3DCompareMode.LESS_EQUAL );
-		c.setCulling(flash.display3D.Context3DTriangleFace.BACK);	
+		c.setCulling(flash.display3D.Context3DTriangleFace.BACK );
+		c.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
+		projection = createOrthographicProjectionMatrix(stage.stageWidth, stage.stageHeight, -1., 1.);
+		resetCounts();
+		prof = new Array();
 	}
 	
 	public inline function present()
 	{
 		c.present();
+		// profile infos
+		var s = new Array<Array<Dynamic>>();
+		for (n in prof)
+			s.push([n.dist,n.name]);
+		//trace(s);
+	}
+	
+	public inline function doProf(name:String)
+	{
+		/*if (prof.length == 0)
+			prof.push( { time:Lib.getTimer(), dist:0, name:name } );
+		else
+		{
+			var t = Lib.getTimer();
+			prof.push( { time:t, dist:t - prof[prof.length-1].time,name:name } );
+		}*/
 	}
 	
 	private function createOrthographicProjectionMatrix(viewWidth : Float, viewHeight : Float, 
@@ -86,104 +133,108 @@ class Stage3DScene
 		return mtx;
 	}
 	
-	public inline function writeVert(buf : Vector<Float>, idx : Vector<UInt>, 
-		x : Float, y : Float, z : Float, u : Float, v : Float)
+	public inline function writeVert(
+		x : Float, y : Float, u : Float, v : Float)
 	{
-		buf.push(x);
-		buf.push(y);
-		buf.push(z);
-		buf.push(u);
-		buf.push(v);
-		idx.push(idx.length);
+		bytebuf_vert.writeFloat(x);
+		bytebuf_vert.writeFloat(y);
+		bytebuf_vert.writeFloat(u);
+		bytebuf_vert.writeFloat(v);
+		++idx_count;
 	}
 	
-	public inline function writeQuad(buf : Vector<Float>, idx : Vector<UInt>, 
-		tl, tr, bl, br, tleft, ttop, tright, tbottom)
+	public inline function writeQuad(
+		tl_x : Float, tl_y : Float, tr_x : Float, tr_y : Float, 
+		bl_x : Float, bl_y : Float, br_x : Float, br_y : Float,
+		tleft : Float, ttop : Float, tright : Float, tbottom : Float)
 	{
-		writeVert(buf, idx, tl.x, tl.y, 0., tleft, ttop);
-		writeVert(buf, idx, tr.x, tr.y, 0., tright, ttop);
-		writeVert(buf, idx, br.x, br.y, 0., tright, tbottom);
-		writeVert(buf, idx, tl.x, tl.y, 0., tleft, ttop);
-		writeVert(buf, idx, br.x, br.y, 0., tright, tbottom);
-		writeVert(buf, idx, bl.x, bl.y, 0., tleft, tbottom);
+		writeVert(tl_x, tl_y, tleft, ttop);
+		writeVert(tr_x, tr_y, tright, ttop);
+		writeVert(br_x, br_y, tright, tbottom);
+		writeVert(tl_x, tl_y, tleft, ttop);
+		writeVert(br_x, br_y, tright, tbottom);
+		writeVert(bl_x, bl_y, tleft, tbottom);
 	}
 	
-	public inline function writeColorVert(buf : Vector<Float>, idx : Vector<UInt>, 
-		x : Float, y : Float, z : Float, u : Float, v : Float, r : Float, g : Float, b : Float, a : Float)
+	public inline function writeColorVert(
+		x : Float, y : Float, u : Float, v : Float, r : Float, g : Float, b : Float, a : Float)
 	{
-		buf.push(x);
-		buf.push(y);
-		buf.push(z);
-		buf.push(u);
-		buf.push(v);
-		buf.push(r);
-		buf.push(g);
-		buf.push(b);
-		buf.push(a);
-		idx.push(idx.length);
+		bytebuf_vert.writeFloat(x);
+		bytebuf_vert.writeFloat(y);
+		bytebuf_vert.writeFloat(u);
+		bytebuf_vert.writeFloat(v);
+		bytebuf_vert.writeFloat(r);
+		bytebuf_vert.writeFloat(g);
+		bytebuf_vert.writeFloat(b);
+		bytebuf_vert.writeFloat(a);
+		++idx_count;
 	}
 	
-	public inline function writeColorQuad(buf : Vector<Float>, idx : Vector<UInt>, 
-		tl, tr, bl, br, tleft, ttop, tright, tbottom, r, g, b, a)
+	public inline function writeColorQuad(
+		tl_x : Float, tl_y : Float, tr_x : Float, tr_y : Float, 
+		bl_x : Float, bl_y : Float, br_x : Float, br_y : Float,
+		tleft : Float, ttop : Float, tright : Float, tbottom : Float,
+		r : Float, g : Float, b : Float, a : Float)
 	{
-		writeColorVert(buf, idx, tl.x, tl.y, 0., tleft, ttop, r, g, b, a);
-		writeColorVert(buf, idx, tr.x, tr.y, 0., tright, ttop, r, g, b, a);
-		writeColorVert(buf, idx, br.x, br.y, 0., tright, tbottom, r, g, b, a);
-		writeColorVert(buf, idx, tl.x, tl.y, 0., tleft, ttop, r, g, b, a);
-		writeColorVert(buf, idx, br.x, br.y, 0., tright, tbottom, r, g, b, a);
-		writeColorVert(buf, idx, bl.x, bl.y, 0., tleft, tbottom, r, g, b, a);
+		writeColorVert(tl_x, tl_y, tleft, ttop, r, g, b, a);
+		writeColorVert(tr_x, tr_y, tright, ttop, r, g, b, a);
+		writeColorVert(br_x, br_y, tright, tbottom, r, g, b, a);
+		writeColorVert(tl_x, tl_y, tleft, ttop, r, g, b, a);
+		writeColorVert(br_x, br_y, tright, tbottom, r, g, b, a);
+		writeColorVert(bl_x, bl_y, tleft, tbottom, r, g, b, a);
 	}
 	
-	inline function doUpload(buf : Vector<Float>, idx : Vector<UInt>, numQuads : Int)
+	private inline function padIBuf()
 	{
-		var points = numQuads * 6;
-		var ibuf = c.createIndexBuffer(idx.length); ibuf.uploadFromVector(idx, 0, idx.length);
-		var vbuf = c.createVertexBuffer(points, 5); vbuf.uploadFromVector(buf, 0, points);
-		return { idx:ibuf, vertex:vbuf };
-	}
-
-	inline function doUploadColor(buf : Vector<Float>, idx : Vector<UInt>, numQuads : Int)
-	{
-		var points = numQuads * 6;
-		var ibuf = c.createIndexBuffer(idx.length); ibuf.uploadFromVector(idx, 0, idx.length);
-		var vbuf = c.createVertexBuffer(points, 9); vbuf.uploadFromVector(buf, 0, points);
-		return { idx:ibuf, vertex:vbuf };
+		while (Std.int(bytebuf_idx.length) < idx_count * 2) // fill out the index buffer with incrementing values
+		{
+			bytebuf_idx.writeShort(bytebuf_idx.position >> 1);
+		}	
 	}
 	
-	public inline function runShader(buf : Vector<Float>, idx : Vector<UInt>, numQuads : Int, sheet : XTilesheet)
+	public inline function runShader(sheet : XTilesheet)
 	{
 		shader.init(
-			{ mproj : createOrthographicProjectionMatrix(Main.W, Main.H, -1., 1.) },
-			{ tex : sheet.texture }
-		);	
-		
-		var result = doUpload(buf, idx, numQuads);
-		
-		shader.bind(result.vertex);
-		c.drawTriangles(result.idx);
-		
-		shader.unbind();
-		
-		result.vertex.dispose();
-		result.idx.dispose();
-	}
-	
-	public inline function runColorShader(buf : Vector<Float>, idx : Vector<UInt>, numQuads : Int, sheet : XTilesheet)
-	{
-		shader_color.init(
-			{ mproj : createOrthographicProjectionMatrix(Main.W, Main.H, -1., 1.) },
+			{ mproj : projection },
 			{ tex : sheet.texture }
 		);
 		
-		var result = doUploadColor(buf, idx, numQuads);
+		padIBuf();
 		
-		shader_color.bind(result.vertex);
-		c.drawTriangles(result.idx);
+		var ibuf = c.createIndexBuffer(idx_count); ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
+		var vbuf = c.createVertexBuffer(idx_count, 4); vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
+		
+		resetCounts();
+		
+		shader.bind(vbuf);
+		c.drawTriangles(ibuf);
+		
+		shader.unbind();
+		
+		vbuf.dispose();
+		ibuf.dispose();
+	}
+	
+	public inline function runColorShader(sheet : XTilesheet)
+	{
+		shader_color.init(
+			{ mproj : projection },
+			{ tex : sheet.texture }
+		);
+		
+		padIBuf();
+		
+		var ibuf = c.createIndexBuffer(idx_count); ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
+		var vbuf = c.createVertexBuffer(idx_count, 8); vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
+		resetCounts();
+		
+		shader_color.bind(vbuf);
+		c.drawTriangles(ibuf);
 		
 		shader_color.unbind();
 		
-		result.vertex.dispose();
-		result.idx.dispose();
+		vbuf.dispose();
+		ibuf.dispose();
 	}
 	
 }
@@ -192,7 +243,7 @@ class Texture2DShader extends format.hxsl.Shader {
 
 	static var SRC = {
 		var input : {
-			pos : Float3,
+			pos : Float2,
 			uv : Float2,
 		};
 		var tuv : Float2;
@@ -211,7 +262,7 @@ class Texture2DColorShader extends format.hxsl.Shader {
 
 	static var SRC = {
 		var input : {
-			pos : Float3,
+			pos : Float2,
 			uv : Float2,
 			rgba : Float4,
 		};
