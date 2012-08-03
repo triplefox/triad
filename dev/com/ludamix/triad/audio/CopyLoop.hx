@@ -1,4 +1,5 @@
 package com.ludamix.triad.audio;
+import com.ludamix.triad.audio.Interpolator;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 
@@ -86,7 +87,8 @@ class CopyLoop
 					
 					if (volume_name.length > 1) // introduce an intermediate step so that we interp only once
 					{
-						st += "a = " + copystuff+";\n";
+						if (copystuff!="a") // don't allow the assign to self case
+							st += "a = " + copystuff+";\n";
 						for (v in volume_name)						
 							st += "buffer.add( a * " + v + "); buffer.advancePlayheadUnbounded();\n";
 					}

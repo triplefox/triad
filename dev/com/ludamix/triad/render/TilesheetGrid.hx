@@ -29,11 +29,11 @@ class TilesheetGrid
 	public var blue(default,setBlue) : Float;
 	public var flags_changed : Bool;
 	private var cache : Array<Float>;
+	private var cache_bitmap : Array<Float>;
 	private var temp_bitmap : Bitmap;
 	
 	#if flash11
 	private var s3dbuffer : Stage3DBuffer;
-	public var useStage3D : Bool;
 	#end
 	
 	public function setAlpha(n:Float) { if (alpha!=n) {alpha = n; flags_changed = true;} return alpha; }
@@ -42,7 +42,7 @@ class TilesheetGrid
 	public function setBlue(n:Float) { if (blue!=n) {blue = n; flags_changed = true;} return blue; }
 	
 	public function new(sheet : XTilesheet, worldw : Int, worldh : Int, twidth : Int, theight : Int, populate : Array<Int>,
-		?useStage3D=false)
+		?useBlitter=false, ?useStage3D=false)
 	{		
 		grid = new IntGrid(worldw, worldh, twidth, theight, populate);
 		this.sheet = sheet;
@@ -52,43 +52,54 @@ class TilesheetGrid
 		this.blue = 1.0;
 		flags_changed = true;
 		temp_bitmap = new Bitmap(sheet.nmeBitmap);
-		this.useStage3D = useStage3D;
-		
-		recache();		
-	}
-	
-	public function recache():Void 
-	{
-		cache = new Array<Float>();
-		
-		var idx = 0;
 		
 		#if flash11
 		if (useStage3D)
+			recacheStage3D();
+		else
+		#end
 		{
-			if (s3dbuffer == null) s3dbuffer = new Stage3DBuffer();
-			s3dbuffer.resetCounts();
-			var offset : Point;
-			var rect : Rectangle;
-			var rect_uv : Vector<Float>;
-			var idx = 0;
-			for (y in 0...grid.worldH)
+			if (useBlitter)
+				recacheBitmap();
+			else
+				recacheDrawtiles();
+		}
+	}
+	
+	#if flash11
+	public function recacheStage3D()
+	{
+		if (s3dbuffer == null) s3dbuffer = new Stage3DBuffer();
+		s3dbuffer.resetCounts();
+		var offset : Point;
+		var rect : Rectangle;
+		var rect_uv : Vector<Float>;
+		var idx = 0;
+		for (y in 0...grid.worldH)
+		{
+			for (x in 0...grid.worldW)
 			{
-				for (x in 0...grid.worldW)
+				var frame = grid.c1t(idx);
+				if (frame >= 0)
 				{
-					var frame = grid.c1t(idx);
 					rect = sheet.rects[frame];
 					rect_uv = sheet.rects_uv[frame];
 					var px = x * grid.twidth; var py = y * grid.theight;
 					var pr = px + grid.twidth; var pb = py + grid.theight;
 					s3dbuffer.writeQuad(px, py, pr, py, px, pb, pr, pb, rect_uv[0], rect_uv[1],
-						rect_uv[2],rect_uv[1],rect_uv[0],rect_uv[3],rect_uv[2],rect_uv[3]);
-					idx++;
+						rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3]);
 				}
+				idx++;
 			}
-			return;
 		}
-		#end
+		return;
+	}
+	#end
+	
+	public function recacheBitmap():Void
+	{
+		cache_bitmap = new Array<Float>();
+		var idx = 0;
 		
 		if (useDraw())
 		{
@@ -96,13 +107,13 @@ class TilesheetGrid
 			{
 				for (x in 0...grid.worldW)
 				{
-					cache.push(x*grid.twidth);
-					cache.push(y*grid.theight);
-					cache.push(grid.c1t(idx));
-					cache.push(red);
-					cache.push(green);
-					cache.push(blue);
-					cache.push(alpha);
+					cache_bitmap.push(x*grid.twidth);
+					cache_bitmap.push(y*grid.theight);
+					cache_bitmap.push(grid.c1t(idx));
+					cache_bitmap.push(red);
+					cache_bitmap.push(green);
+					cache_bitmap.push(blue);
+					cache_bitmap.push(alpha);
 					idx++;
 				}
 			}	
@@ -113,28 +124,62 @@ class TilesheetGrid
 			{
 				for (x in 0...grid.worldW)
 				{
-					cache.push(x*grid.twidth);
-					cache.push(y*grid.theight);
-					cache.push(grid.c1t(idx));
+					cache_bitmap.push(x*grid.twidth);
+					cache_bitmap.push(y*grid.theight);
+					cache_bitmap.push(grid.c1t(idx));
+					idx++;
+				}
+			}
+		}
+	}
+	
+	public function recacheDrawtiles():Void 
+	{
+		cache = new Array<Float>();
+		
+		var idx = 0;
+		
+		if (useDraw())
+		{
+			for (y in 0...grid.worldH)
+			{
+				for (x in 0...grid.worldW)
+				{
+					var frame = grid.c1t(idx);
+					if (frame >= 0)
+					{
+						cache.push(x*grid.twidth);
+						cache.push(y*grid.theight);
+						cache.push(frame);
+						cache.push(red);
+						cache.push(green);
+						cache.push(blue);
+						cache.push(alpha);
+					}
+					idx++;
+				}
+			}	
+		}
+		else
+		{
+			for (y in 0...grid.worldH)
+			{
+				for (x in 0...grid.worldW)
+				{
+					var frame = grid.c1t(idx);
+					if (frame >= 0)
+					{
+						cache.push(x*grid.twidth);
+						cache.push(y*grid.theight);
+						cache.push(frame);
+					}
 					idx++;
 				}
 			}	
 		}
 	}
 	
-	public inline function recachePartial(idx : Int)
-	{
-		if (useDraw())
-		{
-			cache[(idx * 7) + 2] = grid.c1t(idx);
-		}
-		else
-		{
-			cache[(idx * 3) + 2] = grid.c1t(idx);
-		}
-	}
-	
-	public inline function set1(idx, val) { grid.world[idx] = val; recachePartial(idx); }
+	public inline function set1(idx, val) { grid.world[idx] = val; }
 	public inline function set2(x, y, val) { var idx = grid.c21(x, y); set1(idx,val); }
 	public inline function setff(x, y, val) { var idx = grid.cff1(x, y); set1(idx,val); }
 	
@@ -143,11 +188,10 @@ class TilesheetGrid
 	{
 		var idx = 0;
 		
-		if (!useStage3D) throw "enable stage 3d on this first";
+		if (flags_changed) partialUpdate = false;
 		
 		if (partialUpdate)
 		{
-			// someday maybe we could actually have this do a partial update on the buffer.
 			var doRecache = false;
 			for (n in input_grid.world)
 			{
@@ -158,7 +202,7 @@ class TilesheetGrid
 				}
 				idx++;
 			}
-			if (doRecache) recache();
+			if (doRecache) recacheStage3D();
 		}
 		else
 		{
@@ -167,7 +211,7 @@ class TilesheetGrid
 				grid.world[idx] = n;
 				idx++;
 			}
-			recache();
+			recacheStage3D();
 		}
 		c.runShader(sheet, s3dbuffer);
 		
@@ -178,17 +222,22 @@ class TilesheetGrid
 	public inline function renderFromGrid(input_grid : IntGrid, gfx : Graphics, partialUpdate=true)
 	{
 		var idx = 0;
-		if (flags_changed) partialUpdate = false;
-		partialUpdate = false;
 		
-		if (partialUpdate) // when using Flash DrawTiles, this does not work correctly for idx 0.
+		if (flags_changed) partialUpdate = false;
+		
+		if (partialUpdate)
 		{
+			var doRecache = false;
 			for (n in input_grid.world)
 			{
 				if (n != grid.world[idx])
+				{
 					set1(idx, n);
+					doRecache = true;
+				}
 				idx++;
 			}
+			if (doRecache) recacheDrawtiles();
 		}
 		else
 		{
@@ -197,8 +246,9 @@ class TilesheetGrid
 				grid.world[idx] = n;
 				idx++;
 			}
-			recache();
+			recacheDrawtiles();
 		}
+		
 		if (useDraw())
 			sheet.drawTiles(gfx, cache, false, Tilesheet.TILE_RGB+Tilesheet.TILE_ALPHA);
 		else sheet.drawTiles(gfx, cache);
@@ -226,14 +276,23 @@ class TilesheetGrid
 					{
 						set1(idx, n);
 						var cidx = idx * 7;
-						var pt = new Point(cache[cidx], cache[cidx + 1]);
-						var rect = sheet.rects[Std.int(cache[cidx+2])];
-						tb.scrollRect = rect;
-						if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, rect.width, rect.height), 0);
-						var ct = new ColorTransform(red, green, blue, alpha);
-						var mtx = new Matrix();
-						mtx.translate(pt.x, pt.y);
-						gfx.draw(tb, mtx, ct);
+						cache_bitmap[cidx + 2] = n;
+						var pt = new Point(cache_bitmap[cidx], cache_bitmap[cidx + 1]);
+						var frame = cache_bitmap[cidx + 2];
+						if (frame >= 0)
+						{
+							var rect = sheet.rects[Std.int(cache_bitmap[cidx+2])];
+							tb.scrollRect = rect;
+							if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, rect.width, rect.height), 0);
+							var ct = new ColorTransform(red, green, blue, alpha);
+							var mtx = new Matrix();
+							mtx.translate(pt.x, pt.y);
+							gfx.draw(tb, mtx, ct);
+						}
+						else
+						{
+							if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, grid.twidth, grid.theight), 0);						
+						}
 					}
 					idx++;
 				}
@@ -246,11 +305,21 @@ class TilesheetGrid
 					{
 						set1(idx, n);
 						var cidx = idx * 3;
-						var pt = new Point(cache[cidx], cache[cidx + 1]); var rect = sheet.rects[Std.int(cache[cidx + 2])];
-						var a = cache[cidx + 3]; 
-						var r = cache[cidx + 4]; var g = cache[cidx + 5]; var b = cache[cidx + 6];
-						if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, rect.width, rect.height), 0);
-						gfx.copyPixels(src, rect, pt);
+						cache_bitmap[cidx + 2] = n;
+						var pt = new Point(cache_bitmap[cidx], cache_bitmap[cidx + 1]); 
+						var frame = Std.int(cache_bitmap[cidx + 2]);
+						if (frame >= 0)
+						{
+							var rect = sheet.rects[frame];
+							var a = cache_bitmap[cidx + 3]; 
+							var r = cache_bitmap[cidx + 4]; var g = cache_bitmap[cidx + 5]; var b = cache_bitmap[cidx + 6];
+							if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, rect.width, rect.height), 0);
+							gfx.copyPixels(src, rect, pt);
+						}
+						else
+						{
+							if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, grid.twidth, grid.theight), 0);
+						}
 					}
 					idx++;
 				}
@@ -261,9 +330,9 @@ class TilesheetGrid
 			for (n in input_grid.world)
 			{
 				grid.world[idx] = n;
-				idx++;
+				idx++;				
 			}
-			recache();
+			recacheBitmap();
 			if (doErase) gfx.fillRect(gfx.rect, 0);
 			if (useDraw())
 			{
@@ -271,14 +340,19 @@ class TilesheetGrid
 				for (n in (0...Std.int(cache.length/7)))
 				{
 					var idx = Std.int(n * 7);
-					var pt = new Point(cache[idx], cache[idx + 1]); var rect = sheet.rects[Std.int(cache[idx + 2])];
-					var a = cache[idx + 3]; 
-					var r = cache[idx + 4]; var g = cache[idx + 5]; var b = cache[idx + 6];
-					tb.scrollRect = rect;
-					var ct = new ColorTransform(red, green, blue, alpha);
-					var mtx = new Matrix();
-					mtx.translate(pt.x, pt.y);
-					gfx.draw(tb,mtx,ct);
+					var pt = new Point(cache_bitmap[idx], cache_bitmap[idx + 1]); 
+					var frame = Std.int(cache_bitmap[idx + 2]);
+					if (frame >= 0)
+					{
+						var rect = sheet.rects[frame];
+						var a = cache_bitmap[idx + 3]; 
+						var r = cache_bitmap[idx + 4]; var g = cache_bitmap[idx + 5]; var b = cache_bitmap[idx + 6];
+						tb.scrollRect = rect;
+						var ct = new ColorTransform(red, green, blue, alpha);
+						var mtx = new Matrix();
+						mtx.translate(pt.x, pt.y);
+						gfx.draw(tb,mtx,ct);
+					}
 				}
 			}
 			else
@@ -286,8 +360,10 @@ class TilesheetGrid
 				for (n in (0...Std.int(cache.length/3)))
 				{
 					var idx = Std.int(n * 3);
-					var pt = new Point(cache[idx], cache[idx + 1]);
-					gfx.copyPixels(src, sheet.rects[Std.int(cache[idx + 2])], pt);
+					var pt = new Point(cache_bitmap[idx], cache_bitmap[idx + 1]);
+					var frame = Std.int(cache_bitmap[idx + 2]);
+					if (frame>=0)
+						gfx.copyPixels(src, sheet.rects[frame], pt);
 				}
 			}
 		}		

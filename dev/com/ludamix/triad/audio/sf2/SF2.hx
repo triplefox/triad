@@ -10,6 +10,7 @@ package com.ludamix.triad.audio.sf2;
 
 import com.ludamix.triad.audio.Sequencer;
 import nme.utils.ByteArray;
+import nme.utils.Endian;
 
 class SF2 
 {
@@ -24,6 +25,7 @@ class SF2
     public static function load(data:ByteArray) : SF2
     {
         var sf2 = new SF2();
+		data.endian = Endian.LITTLE_ENDIAN;
         var riff:RiffChunk = RiffChunk.getTopLevelChunk(data);
         if(riff.chunk_id == "RIFF") 
         {

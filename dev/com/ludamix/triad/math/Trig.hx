@@ -19,13 +19,21 @@ class Trig
 
 	public static inline function nearestCardinal(deg : Float) : Float
 	{
+		
+		var q1_a = 0 + 45;
+		var q1_b = 360 - 45;
+		var q2_a = 90 - 45;
+		var q2_b = 90 + 45;
+		var q3_a = 180 - 45;
+		var q3_b = 180 + 45;
+	
 		while (deg < 0) deg += 360;
 		deg = deg % 360;
-		if (deg<=45 || deg > 360-45)
+		if (deg<=q1_a || deg > q1_b)
 			return 0.;
-		else if (deg<=90+45 || deg > 90-45)
+		else if (deg>=q2_a && deg < q2_b)
 			return 90.;
-		else if (deg<=180+45 || deg > 180-45)
+		else if (deg>=q3_a && deg < q3_b)
 			return 180.;
 		else
 			return 270.;

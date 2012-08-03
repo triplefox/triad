@@ -11,4 +11,7 @@ package com.ludamix.triad.audio.sf2;
 enum TransformEnum
 {
     Linear;
+	Concave;
+	Convex;
+	Switch;
 }

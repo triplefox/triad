@@ -48,10 +48,51 @@ class Stage3DBuffer
 		bytebuf_vert.position = 0;
 	}
 	
+	public static inline var REG_FLOATS = 3;
+	public static inline var COLOR_FLOATS = 5;
+	
+	/*
+	 * A note on the packing:
+	 * 
+	 * The goal of packing my values is to minimize the amount of memory uploaded with each vertex buffer,
+	 * 		making quads lighter for CPU usage(which is at a premium in Flash).
+	 * 
+	 * (An alternate goal which I have not tried is to encode more information into the shader constants,
+	 *  reducing duplicated information in the vertex buffer such as a recurring set of uvs)
+	 * 
+	 * I use the hxsl "Color" values to hold my inputs at char precision.
+	 * (Stage3D wants little endian inputs - important!)
+	 * 
+	 * Each of these values is turned into a 0.0-1.0 float in the shader.
+	 * Therefore, I can map one float into two shorts with (careful) multiplying.
+	 * 
+	 * For the RGBA I wish to allow precision below 1.0, but also values above 1.0.
+	 * This means that I multiply to less than the full range at upload time, and then reconstruct in
+	 * the shader.
+	 * 
+	 * For the vertex XY I have to achieve two goals:
+	 * 1. Negative values are possible.
+	 * 2. Space has room for any practical screen resolution of today, plus padding. 
+	 * 		This formula starts by taking the basic x and y and adding the padding (ignoring subpixel precision for now)
+	 * 			We add a 2048 pad - presumably user can truncate values past that.
+	 * 		Then the shader gets two 0.0-1.0 little-endian values. The first one is divided by 256, the second is added.
+	 *	 		This gives us a 0.0-1.0 value at 16-bit precision.
+	 * 			Then we multiply by 65535 to get back to the integer coordinates.
+	 * 		Now we go back and add the subpixel part.
+	 * 		The shader has to multiply by a smaller amount;
+	 *  		this means that our 0.0-1.0 value comes in multiplied by an equivalently large amount.
+	 * 		We allow a 4x multiple for the subpixel values - just enough to be visible.
+	 * 			So the shader multiplies by 16382 now,
+	 * 			and then we micro-optimize some division and multiplication.
+	 * 
+	 * I don't pack the UV values because they demand some extra precision.
+	 * 
+	 * */
+	
 	public inline function writeVert(x : Float, y :Float, u : Float, v : Float)
 	{
-		bytebuf_vert.writeFloat(x);
-		bytebuf_vert.writeFloat(y);
+		bytebuf_vert.writeShort(Std.int(x+2048)<<2);
+		bytebuf_vert.writeShort(Std.int(y+2048)<<2);
 		bytebuf_vert.writeFloat(u);
 		bytebuf_vert.writeFloat(v);
 		bytebuf_idx.writeShort(idx_count);
@@ -61,14 +102,14 @@ class Stage3DBuffer
 	public inline function writeColorVert(x : Float, y :Float, u : Float, v : Float, 
 		r : Float, g : Float, b : Float, a :Float)
 	{
-		bytebuf_vert.writeFloat(x);
-		bytebuf_vert.writeFloat(y);
+		bytebuf_vert.writeShort(Std.int(x+2048)<<2);
+		bytebuf_vert.writeShort(Std.int(y+2048)<<2);
 		bytebuf_vert.writeFloat(u);
 		bytebuf_vert.writeFloat(v);
-		bytebuf_vert.writeFloat(r);
-		bytebuf_vert.writeFloat(g);
-		bytebuf_vert.writeFloat(b);
-		bytebuf_vert.writeFloat(a);
+		bytebuf_vert.writeShort(Std.int(r * 0xFF));
+		bytebuf_vert.writeShort(Std.int(g * 0xFF));
+		bytebuf_vert.writeShort(Std.int(b * 0xFF));
+		bytebuf_vert.writeShort(Std.int(a * 0xFF));
 		bytebuf_idx.writeShort(idx_count);
 		++idx_count;
 	}
@@ -78,7 +119,7 @@ class Stage3DBuffer
 		if (idx_count > idx_max) idx_max = idx_count;
 		idx_count = n;
 		bytebuf_idx.position = 6 * 2 * n;
-		bytebuf_vert.position = 6 * 4 * n;
+		bytebuf_vert.position = 6 * REG_FLOATS * n;
 	}
 	
 	public inline function seekColorQuad(n : Int)
@@ -86,7 +127,7 @@ class Stage3DBuffer
 		if (idx_count > idx_max) idx_max = idx_count;
 		idx_count = n;
 		bytebuf_idx.position = 6 * 2 * n;
-		bytebuf_vert.position = 6 * 8 * n;
+		bytebuf_vert.position = 6 * COLOR_FLOATS * n;
 	}
 	
 	public inline function writeQuad(
@@ -245,8 +286,10 @@ class Stage3DScene
 		var bytebuf_idx = buffer.bytebuf_idx;
 		var bytebuf_vert = buffer.bytebuf_vert;
 		
-		var ibuf = c.createIndexBuffer(idx_count); ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
-		var vbuf = c.createVertexBuffer(idx_count, 4); vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
+		var ibuf = c.createIndexBuffer(idx_count); 
+			ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
+		var vbuf = c.createVertexBuffer(idx_count, Stage3DBuffer.REG_FLOATS); 
+			vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
 		
 		shader.bind(vbuf);
 		c.drawTriangles(ibuf);
@@ -271,8 +314,10 @@ class Stage3DScene
 		var bytebuf_idx = buffer.bytebuf_idx;
 		var bytebuf_vert = buffer.bytebuf_vert;
 		
-		var ibuf = c.createIndexBuffer(idx_count); ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
-		var vbuf = c.createVertexBuffer(idx_count, 8); vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
+		var ibuf = c.createIndexBuffer(idx_count); 
+			ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
+		var vbuf = c.createVertexBuffer(idx_count, Stage3DBuffer.COLOR_FLOATS); 
+			vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
 		
 		color_shader.bind(vbuf);
 		c.drawTriangles(ibuf);
@@ -290,13 +335,16 @@ class Texture2DShader extends format.hxsl.Shader {
 
 	static var SRC = {
 		var input : {
-			pos : Float2,
+			pos : Color,
 			uv : Float2,
 		};
 		var tuv : Float2;
 		function vertex( mproj : M44 ) {
-			out = pos.xyzw * mproj;
-			tuv = uv;
+			out = [(((pos.x*0.00390625) + pos.y)*16382) - 2048, // x
+				   (((pos.z*0.00390625) + pos.w)*16382) - 2048, // y
+				   1, 1] * mproj;
+			
+		   tuv = uv;
 		}
 		function fragment( tex : Texture ) {
 			out = tex.get(tuv);
@@ -309,16 +357,24 @@ class TextureColor2DShader extends format.hxsl.Shader {
 
 	static var SRC = {
 		var input : {
-			pos : Float2,
+			pos : Color,
 			uv : Float2,
-			rgba : Float4
+			rg : Color,
+			ba : Color
 		};
 		var tuv : Float2;
 		var trgba : Float4;
 		function vertex( mproj : M44 ) {
-			out = pos.xyzw * mproj;
-			tuv = uv;
-			trgba = rgba;
+			out = [(((pos.x*0.00390625) + pos.y)*16382) - 2048, // x
+				   (((pos.z*0.00390625) + pos.w)*16382) - 2048, // y
+				   1, 1] * mproj;
+			
+		   tuv = uv;
+			
+		   trgba = [rg.x + rg.y * 256,  // r
+					rg.z + rg.w * 256,  // g
+					ba.x + ba.y * 256,  // b
+					ba.z + ba.w * 256]; // a
 		}
 		function fragment( tex : Texture ) {
 			out = tex.get(tuv) * trgba;

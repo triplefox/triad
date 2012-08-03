@@ -88,7 +88,7 @@ class SFZGroup
 			else if (group_opcodes.exists('sample'))
 				sampler_patch = Reflect.copy(samples.get(group_opcodes.get('sample')));
 			if (sampler_patch == null) continue; // no sample found...
-
+			
 			// ampeg directives are all in % and seconds.
 			var amp_vals = [0., 0., 0., 0., 0., 1., 0.];			
 			var fil_vals = [0., 0., 0., 0., 0., 1., 0.];
@@ -99,9 +99,14 @@ class SFZGroup
 			{
 				if (directives.exists("pitch_keycenter"))
 					midinote = directives.get("pitch_keycenter");
+					
+				// rewrite the tuning data
 				if (directives.exists("tune")) { midinote -= (directives.get("tune")/100); }
 				if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
-				sampler_patch.base_frequency = seq.tuning.midiNoteToFrequency(midinote);
+				sampler_patch.tuning = {
+					sample_rate : sampler_patch.tuning.sample_rate,
+					base_frequency : seq.tuning.midiNoteToFrequency(midinote)					
+				};
 
 				if (directives.exists("ampeg_delay")) { amp_vals[0] = directives.get("ampeg_delay"); }
 				if (directives.exists("ampeg_start")) { amp_vals[1] = directives.get("ampeg_start") / 100; }
@@ -119,19 +124,21 @@ class SFZGroup
 				if (directives.exists("fileg_sustain")) { fil_vals[5] = directives.get("fileg_sustain") / 100; }
 				if (directives.exists("fileg_release")) { fil_vals[6] = directives.get("fileg_release"); }
 				if (directives.exists("fileg_depth")) { fil_depth = directives.get("fileg_depth"); }
-
+				
+				var sample = sampler_patch.sample;
+				
 				if (directives.exists("loop_mode")) {
 					switch(directives.get("loop_mode"))
 					{
-						case "no_loop": sampler_patch.loop_mode = SamplerSynth.NO_LOOP;
-						case "one_shot": sampler_patch.loop_mode = SamplerSynth.ONE_SHOT;
-						case "loop_continuous": sampler_patch.loop_mode = SamplerSynth.LOOP_FORWARD;
-						case "loop_sustain": sampler_patch.loop_mode = SamplerSynth.SUSTAIN_FORWARD;						
+						case "no_loop": sampler_patch.loops[0].loop_mode = SamplerSynth.NO_LOOP;
+						case "one_shot": sampler_patch.loops[0].loop_mode = SamplerSynth.ONE_SHOT;
+						case "loop_continuous": sampler_patch.loops[0].loop_mode = SamplerSynth.LOOP_FORWARD;
+						case "loop_sustain": sampler_patch.loops[0].loop_mode = SamplerSynth.SUSTAIN_FORWARD;						
 					}
 				}
 
-				if (directives.exists("loop_start")) { sampler_patch.loop_start = directives.get("loop_start"); }
-				if (directives.exists("loop_end")) { sampler_patch.loop_end = directives.get("loop_end"); }
+				if (directives.exists("loop_start")) { sampler_patch.loops[0].loop_start = directives.get("loop_start"); }
+				if (directives.exists("loop_end")) { sampler_patch.loops[0].loop_end = directives.get("loop_end"); }
 
 				if (directives.exists("pan")) { sampler_patch.pan = ((directives.get("pan")/100)+1)/2; }
 				if (directives.exists("volume")) { sampler_patch.volume = 1.0 *
