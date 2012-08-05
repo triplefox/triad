@@ -125,9 +125,7 @@ class CopyLoop
 		}
 	}
 
-#end
-
-	@:macro public static function copyLoop(num_samples : Int, channel_behavior : String, copy_functions : Array<String>,
+	public static function _copyLoop(num_samples : Int, channel_behavior : String, copy_functions : Array<String>,
 		endpoint_behavior : String) : Expr
 	{
 		
@@ -198,5 +196,13 @@ class CopyLoop
 		bk.push(Context.parse("{"+combi.join("\n")+"}", cpos));
 		return { expr:EBlock(bk), pos:cpos };
 	}	
+
+#end
+	
+	@:macro public static function copyLoop(num_samples : Int, channel_behavior : String, copy_functions : Array<String>,
+		endpoint_behavior : String) : Expr
+	{
+		return _copyLoop(num_samples, channel_behavior, copy_functions, endpoint_behavior);
+	}
 
 }
