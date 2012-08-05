@@ -85,7 +85,7 @@ class TilesheetGrid
 					rect = sheet.rects[frame];
 					rect_uv = sheet.rects_uv[frame];
 					var px = x * grid.twidth; var py = y * grid.theight;
-					var pr = px + grid.twidth; var pb = py + grid.theight;
+					var pr = px + rect.width; var pb = py + rect.height;					
 					s3dbuffer.writeQuad(px, py, pr, py, px, pb, pr, pb, rect_uv[0], rect_uv[1],
 						rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3]);
 				}

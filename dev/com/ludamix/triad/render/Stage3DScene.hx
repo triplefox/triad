@@ -48,8 +48,8 @@ class Stage3DBuffer
 		bytebuf_vert.position = 0;
 	}
 	
-	public static inline var REG_FLOATS = 3;
-	public static inline var COLOR_FLOATS = 5;
+	public static inline var REG_FLOATS = 4;
+	public static inline var COLOR_FLOATS = 6;
 	
 	/*
 	 * A note on the packing:
@@ -70,29 +70,15 @@ class Stage3DBuffer
 	 * This means that I multiply to less than the full range at upload time, and then reconstruct in
 	 * the shader.
 	 * 
-	 * For the vertex XY I have to achieve two goals:
-	 * 1. Negative values are possible.
-	 * 2. Space has room for any practical screen resolution of today, plus padding. 
-	 * 		This formula starts by taking the basic x and y and adding the padding (ignoring subpixel precision for now)
-	 * 			We add a 2048 pad - presumably user can truncate values past that.
-	 * 		Then the shader gets two 0.0-1.0 little-endian values. The first one is divided by 256, the second is added.
-	 *	 		This gives us a 0.0-1.0 value at 16-bit precision.
-	 * 			Then we multiply by 65535 to get back to the integer coordinates.
-	 * 		Now we go back and add the subpixel part.
-	 * 		The shader has to multiply by a smaller amount;
-	 *  		this means that our 0.0-1.0 value comes in multiplied by an equivalently large amount.
-	 * 		We allow a 4x multiple for the subpixel values - just enough to be visible.
-	 * 			So the shader multiplies by 16382 now,
-	 * 			and then we micro-optimize some division and multiplication.
-	 * 
-	 * I don't pack the UV values because they demand some extra precision.
+	 * After testing packing for both the XY or UV values, I've determined the extra precision is desirable for 2D,
+	 * especially with regular tilemaps.
 	 * 
 	 * */
 	
 	public inline function writeVert(x : Float, y :Float, u : Float, v : Float)
 	{
-		bytebuf_vert.writeShort(Std.int(x+2048)<<2);
-		bytebuf_vert.writeShort(Std.int(y+2048)<<2);
+		bytebuf_vert.writeFloat(x);
+		bytebuf_vert.writeFloat(y);
 		bytebuf_vert.writeFloat(u);
 		bytebuf_vert.writeFloat(v);
 		bytebuf_idx.writeShort(idx_count);
@@ -102,8 +88,8 @@ class Stage3DBuffer
 	public inline function writeColorVert(x : Float, y :Float, u : Float, v : Float, 
 		r : Float, g : Float, b : Float, a :Float)
 	{
-		bytebuf_vert.writeShort(Std.int(x+2048)<<2);
-		bytebuf_vert.writeShort(Std.int(y+2048)<<2);
+		bytebuf_vert.writeFloat(x);
+		bytebuf_vert.writeFloat(y);
 		bytebuf_vert.writeFloat(u);
 		bytebuf_vert.writeFloat(v);
 		bytebuf_vert.writeShort(Std.int(r * 0xFF));
@@ -335,19 +321,16 @@ class Texture2DShader extends format.hxsl.Shader {
 
 	static var SRC = {
 		var input : {
-			pos : Color,
+			pos : Float2,
 			uv : Float2,
 		};
 		var tuv : Float2;
 		function vertex( mproj : M44 ) {
-			out = [(((pos.x*0.00390625) + pos.y)*16382) - 2048, // x
-				   (((pos.z*0.00390625) + pos.w)*16382) - 2048, // y
-				   1, 1] * mproj;
-			
+		   out = pos.xyzw * mproj;
 		   tuv = uv;
 		}
 		function fragment( tex : Texture ) {
-			out = tex.get(tuv);
+			out = tex.get(tuv, linear);
 		}
 	};
 
@@ -357,7 +340,7 @@ class TextureColor2DShader extends format.hxsl.Shader {
 
 	static var SRC = {
 		var input : {
-			pos : Color,
+			pos : Float2,
 			uv : Float2,
 			rg : Color,
 			ba : Color
@@ -365,19 +348,15 @@ class TextureColor2DShader extends format.hxsl.Shader {
 		var tuv : Float2;
 		var trgba : Float4;
 		function vertex( mproj : M44 ) {
-			out = [(((pos.x*0.00390625) + pos.y)*16382) - 2048, // x
-				   (((pos.z*0.00390625) + pos.w)*16382) - 2048, // y
-				   1, 1] * mproj;
-			
+		   out = pos.xyzw * mproj;			
 		   tuv = uv;
-			
 		   trgba = [rg.x + rg.y * 256,  // r
 					rg.z + rg.w * 256,  // g
 					ba.x + ba.y * 256,  // b
 					ba.z + ba.w * 256]; // a
 		}
 		function fragment( tex : Texture ) {
-			out = tex.get(tuv) * trgba;
+			out = tex.get(tuv, linear) * trgba;
 		}
 	};
 
