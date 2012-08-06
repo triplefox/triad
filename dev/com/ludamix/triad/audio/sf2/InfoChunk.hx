@@ -78,4 +78,21 @@ class InfoChunk
             throw "Missing SoundFont name information";
         }
     }
+	
+	public function toString() : String
+	{
+		var buf:StringBuf = new StringBuf();
+		buf.add("wavetable_soundengine: " + wavetable_soundengine + "\n");
+		buf.add("bank_name: " + bank_name + "\n");
+		buf.add("data_rom: " + data_rom + "\n");
+		buf.add("creation_date: " + creation_date + "\n");
+		buf.add("author: " + author + "\n");
+		buf.add("target_product: " + target_product + "\n");
+		buf.add("copyright: " + copyright + "\n");
+		buf.add("comments: " + comments + "\n");
+		buf.add("tools: " + tools + "\n");
+		buf.add("rom_version: " + rom_version + "\n");
+		buf.add("soundfont_version: " + soundfont_version);
+		return buf.toString();
+	}
 }
