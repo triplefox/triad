@@ -330,7 +330,7 @@ class Texture2DShader extends format.hxsl.Shader {
 		   tuv = uv;
 		}
 		function fragment( tex : Texture ) {
-			out = tex.get(tuv, linear);
+			out = tex.get(tuv, clamp, nearest);
 		}
 	};
 
@@ -356,7 +356,7 @@ class TextureColor2DShader extends format.hxsl.Shader {
 					ba.z + ba.w * 256]; // a
 		}
 		function fragment( tex : Texture ) {
-			out = tex.get(tuv, linear) * trgba;
+			out = tex.get(tuv, clamp, nearest) * trgba;
 		}
 	};
 

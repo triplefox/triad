@@ -2,6 +2,10 @@
 [id = at1; file = autotile.png; type = autotile;  recth = 16; masksend=[first]; maskrecieve=[first]; ]
 [id = at2; file = autotile.png; type = autotile; tilesize=[8; 8] 
  recty = 16; recth = 16; masksend=[second]; maskrecieve=[second]; ]
+[group=landscape; type=autotile; tilesize=[16; 16]]
+[id = grass; file = tileset.png; type = autotile; tilesize=[16;16;] rect=[0;0;160;32] masksend=[grass;] maskrecieve=[grass;]]
+[id = water; file = tileset.png; type = autotile; tilesize=[16;16;] rect=[0;32;160;32] masksend=[water;] maskrecieve=[water;]]
+[id = rock; file = tileset.png; type = autotile; tilesize=[16;16;] rect=[0;64;160;32] masksend=[rock;] maskrecieve=[rock;]]
 
 [group=ascii; type = spritesheet;]
 [id = 8x16; file = VGA8x16.png; tilesize=[8; 16] ] 

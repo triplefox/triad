@@ -1,7 +1,7 @@
 //typedef MyExample = GUITests;
 //typedef MyExample = Blackjack;
 //typedef MyExample = ASCIITest;
-typedef MyExample = SynthTest;
+//typedef MyExample = SynthTest;
 //typedef MyExample = SF2SynthTest;
 //typedef MyExample = CompressedSynthTest;
 //typedef MyExample = Tilemapping;
@@ -12,6 +12,7 @@ typedef MyExample = SynthTest;
 //typedef MyExample = Raycast;
 //typedef MyExample = TriadConfigTest;
 //typedef MyExample = Stage3DTest;
+typedef MyExample = TileLandscape;
 
 class Main
 {

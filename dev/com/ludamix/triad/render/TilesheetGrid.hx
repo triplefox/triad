@@ -28,6 +28,9 @@ class TilesheetGrid
 	public var green(default,setGreen) : Float;
 	public var blue(default,setBlue) : Float;
 	public var flags_changed : Bool;
+	public var scale : Float;
+	public var off_x : Float;
+	public var off_y : Float;
 	private var cache : Array<Float>;
 	private var cache_bitmap : Array<Float>;
 	private var temp_bitmap : Bitmap;
@@ -43,13 +46,16 @@ class TilesheetGrid
 	
 	public function new(sheet : XTilesheet, worldw : Int, worldh : Int, twidth : Int, theight : Int, populate : Array<Int>,
 		?useBlitter=false, ?useStage3D=false)
-	{		
+	{
 		grid = new IntGrid(worldw, worldh, twidth, theight, populate);
 		this.sheet = sheet;
 		this.alpha = 1.0;
 		this.red = 1.0;
 		this.green = 1.0;
 		this.blue = 1.0;
+		scale = 1.;
+		off_x = 0.;
+		off_y = 0.;
 		flags_changed = true;
 		temp_bitmap = new Bitmap(sheet.nmeBitmap);
 		
@@ -80,12 +86,14 @@ class TilesheetGrid
 			for (x in 0...grid.worldW)
 			{
 				var frame = grid.c1t(idx);
+				var stw = grid.twidth * scale;
+				var sth = grid.theight * scale;
 				if (frame >= 0)
 				{
 					rect = sheet.rects[frame];
 					rect_uv = sheet.rects_uv[frame];
-					var px = x * grid.twidth; var py = y * grid.theight;
-					var pr = px + rect.width; var pb = py + rect.height;					
+					var px = off_x + x * stw; var py = off_y + y * sth;
+					var pr = px + rect.width * scale; var pb = py + rect.height * scale;
 					s3dbuffer.writeQuad(px, py, pr, py, px, pb, pr, pb, rect_uv[0], rect_uv[1],
 						rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3]);
 				}
@@ -107,8 +115,8 @@ class TilesheetGrid
 			{
 				for (x in 0...grid.worldW)
 				{
-					cache_bitmap.push(x*grid.twidth);
-					cache_bitmap.push(y*grid.theight);
+					cache_bitmap.push(off_x + x*grid.twidth);
+					cache_bitmap.push(off_y + y*grid.theight);
 					cache_bitmap.push(grid.c1t(idx));
 					cache_bitmap.push(red);
 					cache_bitmap.push(green);
@@ -124,8 +132,8 @@ class TilesheetGrid
 			{
 				for (x in 0...grid.worldW)
 				{
-					cache_bitmap.push(x*grid.twidth);
-					cache_bitmap.push(y*grid.theight);
+					cache_bitmap.push(off_x + x*grid.twidth);
+					cache_bitmap.push(off_y + y*grid.theight);
 					cache_bitmap.push(grid.c1t(idx));
 					idx++;
 				}
@@ -139,43 +147,91 @@ class TilesheetGrid
 		
 		var idx = 0;
 		
+		var stw = grid.twidth * scale;
+		var sth = grid.theight * scale;
 		if (useDraw())
 		{
-			for (y in 0...grid.worldH)
+			if (scale != 1.)
 			{
-				for (x in 0...grid.worldW)
+				for (y in 0...grid.worldH)
 				{
-					var frame = grid.c1t(idx);
-					if (frame >= 0)
+					for (x in 0...grid.worldW)
 					{
-						cache.push(x*grid.twidth);
-						cache.push(y*grid.theight);
-						cache.push(frame);
-						cache.push(red);
-						cache.push(green);
-						cache.push(blue);
-						cache.push(alpha);
+						var frame = grid.c1t(idx);
+						if (frame >= 0)
+						{
+							cache.push(off_x + x*stw);
+							cache.push(off_y + y*sth);
+							cache.push(frame);
+							cache.push(scale);
+							cache.push(red);
+							cache.push(green);
+							cache.push(blue);
+							cache.push(alpha);
+						}
+						idx++;
 					}
-					idx++;
-				}
-			}	
+				}				
+			}
+			else
+			{
+				for (y in 0...grid.worldH)
+				{
+					for (x in 0...grid.worldW)
+					{
+						var frame = grid.c1t(idx);
+						if (frame >= 0)
+						{
+							cache.push(off_x + x*stw);
+							cache.push(off_y + y*sth);
+							cache.push(frame);
+							cache.push(red);
+							cache.push(green);
+							cache.push(blue);
+							cache.push(alpha);
+						}
+						idx++;
+					}
+				}				
+			}
 		}
 		else
 		{
-			for (y in 0...grid.worldH)
+			if (scale != 1.)
 			{
-				for (x in 0...grid.worldW)
+				for (y in 0...grid.worldH)
 				{
-					var frame = grid.c1t(idx);
-					if (frame >= 0)
+					for (x in 0...grid.worldW)
 					{
-						cache.push(x*grid.twidth);
-						cache.push(y*grid.theight);
-						cache.push(frame);
+						var frame = grid.c1t(idx);
+						if (frame >= 0)
+						{
+							cache.push(off_x + x*stw);
+							cache.push(off_y + y*sth);
+							cache.push(frame);
+							cache.push(scale);
+						}
+						idx++;
 					}
-					idx++;
-				}
-			}	
+				}			
+			}
+			else
+			{
+				for (y in 0...grid.worldH)
+				{
+					for (x in 0...grid.worldW)
+					{
+						var frame = grid.c1t(idx);
+						if (frame >= 0)
+						{
+							cache.push(off_x + x*stw);
+							cache.push(off_y + y*sth);
+							cache.push(frame);
+						}
+						idx++;
+					}
+				}	
+			}
 		}
 	}
 	
@@ -249,9 +305,10 @@ class TilesheetGrid
 			recacheDrawtiles();
 		}
 		
+		var useScale = scale != 1. ? Tilesheet.TILE_SCALE : 0;
 		if (useDraw())
-			sheet.drawTiles(gfx, cache, false, Tilesheet.TILE_RGB+Tilesheet.TILE_ALPHA);
-		else sheet.drawTiles(gfx, cache);
+			sheet.drawTiles(gfx, cache, false, Tilesheet.TILE_RGB+Tilesheet.TILE_ALPHA+useScale);
+		else sheet.drawTiles(gfx, cache, false, useScale);
 		flags_changed = false;
 	}
 	
@@ -259,6 +316,8 @@ class TilesheetGrid
 	
 	public function blitFromGrid(input_grid : IntGrid, gfx : BitmapData, partialUpdate=true, doErase=true)
 	{
+		// note: the blitter will ignore scale
+		
 		var idx = 0;
 		var src = sheet.nmeBitmap;
 		
@@ -369,5 +428,17 @@ class TilesheetGrid
 		}		
 		flags_changed = false;
 	}	
+	
+	public function resize(worldw : Int, worldh : Int, tilew : Int, tileh : Int, pop : Array<Int>)
+	{
+		grid.worldW = worldw;
+		grid.worldH = worldh;
+		grid.twidth = tilew;
+		grid.theight = tileh;
+		grid.world = pop;
+		cache = null;
+		cache_bitmap = null;
+		flags_changed = true;
+	}
 	
 }
