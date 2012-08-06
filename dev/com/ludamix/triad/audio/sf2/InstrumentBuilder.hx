@@ -45,6 +45,7 @@ class InstrumentBuilder extends StructureBuilder<Instrument>
         for(instrument in 0 ... data.length - 1)
         {
             var i = data[instrument];
+			i.zones = new Array<Zone>();
             for (j in 0 ... (i.end_instrument_zoneindex - i.start_instrument_zoneindex + 1))
             {
                 i.zones[j] = zones[i.start_instrument_zoneindex + j];
