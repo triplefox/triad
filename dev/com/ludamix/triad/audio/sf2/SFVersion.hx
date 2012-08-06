@@ -16,4 +16,9 @@ class SFVersion
     public function new() 
     {
     }
+	
+	public function toString() : String
+	{
+		return major + "." + minor;
+	}
 }
