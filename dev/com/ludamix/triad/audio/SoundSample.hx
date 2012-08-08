@@ -28,6 +28,7 @@ class SoundSample
 	public var mip_levels : Array<RawSample>;
 	public var tuning : SampleTuning;
 	public var stereo : Bool;
+	public var mono_mode : Int; // if the sample is mono, this indicates if it's intended to be paired.
 	public var loops : Array<LoopInfo>;
 	public var name : String;
 
@@ -44,6 +45,10 @@ class SoundSample
 	public static inline var SUSTAIN_PINGPONG = 5;
 	public static inline var ONE_SHOT = 6;
 	public static inline var NO_LOOP = 7;
+	
+	public static inline var MONOMODE_BOTH = 0;
+	public static inline var MONOMODE_LEFT = 1;
+	public static inline var MONOMODE_RIGHT = 2;
 
 	private static function defaultLoop(data_length : Int) : LoopInfo
 	{
@@ -95,6 +100,7 @@ class SoundSample
 		
 		sample.stereo = sample.mip_levels[0].sample_left != sample.mip_levels[0].sample_right;
 		sample.name = name;
+		sample.mono_mode = MONOMODE_BOTH;
 		
 		return sample;
 	}
@@ -109,6 +115,7 @@ class SoundSample
 		sample.tuning = { base_frequency: base_frequency, sample_rate : sample_rate };
 		sample.stereo = (left != right);
 		sample.name = name;
+		sample.mono_mode = MONOMODE_BOTH;
 		
 		if (loops == null) loops = [defaultLoop(left.length)];
 		sample.loops = loops;

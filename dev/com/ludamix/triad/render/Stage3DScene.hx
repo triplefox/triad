@@ -25,10 +25,9 @@ class Stage3DBuffer
 
 	public var bytebuf_vert : ByteArray;
 	public var bytebuf_idx : ByteArray;
-	public var idx_count : Int;
-	public var idx_max : Int;
 	public var quad_count : Int;
-	public var quad_max : Int;
+	public var vert_count : Int;
+	public var idx_count : Int;
 	
 	public function new()
 	{
@@ -40,10 +39,9 @@ class Stage3DBuffer
 	
 	public inline function resetCounts()
 	{
-		idx_count = 0;
-		idx_max = 0;
 		quad_count = 0;
-		quad_max = 0;
+		vert_count = 0;
+		idx_count = 0;
 		bytebuf_idx.position = 0;
 		bytebuf_vert.position = 0;
 	}
@@ -81,8 +79,6 @@ class Stage3DBuffer
 		bytebuf_vert.writeFloat(y);
 		bytebuf_vert.writeFloat(u);
 		bytebuf_vert.writeFloat(v);
-		bytebuf_idx.writeShort(idx_count);
-		++idx_count;
 	}
 	
 	public inline function writeColorVert(x : Float, y :Float, u : Float, v : Float, 
@@ -96,24 +92,6 @@ class Stage3DBuffer
 		bytebuf_vert.writeShort(Std.int(g * 0xFF));
 		bytebuf_vert.writeShort(Std.int(b * 0xFF));
 		bytebuf_vert.writeShort(Std.int(a * 0xFF));
-		bytebuf_idx.writeShort(idx_count);
-		++idx_count;
-	}
-	
-	public inline function seekQuad(n : Int)
-	{
-		if (idx_count > idx_max) idx_max = idx_count;
-		idx_count = n;
-		bytebuf_idx.position = 6 * 2 * n;
-		bytebuf_vert.position = 6 * REG_FLOATS * n;
-	}
-	
-	public inline function seekColorQuad(n : Int)
-	{
-		if (idx_count > idx_max) idx_max = idx_count;
-		idx_count = n;
-		bytebuf_idx.position = 6 * 2 * n;
-		bytebuf_vert.position = 6 * COLOR_FLOATS * n;
 	}
 	
 	public inline function writeQuad(
@@ -124,12 +102,20 @@ class Stage3DBuffer
 		)
 	{
 		
-		writeVert(tl_x, tl_y, tluv_x, truv_y);
-		writeVert(tr_x, tr_y, truv_x, truv_y);
-		writeVert(br_x, br_y, bruv_x, bruv_y);
-		writeVert(tl_x, tl_y, tluv_x, tluv_y);
-		writeVert(br_x, br_y, bruv_x, bruv_y);
-		writeVert(bl_x, bl_y, bluv_x, bluv_y);
+		writeVert(tl_x, tl_y, tluv_x, truv_y); // 0
+		writeVert(tr_x, tr_y, truv_x, truv_y); // 1
+		writeVert(br_x, br_y, bruv_x, bruv_y); // 2
+		//writeVert(tl_x, tl_y, tluv_x, tluv_y); // 0
+		//writeVert(br_x, br_y, bruv_x, bruv_y); // 2
+		writeVert(bl_x, bl_y, bluv_x, bluv_y); // 3
+		bytebuf_idx.writeShort(vert_count);
+		bytebuf_idx.writeShort(vert_count+1);
+		bytebuf_idx.writeShort(vert_count+2);
+		bytebuf_idx.writeShort(vert_count);
+		bytebuf_idx.writeShort(vert_count+2);
+		bytebuf_idx.writeShort(vert_count+3);
+		vert_count += 4;
+		idx_count += 6;
 		
 		quad_count++;
 		
@@ -144,35 +130,20 @@ class Stage3DBuffer
 		)
 	{
 		
-		writeColorVert(tl_x, tl_y, tluv_x, truv_y, r, g, b, a);
-		writeColorVert(tr_x, tr_y, truv_x, truv_y, r, g, b, a);
-		writeColorVert(br_x, br_y, bruv_x, bruv_y, r, g, b, a);
-		writeColorVert(tl_x, tl_y, tluv_x, tluv_y, r, g, b, a);
-		writeColorVert(br_x, br_y, bruv_x, bruv_y, r, g, b, a);
-		writeColorVert(bl_x, bl_y, bluv_x, bluv_y, r, g, b, a);
-		
-		quad_count++;
-		
-	}
-	
-	public inline function write4ColorQuad(
-		tl_x : Float, tl_y : Float, tr_x : Float, tr_y : Float, 
-		bl_x : Float, bl_y : Float, br_x : Float, br_y : Float,
-		tluv_x : Float, tluv_y : Float, truv_x : Float, truv_y : Float,
-		bluv_x : Float, bluv_y : Float, bruv_x : Float, bruv_y : Float,
-		tl_r : Float, tl_g : Float, tl_b : Float, tl_a : Float,
-		tr_r : Float, tr_g : Float, tr_b : Float, tr_a : Float,
-		bl_r : Float, bl_g : Float, bl_b : Float, bl_a : Float,
-		br_r : Float, br_g : Float, br_b : Float, br_a : Float
-		)
-	{
-		
-		writeColorVert(tl_x, tl_y, tluv_x, truv_y, tl_r, tl_g, tl_b, tl_a);
-		writeColorVert(tr_x, tr_y, truv_x, truv_y, tr_r, tr_g, tr_b, tr_a);
-		writeColorVert(br_x, br_y, bruv_x, bruv_y, br_r, br_g, br_b, br_a);
-		writeColorVert(tl_x, tl_y, tluv_x, tluv_y, tl_r, tl_g, tl_b, tl_a);
-		writeColorVert(br_x, br_y, bruv_x, bruv_y, br_r, br_g, br_b, br_a);
-		writeColorVert(bl_x, bl_y, bluv_x, bluv_y, bl_r, bl_g, bl_b, bl_a);
+		writeColorVert(tl_x, tl_y, tluv_x, truv_y, r, g, b, a); // 0
+		writeColorVert(tr_x, tr_y, truv_x, truv_y, r, g, b, a); // 1
+		writeColorVert(br_x, br_y, bruv_x, bruv_y, r, g, b, a); // 2
+		//writeColorVert(tl_x, tl_y, tluv_x, tluv_y, r, g, b, a); // 0 
+		//writeColorVert(br_x, br_y, bruv_x, bruv_y, r, g, b, a); // 2
+		writeColorVert(bl_x, bl_y, bluv_x, bluv_y, r, g, b, a); // 3
+		bytebuf_idx.writeShort(vert_count);
+		bytebuf_idx.writeShort(vert_count+1);
+		bytebuf_idx.writeShort(vert_count+2);
+		bytebuf_idx.writeShort(vert_count);
+		bytebuf_idx.writeShort(vert_count+2);
+		bytebuf_idx.writeShort(vert_count+3);
+		vert_count += 4;
+		idx_count += 6;
 		
 		quad_count++;
 		
@@ -267,15 +238,16 @@ class Stage3DScene
 			{ tex : sheet.texture }
 		);
 		
-		buffer.seekQuad(buffer.idx_count);
-		var idx_count = buffer.idx_max;
+		buffer.bytebuf_idx.position = 6 * 2 * buffer.quad_count;
+		buffer.bytebuf_vert.position = 4 * Stage3DBuffer.REG_FLOATS * buffer.quad_count;
+		
 		var bytebuf_idx = buffer.bytebuf_idx;
 		var bytebuf_vert = buffer.bytebuf_vert;
 		
-		var ibuf = c.createIndexBuffer(idx_count); 
-			ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
-		var vbuf = c.createVertexBuffer(idx_count, Stage3DBuffer.REG_FLOATS); 
-			vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
+		var ibuf = c.createIndexBuffer(buffer.idx_count); 
+			ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, buffer.idx_count);
+		var vbuf = c.createVertexBuffer(buffer.vert_count, Stage3DBuffer.REG_FLOATS); 
+			vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, buffer.vert_count);
 		
 		shader.bind(vbuf);
 		c.drawTriangles(ibuf);
@@ -295,15 +267,16 @@ class Stage3DScene
 			{ tex : sheet.texture }
 		);
 		
-		buffer.seekColorQuad(buffer.idx_count);
-		var idx_count = buffer.idx_max;
+		buffer.bytebuf_idx.position = 6 * 2 * buffer.quad_count;
+		buffer.bytebuf_vert.position = 4 * Stage3DBuffer.COLOR_FLOATS * buffer.quad_count;
+		
 		var bytebuf_idx = buffer.bytebuf_idx;
 		var bytebuf_vert = buffer.bytebuf_vert;
 		
-		var ibuf = c.createIndexBuffer(idx_count); 
-			ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, idx_count);
-		var vbuf = c.createVertexBuffer(idx_count, Stage3DBuffer.COLOR_FLOATS); 
-			vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, idx_count);
+		var ibuf = c.createIndexBuffer(buffer.idx_count); 
+			ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, buffer.idx_count);
+		var vbuf = c.createVertexBuffer(buffer.vert_count, Stage3DBuffer.COLOR_FLOATS); 
+			vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, buffer.vert_count);
 		
 		color_shader.bind(vbuf);
 		c.drawTriangles(ibuf);

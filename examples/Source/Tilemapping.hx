@@ -11,6 +11,7 @@ import nme.display.Sprite;
 import nme.display.Tilesheet;
 import nme.Lib;
 import nme.events.KeyboardEvent;
+import nme.Vector;
 
 class Tilemapping
 {
@@ -96,7 +97,7 @@ class Tilemapping
 	public function doOver(?event : KeyboardEvent)
 	{
 		var pop = new Array<Int>(); for (n in 0...16 * 16) pop.push(0);
-		board.source.world = pop;
+		board.source.world = Vector.ofArray(pop);
 		var x = 0; var y = 0;
 		for (n in 0...120)
 		{

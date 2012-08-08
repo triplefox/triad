@@ -5,6 +5,7 @@ import nme.display.BitmapData;
 import nme.display.Graphics;
 import nme.display.Tilesheet;
 import nme.geom.Rectangle;
+import nme.Vector;
 
 typedef AutoTileDef = { name:String, indexes:Array<Int>, masksend:Int, maskrecieve:Int };
 

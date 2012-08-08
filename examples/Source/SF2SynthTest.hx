@@ -274,6 +274,29 @@ class SF2SynthTest
 		queueFunction(function() {
 			var sf2 = SF2.load(Assets.getBytes("assets/TestSF2.sf2"));
 			trace(sf2.info);
+			trace(sf2.sample_data.sample_data.length);
+			for (d in sf2.presets_chunk.sample_headers.data)
+			{
+				//trace(["sample_name", d.sample_name]);
+				//an interesting thing that comes out of this - I think I'm going to have to copy the data.
+				//since I want to start from 0, and I want to be able to mipmap samples.
+				
+				//The next step is to load a raw sample and see if it plays!
+				
+				var sample_length = d.end - d.start;
+				var loop_start = d.start_loop - d.start;
+				var loop_end = d.end_loop - d.start;
+				
+				trace(["start",d.start]); // start of sample in bytearray (there will be min 48 bytes pad)
+				trace(["end",d.end]); // end of sample
+				trace(["start_loop",d.start_loop]); // start of loop
+				trace(["end_loop",d.end_loop]); // end of loop
+				trace(["sample_rate",d.sample_rate]);
+				trace(["original_pitch",d.original_pitch]); // MIDI note, with 255 being "unpitched" (60)
+				trace(["pitch_correction",d.pitch_correction]); // cents
+				trace(["sample_link",d.sample_link]); // left/right position, when sample is stereo
+				trace(["sf_sample_link",d.sf_sample_link]); // enumeration of sample type
+			}
 		});
 
 		startQueue();

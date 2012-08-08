@@ -81,6 +81,7 @@ class TilesheetGrid
 		var rect : Rectangle;
 		var rect_uv : Vector<Float>;
 		var idx = 0;
+		
 		for (y in 0...grid.worldH)
 		{
 			for (x in 0...grid.worldW)
@@ -396,7 +397,7 @@ class TilesheetGrid
 			if (useDraw())
 			{
 				var tb = new Bitmap(src);
-				for (n in (0...Std.int(cache.length/7)))
+				for (n in (0...Std.int(cache_bitmap.length/7)))
 				{
 					var idx = Std.int(n * 7);
 					var pt = new Point(cache_bitmap[idx], cache_bitmap[idx + 1]); 
@@ -416,7 +417,7 @@ class TilesheetGrid
 			}
 			else
 			{
-				for (n in (0...Std.int(cache.length/3)))
+				for (n in (0...Std.int(cache_bitmap.length/3)))
 				{
 					var idx = Std.int(n * 3);
 					var pt = new Point(cache_bitmap[idx], cache_bitmap[idx + 1]);
@@ -435,7 +436,7 @@ class TilesheetGrid
 		grid.worldH = worldh;
 		grid.twidth = tilew;
 		grid.theight = tileh;
-		grid.world = pop;
+		grid.world = Vector.ofArray(pop);
 		cache = null;
 		cache_bitmap = null;
 		flags_changed = true;
