@@ -60,10 +60,10 @@ class CopyLoop
 								case CLEIgnore:
 								case CLECut:
 									st += "if (" + smp + ".playhead > " + smp + ".length) " + smp +
-										".playhead = Std.int("+smp+".length - 1);";
+										".playhead = Std.int("+smp+".length) - 1;";
 								case CLELoop:
 									st += "if (" + smp + ".playhead > " + smp + ".length) {" + smp +
-										".playhead = Std.int("+smp+".length - loop_len);}";
+										".playhead = Std.int("+smp+".length) - Std.int(loop_len);}";
 							}
 						}
 						
