@@ -232,59 +232,65 @@ class Stage3DScene
 	
 	public inline function runShader(sheet : XTilesheet, buffer : Stage3DBuffer)
 	{
-		
-		shader.init(
-			{ mproj : projection },
-			{ tex : sheet.texture }
-		);
-		
-		buffer.bytebuf_idx.position = 6 * 2 * buffer.quad_count;
-		buffer.bytebuf_vert.position = 4 * Stage3DBuffer.REG_FLOATS * buffer.quad_count;
-		
-		var bytebuf_idx = buffer.bytebuf_idx;
-		var bytebuf_vert = buffer.bytebuf_vert;
-		
-		var ibuf = c.createIndexBuffer(buffer.idx_count); 
-			ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, buffer.idx_count);
-		var vbuf = c.createVertexBuffer(buffer.vert_count, Stage3DBuffer.REG_FLOATS); 
-			vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, buffer.vert_count);
-		
-		shader.bind(vbuf);
-		c.drawTriangles(ibuf);
-		
-		shader.unbind();
-		
-		vbuf.dispose();
-		ibuf.dispose();
+	
+		if (buffer.quad_count > 0)
+		{
+			shader.init(
+				{ mproj : projection },
+				{ tex : sheet.texture }
+			);
+			
+			buffer.bytebuf_idx.position = 6 * 2 * buffer.quad_count;
+			buffer.bytebuf_vert.position = 4 * Stage3DBuffer.REG_FLOATS * buffer.quad_count;
+			
+			var bytebuf_idx = buffer.bytebuf_idx;
+			var bytebuf_vert = buffer.bytebuf_vert;
+			
+			var ibuf = c.createIndexBuffer(buffer.idx_count); 
+				ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, buffer.idx_count);
+			var vbuf = c.createVertexBuffer(buffer.vert_count, Stage3DBuffer.REG_FLOATS); 
+				vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, buffer.vert_count);
+			
+			shader.bind(vbuf);
+			c.drawTriangles(ibuf);
+			
+			shader.unbind();
+			
+			vbuf.dispose();
+			ibuf.dispose();
+		}
 		
 	}
 	
 	public inline function runColorShader(sheet : XTilesheet, buffer : Stage3DBuffer)
 	{
 		
-		color_shader.init(
-			{ mproj : projection },
-			{ tex : sheet.texture }
-		);
-		
-		buffer.bytebuf_idx.position = 6 * 2 * buffer.quad_count;
-		buffer.bytebuf_vert.position = 4 * Stage3DBuffer.COLOR_FLOATS * buffer.quad_count;
-		
-		var bytebuf_idx = buffer.bytebuf_idx;
-		var bytebuf_vert = buffer.bytebuf_vert;
-		
-		var ibuf = c.createIndexBuffer(buffer.idx_count); 
-			ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, buffer.idx_count);
-		var vbuf = c.createVertexBuffer(buffer.vert_count, Stage3DBuffer.COLOR_FLOATS); 
-			vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, buffer.vert_count);
-		
-		color_shader.bind(vbuf);
-		c.drawTriangles(ibuf);
-		
-		color_shader.unbind();
-		
-		vbuf.dispose();
-		ibuf.dispose();
+		if (buffer.quad_count > 0)
+		{
+			color_shader.init(
+				{ mproj : projection },
+				{ tex : sheet.texture }
+			);
+			
+			buffer.bytebuf_idx.position = 6 * 2 * buffer.quad_count;
+			buffer.bytebuf_vert.position = 4 * Stage3DBuffer.COLOR_FLOATS * buffer.quad_count;
+			
+			var bytebuf_idx = buffer.bytebuf_idx;
+			var bytebuf_vert = buffer.bytebuf_vert;
+			
+			var ibuf = c.createIndexBuffer(buffer.idx_count); 
+				ibuf.uploadFromByteArray(bytebuf_idx, 0, 0, buffer.idx_count);
+			var vbuf = c.createVertexBuffer(buffer.vert_count, Stage3DBuffer.COLOR_FLOATS); 
+				vbuf.uploadFromByteArray(bytebuf_vert, 0, 0, buffer.vert_count);
+			
+			color_shader.bind(vbuf);
+			c.drawTriangles(ibuf);
+			
+			color_shader.unbind();
+			
+			vbuf.dispose();
+			ibuf.dispose();
+		}
 		
 	}
 	

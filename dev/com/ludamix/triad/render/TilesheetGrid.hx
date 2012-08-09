@@ -245,7 +245,7 @@ class TilesheetGrid
 	{
 		var idx = 0;
 		
-		if (flags_changed) partialUpdate = false;
+		if (flags_changed || grid.worldW!=input_grid.worldW || grid.worldH!=input_grid.worldH) partialUpdate = false;
 		
 		if (partialUpdate)
 		{
@@ -263,6 +263,9 @@ class TilesheetGrid
 		}
 		else
 		{
+			grid.worldW = input_grid.worldW;
+			grid.worldH = input_grid.worldH;
+			grid.world.length = input_grid.world.length;
 			for (n in input_grid.world)
 			{
 				grid.world[idx] = n;
@@ -280,7 +283,7 @@ class TilesheetGrid
 	{
 		var idx = 0;
 		
-		if (flags_changed) partialUpdate = false;
+		if (flags_changed || grid.worldW!=input_grid.worldW || grid.worldH!=input_grid.worldH) partialUpdate = false;
 		
 		if (partialUpdate)
 		{
@@ -298,6 +301,9 @@ class TilesheetGrid
 		}
 		else
 		{
+			grid.worldW = input_grid.worldW;
+			grid.worldH = input_grid.worldH;
+			grid.world.length = input_grid.world.length;
 			for (n in input_grid.world)
 			{
 				grid.world[idx] = n;
@@ -322,7 +328,7 @@ class TilesheetGrid
 		var idx = 0;
 		var src = sheet.nmeBitmap;
 		
-		if (flags_changed) partialUpdate = false;
+		if (flags_changed || grid.worldW!=input_grid.worldW || grid.worldH!=input_grid.worldH) partialUpdate = false;
 		
 		if (partialUpdate)
 		{
@@ -387,6 +393,9 @@ class TilesheetGrid
 		}
 		else
 		{
+			grid.worldW = input_grid.worldW;
+			grid.worldH = input_grid.worldH;
+			grid.world.length = input_grid.world.length;
 			for (n in input_grid.world)
 			{
 				grid.world[idx] = n;

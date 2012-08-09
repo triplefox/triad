@@ -83,9 +83,9 @@ class TileLandscape
 			if (ev.keyCode==Keyboard.DOWN)
 				shiftCamera(0, SHIFT_VAL);
 			if (ev.keyCode==Keyboard.F1)
-				{ if (zoom_level <= 0.1) zoom_level = 3.; else zoom_level -= 0.05; initializeScene(); }
+				{ if (zoom_level <= 0.1) zoom_level = 3.7; else zoom_level -= 0.05; initializeScene(); }
 			if (ev.keyCode==Keyboard.F2)
-				{ if (zoom_level >= 3.) zoom_level = 0.1; else zoom_level += 0.05; initializeScene(); }
+				{ if (zoom_level >= 3.7) zoom_level = 0.1; else zoom_level += 0.05; initializeScene(); }
 		});
 		
 	}
@@ -94,6 +94,7 @@ class TileLandscape
 	public static inline var WORLD_H = 8;
 	
 	public var worldmap : IntGrid;
+	public var cammap : IntGrid;
 	public var cam : { x:Int, y:Int };
 	
 	public function initializeWorld()
@@ -144,6 +145,12 @@ class TileLandscape
 			worldmap.world[worldmap.c21(n,worldmap.worldH-1)] = 1;
 		}
 		
+		board.source = worldmap;
+		board.result.worldW = worldmap.worldW * 2;
+		board.result.worldH = worldmap.worldH * 2;
+		board.result.world = new Vector<Int>(board.result.worldW * board.result.worldH);
+		board.recacheAll();
+		
 		initializeScene();
 	}
 	
@@ -166,35 +173,50 @@ class TileLandscape
 		return worldmap.c2t(x + cam.x, y + cam.y);
 	}
 	
-	public static function copy(input : IntGrid, camera_view : Rectangle, screen_view : Rectangle, fallback : Int)
+	public function copy(input : IntGrid, camera_view : Rectangle, screen_view : Rectangle, fallback : Int)
 	{
+	
+		var at : Array<AutoTileDef> = graphics_resource.autotile;
+		var offset = 0; // we offset to the correct tileset position
+		for (n in 0...at.length)
+		{
+			if (at[n].name == "grass") offset = n*20;
+		}
+	
 		var tile_tl = input.cffp(camera_view.left, camera_view.top);
 		var tile_br = input.cffp(camera_view.right, camera_view.bottom);
 		
 		// pad one tile at the right and bottom to allow scrolling
-		// then pad with one tile on all sides to allow the autotiler to render correctly
-		var tile_x = Math.floor(tile_tl.x)-1;
-		var tile_y = Math.floor(tile_tl.y)-1;
-		var tile_w = Math.floor(tile_br.x - tile_tl.x)+3;
-		var tile_h = Math.floor(tile_br.y - tile_tl.y)+3;
+		var tile_x = Math.floor(tile_tl.x);
+		var tile_y = Math.floor(tile_tl.y);
+		var tile_w = Math.floor(tile_br.x - tile_tl.x)+1;
+		var tile_h = Math.floor(tile_br.y - tile_tl.y)+1;
 		
-		var pop = new Vector<Int>();
+		if (cammap==null)
+			cammap = new IntGrid(tile_w, tile_h, 16, 16, [0]);
+		else
+			{ cammap.worldW = tile_w; cammap.worldH = tile_h; }
+		
+		var pop = cammap.world;
+		pop.length = tile_w * tile_h;
+		var idx = 0;
 		for (y in tile_y...tile_y + tile_h)
 		{
 			for (x in tile_x...tile_x + tile_w)			
 			{
 				if (input.tileInBounds(x,y))
-					pop.push(input.c2t(x, y));
+					pop[idx]=(input.c2t(x, y)+offset);
 				else
-					pop.push(fallback);
+					pop[idx]=-1;
+				idx++;
 			}
 		}
 		
 		var output = new IntGrid(tile_w, tile_h, input.twidth, input.theight, [0]);
 		output.world = pop;
 		// include padding in offset
-		var off_x = (-camera_view.x % output.twidth) - input.twidth;
-		var off_y = (-camera_view.y % output.theight) - input.theight;
+		var off_x = ( -camera_view.x % output.twidth);		
+		var off_y = ( -camera_view.y % output.theight);
 		
 		var scale_x = screen_view.width / camera_view.width;
 		var scale_y = screen_view.height / camera_view.height;
@@ -205,65 +227,22 @@ class TileLandscape
 		off_x *= output_scale;
 		off_y *= output_scale;
 		
-		return {world:output.world, scale:output_scale, off_x:off_x, off_y:off_y, width:tile_w, height:tile_h};
+		grid.off_x = off_x;
+		grid.off_y = off_y;
+		grid.scale = output_scale;
+		grid.flags_changed = true;
 		
 	}
 	
 	public function initializeScene()
 	{
 		
-		// Can we refactor this into something more "off-the-shelf"?
-		// At the moment it performs poorly when scrolling, throwing out more data than necessary.
-		// A lot of this depends on the way the vector data is constructed and cached.
-		// It might also help to rewrite IntGrid to Vector<Int>.
-		
 		var zoom_w = Main.W * zoom_level;
 		var zoom_h = Main.H * zoom_level;
 
-		var at : Array<AutoTileDef> = graphics_resource.autotile;
-		var offset = 0; // we offset to the correct tileset position
-		for (n in 0...at.length)
-		{
-			if (at[n].name == "grass") offset = n;
-		}
-
-		var render_world = copy(worldmap,
-			new Rectangle(cam.x - zoom_w/2, cam.y - zoom_h/2, 
+		copy(board.result, new Rectangle(cam.x - zoom_w/2, cam.y - zoom_h/2, 
 				zoom_w, zoom_h), new Rectangle(0, 0, Main.W, Main.H),
-				offset);
-		
-		// we offset the tiles.
-		for (n in 0...render_world.world.length)
-			render_world.world[n] += offset;
-		
-		board.source.world = render_world.world;
-		board.source.worldW = render_world.width;
-		board.source.worldH = render_world.height;
-		board.result.worldW = render_world.width * 2;		
-		board.result.worldH = render_world.height * 2;
-		board.result.world = new Vector(board.result.worldW * board.result.worldH);
-		grid.grid.worldW = render_world.width * 2;
-		grid.grid.worldH = render_world.height * 2;
-		grid.grid.world = new Vector(grid.grid.worldW * grid.grid.worldH);
-		grid.off_x = render_world.off_x;
-		grid.off_y = render_world.off_y;
-		grid.scale = render_world.scale;
-		grid.flags_changed = true;
-		
-		board.recacheAll();
-		
-		var infos = [board.source.worldW, board.source.worldH, board.source.world.length];	
-		var infos_2 = [board.result.worldW, board.result.worldH, board.result.world.length];	
-		var infos_3 = [grid.grid.worldW, grid.grid.worldH, grid.grid.world.length];	
-		
-		if (Std.int(board.source.worldW * board.source.worldH) != Std.int(board.source.world.length))
-			throw Std.format("fail_src $infos $infos_2 $infos_3");
-		if (Std.int(board.result.worldW * board.result.worldH) != Std.int(board.result.world.length))
-			throw Std.format("fail_res $infos $infos_2 $infos_3");
-		if (Std.int(grid.grid.worldW * grid.grid.worldH) != Std.int(grid.grid.world.length))
-			throw Std.format("fail_gri $infos $infos_2 $infos_3");
-		
-		// fail_res 50 30 1900
+				0);
 		
 	}
 	
@@ -274,12 +253,12 @@ class TileLandscape
 		
 		#if flash11
 		scene.clear(1.0);
-		grid.stage3DFromGrid(board.result, scene, true);
+		grid.stage3DFromGrid(cammap, scene, true);
 		sprite.draw_stage3d(scene);
 		scene.present();
 		#else
 		gfx.clear();
-		grid.renderFromGrid(board.result, gfx, true);
+		grid.renderFromGrid(cammap, gfx, true);
 		sprite.draw_tiles(gfx);
 		#end
 	}
