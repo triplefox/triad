@@ -11,6 +11,10 @@
 [id = 8x16; file = VGA8x16.png; tilesize=[8; 16] ] 
 [id = 9x16; file = VGA9x16.png; tilesize=[9; 16] ]
 
+[group=sprites; align=center;]
+[id = faces; file = faces.png; type = spritesheet; tilesize=[32; 32;] rect=[0;0;128;32]]
+[id = feet; file = feet.png; type = spritesheet; tilesize=[16; 16;] rect=[0;0;64;16]]
+
 [group=comment; comment=[
 [group=cards;]
 [id = cards; file = cards.png; type = spritesheet; tilesize=[74; 98;]]]

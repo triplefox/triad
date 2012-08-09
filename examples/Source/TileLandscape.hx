@@ -34,6 +34,8 @@ class TileLandscape
 	public var scene : Stage3DScene;
 	#end
 	public var zoom_level : Float;
+	
+	public var player : SmileyCharacter;
 
 	public function new()
 	{
@@ -74,19 +76,21 @@ class TileLandscape
 		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, function(ev:KeyboardEvent)
 		{
 			var SHIFT_VAL = 4;
-			if (ev.keyCode==Keyboard.RIGHT)
+			/*if (ev.keyCode==Keyboard.RIGHT)
 				shiftCamera(SHIFT_VAL, 0);
 			if (ev.keyCode==Keyboard.LEFT)
 				shiftCamera(-SHIFT_VAL, 0);
 			if (ev.keyCode==Keyboard.UP)
 				shiftCamera(0, -SHIFT_VAL);
 			if (ev.keyCode==Keyboard.DOWN)
-				shiftCamera(0, SHIFT_VAL);
+				shiftCamera(0, SHIFT_VAL);*/
 			if (ev.keyCode==Keyboard.F1)
 				{ if (zoom_level <= 0.1) zoom_level = 3.7; else zoom_level -= 0.05; initializeScene(); }
 			if (ev.keyCode==Keyboard.F2)
 				{ if (zoom_level >= 3.7) zoom_level = 0.1; else zoom_level += 0.05; initializeScene(); }
 		});
+		
+		player = new SmileyCharacter(0,0,0);
 		
 	}
 	
@@ -251,6 +255,13 @@ class TileLandscape
 		//spawnParticles();
 		//updateParticles(1/30.);
 		
+		player.update();		
+		cam.x = player.px;
+		cam.y = player.py;
+		player.draw(sprite, Main.W/2-cam.x, Main.H/2-cam.y, zoom_level);
+		
+		initializeScene();
+		
 		#if flash11
 		scene.clear(1.0);
 		grid.stage3DFromGrid(cammap, scene, true);
@@ -262,5 +273,110 @@ class TileLandscape
 		sprite.draw_tiles(gfx);
 		#end
 	}
+
+}
+
+class SmileyCharacter
+{
+
+	public var wx : Int;
+	public var wy : Int;
+	public var wcycle : Float;
+	
+	public var px : Int;
+	public var py : Int;
+	public var facing : Int;
+
+	public function new(px, py, facing)
+	{
+		this.px = px;		
+		this.py = py;
+		wcycle = 0.;
+		wx = 0;
+		wy = 0;
+		this.facing = facing;	
+		
+		var SPEED = 2;
+		
+		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, function(ev:KeyboardEvent)
+		{
+			if (ev.keyCode==Keyboard.RIGHT)
+				{ wx = SPEED; }
+			if (ev.keyCode==Keyboard.LEFT)
+				{ wx = -SPEED; }
+			if (ev.keyCode==Keyboard.UP)
+				{ wy = -SPEED; }
+			if (ev.keyCode==Keyboard.DOWN)
+				{ wy = SPEED; }
+		});
+		Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, function(ev:KeyboardEvent)
+		{
+			if (ev.keyCode==Keyboard.RIGHT)
+				wx = 0;
+			if (ev.keyCode==Keyboard.LEFT)
+				wx = 0;
+			if (ev.keyCode==Keyboard.UP)
+				wy = 0;
+			if (ev.keyCode==Keyboard.DOWN)
+				wy = 0;
+		});		
+	}
+	
+	public function update()
+	{
+		px += wx;
+		py += wy;	
+	}
+	
+	public function draw(sprite : SpriteRenderer, offx : Float, offy : Float, scale : Float)
+	{		
+		var CYCLET = 0.17;
+		
+		if (wx != 0) { if (wx > 0) wcycle -= CYCLET; else wcycle += CYCLET; }
+		else if (wy != 0) { if (wy > 0) wcycle -= CYCLET; else wcycle += CYCLET; }
+		
+		var wcycle_inv = wcycle + Math.PI;
+		
+		var i_scale = 1. / scale;
+		
+		var FEET_D = 7 * i_scale;
+		var RECOVERY = 0.7;
+		var BOB = 2 * i_scale;
+		var FEET_H = 20 * i_scale;
+		var FEET_C = 6 * i_scale;
+		
+		if (wx != 0.) // x cycle
+		{
+			var f_facing = (wx > 0) ? 1 : 0;
+			facing = wx>0 ? 2 : 1;
+			
+			sprite.addName(px+offx, py + offy + Math.sin(wcycle * 2) * BOB, py, "faces", facing,
+				1.,1.,1.,1.,0.,i_scale);
+			sprite.addName(px+offx+ Math.cos(wcycle_inv) * FEET_D,
+								py + offy+FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C), py - 1, "feet", f_facing,
+									1.,1.,1.,1.,0.,i_scale);
+			sprite.addName(px + offx+Math.cos(wcycle) * FEET_D,
+								py + offy+FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C), py - 1, "feet", f_facing,
+									1.,1.,1.,1.,0.,i_scale);
+		}
+		else // y cycle
+		{
+			var r_facing = 0; var l_facing = 1;
+			
+			if (wy == 0.) { wcycle *= RECOVERY; wcycle_inv = wcycle + Math.PI; } // reset on still
+			else facing = wy<0 ? 3 : 0;
+			sprite.addName(px+offx, py +offy+ Math.sin(wcycle * 2) * BOB, py, "faces", facing,
+				1.,1.,1.,1.,0.,i_scale);
+			sprite.addName(px + offx + FEET_D, py +offy + FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C), 
+				py - 1, "feet", l_facing,
+				1.,1.,1.,1.,0.,i_scale);
+			sprite.addName(px + offx - FEET_D, py +offy + FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C), py - 1, 
+				"feet", r_facing,
+				1.,1.,1.,1.,0.,i_scale);
+		}
+		
+		wcycle = wcycle % (Math.PI * 2);
+		
+	}	
 
 }
