@@ -152,7 +152,11 @@ class TileLandscape
 		board.source = worldmap;
 		board.result.worldW = worldmap.worldW * 2;
 		board.result.worldH = worldmap.worldH * 2;
-		board.result.world = new Vector<Int>(board.result.worldW * board.result.worldH);
+		#if flash11
+			board.result.world = new Vector<Int>(board.result.worldW * board.result.worldH);
+		#else
+			board.result.world = new Vector<Int>();
+		#end
 		board.recacheAll();
 		
 		initializeScene();
@@ -202,7 +206,9 @@ class TileLandscape
 			{ cammap.worldW = tile_w; cammap.worldH = tile_h; }
 		
 		var pop = cammap.world;
+		#if flash11
 		pop.length = tile_w * tile_h;
+		#end
 		var idx = 0;
 		for (y in tile_y...tile_y + tile_h)
 		{

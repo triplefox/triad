@@ -5,7 +5,7 @@ class BinPacker
 	
 	public var nodes : Array<PackerNode>;
 	
-	public function new(w:Float,h:Float,inputs: Array<{contents:Dynamic,w:Float,h:Float}>, ?skipx=1)
+	public function new(w:Float,h:Float,inputs: Array<{contents:Dynamic,w:Float,h:Float}>, ?skipx=1, ?always_rescan=false)
 	{
 		// take the inputs and assign ids, then sort by height(this helps pack efficiency)
 		
@@ -17,10 +17,12 @@ class BinPacker
 		stuff.sort(function(a, b):Int { return Std.int(b.h - a.h); } );
 		nodes = new Array();
 		
+		var starty = 0.;
+		
 		while (stuff.length > 0)
 		{
 			var d = stuff.shift();
-			var n = new PackerNode(d.contents, 0, 0, d.w, d.h, d.id);
+			var n = new PackerNode(d.contents, 0, starty, d.w, d.h, d.id);
 			var fail = true;
 			var min_y = h;
 			
@@ -54,6 +56,7 @@ class BinPacker
 			if (fail) throw "size overflow";
 			else 
 			{ 
+				if (!always_rescan) starty = n.y; // we never look back at previous finished lines with this optimization
 				nodes.push(n);
 				nodes.sort(function(a, b) { 
 						return Std.int(a.x - b.x);

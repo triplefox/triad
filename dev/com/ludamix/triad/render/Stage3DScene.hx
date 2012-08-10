@@ -1,5 +1,7 @@
 package com.ludamix.triad.render;
 
+#if flash11
+
 import flash.Lib;
 import flash.Vector;
 import flash.geom.Vector3D;
@@ -72,6 +74,18 @@ class Stage3DBuffer
 	 * especially with regular tilemaps.
 	 * 
 	 * */
+	
+	/*
+	 * 
+	 * To further increase performance we will need to lean more on the shaders.
+	 * 
+	 * The starting place for this is to pass in another shader constant, presumably a Texture,
+	 * which contains the UV data for the sheet. (Cache as a Bytearray etc etc.)
+	 * 
+	 * Then, we can convert UV references to sheet references, and move the transforms onto the GPU.
+	 * As we do this, we eliminate the old drawQuad functionality in favor of following drawTiles format exactly.
+	 * 
+	 */
 	
 	public inline function writeVert(x : Float, y :Float, u : Float, v : Float)
 	{
@@ -340,3 +354,5 @@ class TextureColor2DShader extends format.hxsl.Shader {
 	};
 
 }
+
+#end

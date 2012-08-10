@@ -303,7 +303,9 @@ class TilesheetGrid
 		{
 			grid.worldW = input_grid.worldW;
 			grid.worldH = input_grid.worldH;
+			#if flash11
 			grid.world.length = input_grid.world.length;
+			#end
 			for (n in input_grid.world)
 			{
 				grid.world[idx] = n;
@@ -395,7 +397,9 @@ class TilesheetGrid
 		{
 			grid.worldW = input_grid.worldW;
 			grid.worldH = input_grid.worldH;
+			#if flash11
 			grid.world.length = input_grid.world.length;
+			#end
 			for (n in input_grid.world)
 			{
 				grid.world[idx] = n;
@@ -445,7 +449,11 @@ class TilesheetGrid
 		grid.worldH = worldh;
 		grid.twidth = tilew;
 		grid.theight = tileh;
+		#if flash11
 		grid.world = Vector.ofArray(pop);
+		#else
+		grid.world = pop;
+		#end
 		cache = null;
 		cache_bitmap = null;
 		flags_changed = true;
