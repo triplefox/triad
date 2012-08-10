@@ -5,6 +5,7 @@ import com.ludamix.triad.render.Stage3DScene;
 import com.ludamix.triad.grid.AutotileBoard;
 import com.ludamix.triad.grid.IntGrid;
 import com.ludamix.triad.render.XTilesheet;
+import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.tools.MathTools;
 import com.ludamix.triad.ui.Helpers;
 import nme.display.Sprite;
@@ -34,6 +35,7 @@ class TileLandscape
 	public var scene : Stage3DScene;
 	#end
 	public var zoom_level : Float;
+	public var day_cycle : Float;
 	
 	public var player : SmileyCharacter;
 
@@ -60,6 +62,7 @@ class TileLandscape
 		Lib.current.addChild(spr);
 		#end
 		zoom_level = 1.;
+		day_cycle = 0.;
 		
 		var pop = new Array<Int>(); for (n in 0...50 * 38) pop.push(0);
 		grid = new TilesheetGrid(graphics_resource.tilesheet, 50, 38, 16, 16, pop);
@@ -264,7 +267,8 @@ class TileLandscape
 		player.update();		
 		cam.x = player.px;
 		cam.y = player.py;
-		player.draw(sprite, Main.W/2-cam.x, Main.H/2-cam.y, zoom_level);
+		player.draw(sprite, Main.W / 2 - cam.x, Main.H / 2 - cam.y, zoom_level);
+		computeDayColors();
 		
 		initializeScene();
 		
@@ -279,6 +283,32 @@ class TileLandscape
 		sprite.draw_tiles(gfx);
 		#end
 	}
+	
+	public function computeDayColors()
+	{
+		var grad = [0x001065, 0x9556b2, 0xdfb1ce, 0xf2f1dd, 0xf2826c, 0x753a82, 0x001065];
+		var pos = day_cycle * 6;
+		var left = Std.int(pos);
+		var right = Std.int(pos + 1);
+		var pct = pos - left;
+		var hsv_left = { h:0., s:0., v:0. };
+		var hsv_right = { h:0., s:0., v:0. };
+		Color.RGBtoHSV(Color.RGBPx(grad[left]), hsv_left);
+		Color.RGBtoHSV(Color.RGBPx(grad[right]), hsv_right);
+		var h = MathTools.lerp(hsv_left.h, hsv_right.h, pct);
+		var s = MathTools.lerp(hsv_left.s, hsv_right.s, pct);
+		var v = MathTools.lerp(hsv_left.v, hsv_right.v, pct);
+		var final = { r:0, g:0, b:0 };
+		Color.HSVtoRGB({h:h,s:s,v:v},final);
+		grid.red = final.r / 255.;
+		grid.green = final.g / 255.;
+		grid.blue = final.b / 255.;
+		player.red = (grid.red + 1.)/2;
+		player.green = (grid.green + 1.)/2;
+		player.blue = (grid.blue + 1.)/2;
+		day_cycle += 0.0005;
+		if (day_cycle > 1.) day_cycle -= 1.;
+	}
 
 }
 
@@ -292,6 +322,11 @@ class SmileyCharacter
 	public var px : Int;
 	public var py : Int;
 	public var facing : Int;
+	
+	public var red : Float;
+	public var green : Float;
+	public var blue : Float;
+	public var i_scale : Float;
 
 	public function new(px, py, facing)
 	{
@@ -301,6 +336,10 @@ class SmileyCharacter
 		wx = 0;
 		wy = 0;
 		this.facing = facing;	
+		this.red = 1.;
+		this.green = 1.;
+		this.blue = 1.;
+		this.i_scale = 1.;
 		
 		var SPEED = 2;
 		
@@ -334,6 +373,11 @@ class SmileyCharacter
 		py += wy;	
 	}
 	
+	public inline function addName(sprite : SpriteRenderer, name : String, frame : Int, x, y, z)
+	{
+		sprite.addName(x, y, z, name, frame, 1., red, green, blue, 0., i_scale);
+	}
+	
 	public function draw(sprite : SpriteRenderer, offx : Float, offy : Float, scale : Float)
 	{		
 		var CYCLET = 0.17;
@@ -343,7 +387,7 @@ class SmileyCharacter
 		
 		var wcycle_inv = wcycle + Math.PI;
 		
-		var i_scale = 1. / scale;
+		i_scale = 1. / scale;
 		
 		var FEET_D = 7 * i_scale;
 		var RECOVERY = 0.7;
@@ -356,29 +400,23 @@ class SmileyCharacter
 			var f_facing = (wx > 0) ? 1 : 0;
 			facing = wx>0 ? 2 : 1;
 			
-			sprite.addName(px+offx, py + offy + Math.sin(wcycle * 2) * BOB, py, "faces", facing,
-				1.,1.,1.,1.,0.,i_scale);
-			sprite.addName(px+offx+ Math.cos(wcycle_inv) * FEET_D,
-								py + offy+FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C), py - 1, "feet", f_facing,
-									1.,1.,1.,1.,0.,i_scale);
-			sprite.addName(px + offx+Math.cos(wcycle) * FEET_D,
-								py + offy+FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C), py - 1, "feet", f_facing,
-									1.,1.,1.,1.,0.,i_scale);
+			addName(sprite, "faces", facing, px + offx, py + offy + Math.sin(wcycle * 2) * BOB, py);
+			addName(sprite, "feet", f_facing, px + offx + Math.cos(wcycle_inv) * FEET_D,
+				py + offy+FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C), py - 1);
+			addName(sprite, "feet", f_facing, px + offx+Math.cos(wcycle) * FEET_D,
+				py + offy+FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C), py - 1);
 		}
 		else // y cycle
 		{
 			var r_facing = 0; var l_facing = 1;
 			
 			if (wy == 0.) { wcycle *= RECOVERY; wcycle_inv = wcycle + Math.PI; } // reset on still
-			else facing = wy<0 ? 3 : 0;
-			sprite.addName(px+offx, py +offy+ Math.sin(wcycle * 2) * BOB, py, "faces", facing,
-				1.,1.,1.,1.,0.,i_scale);
-			sprite.addName(px + offx + FEET_D, py +offy + FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C), 
-				py - 1, "feet", l_facing,
-				1.,1.,1.,1.,0.,i_scale);
-			sprite.addName(px + offx - FEET_D, py +offy + FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C), py - 1, 
-				"feet", r_facing,
-				1.,1.,1.,1.,0.,i_scale);
+			else facing = wy < 0 ? 3 : 0;
+			addName(sprite, "faces", facing, px + offx, py +offy + Math.sin(wcycle * 2) * BOB, py);
+			addName(sprite, "feet", l_facing, px + offx + FEET_D, 
+				py +offy + FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C), py - 1);
+			addName(sprite, "feet", r_facing, px + offx - FEET_D, 
+				py +offy + FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C), py - 1);
 		}
 		
 		wcycle = wcycle % (Math.PI * 2);

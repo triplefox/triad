@@ -82,23 +82,49 @@ class TilesheetGrid
 		var rect_uv : Vector<Float>;
 		var idx = 0;
 		
-		for (y in 0...grid.worldH)
+		if (useDraw())
 		{
-			for (x in 0...grid.worldW)
+			for (y in 0...grid.worldH)
 			{
-				var frame = grid.c1t(idx);
-				var stw = grid.twidth * scale;
-				var sth = grid.theight * scale;
-				if (frame >= 0)
+				for (x in 0...grid.worldW)
 				{
-					rect = sheet.rects[frame];
-					rect_uv = sheet.rects_uv[frame];
-					var px = off_x + x * stw; var py = off_y + y * sth;
-					var pr = px + rect.width * scale; var pb = py + rect.height * scale;
-					s3dbuffer.writeQuad(px, py, pr, py, px, pb, pr, pb, rect_uv[0], rect_uv[1],
-						rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3]);
+					var frame = grid.c1t(idx);
+					var stw = grid.twidth * scale;
+					var sth = grid.theight * scale;
+					if (frame >= 0)
+					{
+						rect = sheet.rects[frame];
+						rect_uv = sheet.rects_uv[frame];
+						var px = off_x + x * stw; var py = off_y + y * sth;
+						var pr = px + rect.width * scale; var pb = py + rect.height * scale;
+						s3dbuffer.writeColorQuad(px, py, pr, py, px, pb, pr, pb, rect_uv[0], rect_uv[1],
+							rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3],
+							red, green, blue, alpha);
+					}
+					idx++;
 				}
-				idx++;
+			}
+		}
+		else
+		{
+			for (y in 0...grid.worldH)
+			{
+				for (x in 0...grid.worldW)
+				{
+					var frame = grid.c1t(idx);
+					var stw = grid.twidth * scale;
+					var sth = grid.theight * scale;
+					if (frame >= 0)
+					{
+						rect = sheet.rects[frame];
+						rect_uv = sheet.rects_uv[frame];
+						var px = off_x + x * stw; var py = off_y + y * sth;
+						var pr = px + rect.width * scale; var pb = py + rect.height * scale;
+						s3dbuffer.writeQuad(px, py, pr, py, px, pb, pr, pb, rect_uv[0], rect_uv[1],
+							rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3]);
+					}
+					idx++;
+				}
 			}
 		}
 		return;
@@ -273,7 +299,10 @@ class TilesheetGrid
 			}
 			recacheStage3D();
 		}
-		c.runShader(sheet, s3dbuffer);
+		if (useDraw())
+			c.runColorShader(sheet, s3dbuffer);
+		else
+			c.runShader(sheet, s3dbuffer);
 		
 		flags_changed = false;
 	}
