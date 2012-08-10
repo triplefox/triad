@@ -75,4 +75,17 @@ class StringTools
 		return result;
 	}
 	
+	public static function cleanASCII(i : String)
+	{
+		// returns the string, with non-textual data cut (good for e.g. binary files with fixlen strings)
+		var out = "";
+		for (n in 0...i.length)
+		{
+			var cc = i.charCodeAt(n);
+			if (cc >= 32 && cc < 127)
+				out += String.fromCharCode(cc);
+		}
+		return out;
+	}
+	
 }

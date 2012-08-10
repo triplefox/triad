@@ -273,8 +273,9 @@ class SF2SynthTest
 		
 		queueFunction(function() {
 			var sf2 = SF2.load(Assets.getBytes("assets/TestSF2.sf2"));
-			trace(sf2.info);
-			trace(sf2.sample_data.sample_data.length);
+			//trace(sf2.info);
+			//trace(sf2.sample_data.sample_data.length);
+				/*
 			for (d in sf2.presets_chunk.sample_headers.data)
 			{
 				//trace(["sample_name", d.sample_name]);
@@ -296,6 +297,34 @@ class SF2SynthTest
 				trace(["pitch_correction",d.pitch_correction]); // cents
 				trace(["sample_link",d.sample_link]); // left/right position, when sample is stereo
 				trace(["sf_sample_link",d.sf_sample_link]); // enumeration of sample type
+			}
+				*/
+			for (d in sf2.presets_chunk.instruments.data)
+			{
+				trace("**");
+				trace(d.name);
+				trace(d.zones!=null);
+				trace(d.zones.length);
+				for (z in d.zones)
+				{
+					trace(Std.format("zone: gen ${z.generator_index}/${z.generator_count} ") +
+						  Std.format("mod ${z.modulator_index}/${z.modulator_count}"));
+					// test SF2 has two "empty" generators per zone, and one pointing to the l/r sample.
+					// Now we have to decide how the algorithm points towards a generator.
+					for (g in z.generators)
+					{
+						var inst_name = g.instrument == null ? "NONE" : g.instrument.name;
+						var sample_name = g.sample_header == null ? "NONE" : g.sample_header.sample_name;
+						trace(Std.format("generator: inst $inst_name smp $sample_name ") +
+							Std.format("type ${g.generator_type} amount ${g.raw_amount}"));
+					}
+					// test SF2 has no modulators, this is expected
+					for (m in z.modulators)
+					{
+						trace(Std.format("modulator: dest ${m.destination_generator} amt ${m.amount} ") +
+							Std.format("transform ${m.source_transform}"));
+					}
+				}
 			}
 		});
 

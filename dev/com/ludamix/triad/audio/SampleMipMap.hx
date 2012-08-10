@@ -27,9 +27,10 @@ class SampleMipMap
 		var y3 = 0.;
 		var y4 = 0.;
 		var y5 = 0.;
+		var sl = Std.int(sample.length);
 		for (i in 0...true_len)
 		{
-			if ((i << 1) < Std.int(sample.length-6))
+			if ((i << 1) < sl-6)
 			{
 				y0 = sample[(i << 1)];
 				y1 = sample[((i << 1) + 1)];
@@ -40,12 +41,12 @@ class SampleMipMap
 			}
 			else
 			{
-				y0 = sample[(i << 1) % sample.length];
-				y1 = sample[((i << 1) + 1) % sample.length];
-				y2 = sample[((i << 1) + 2) % sample.length];
-				y3 = sample[((i << 1) + 3) % sample.length];
-				y4 = sample[((i << 1) + 4) % sample.length];
-				y5 = sample[((i << 1) + 5) % sample.length];				
+				y0 = sample[(i << 1) % sl];
+				y1 = sample[((i << 1) + 1) % sl];
+				y2 = sample[((i << 1) + 2) % sl];
+				y3 = sample[((i << 1) + 3) % sl];
+				y4 = sample[((i << 1) + 4) % sl];
+				y5 = sample[((i << 1) + 5) % sl];
 			}
 			out.push(Interpolator.interp_hermite6p(y0,y1,y2,y3,y4,y5,0.));
 		}
