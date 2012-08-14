@@ -1,8 +1,6 @@
 package com.ludamix.triad.render;
 import com.ludamix.triad.geom.BinPacker;
-import com.ludamix.triad.grid.AutotileBoard;
 import com.ludamix.triad.render.TilePack;
-import com.ludamix.triad.render.SpriteRenderer;
 import com.ludamix.triad.tools.StringTools;
 import nme.Assets;
 import nme.display.Bitmap;
@@ -12,7 +10,76 @@ import nme.display.Tilesheet;
 import nme.geom.Point;
 import nme.geom.Rectangle;
 
-typedef GraphicsResourceData = {tilesheet:XTilesheet,sprite:Array<SpriteDef>,autotile:Array<AutoTileDef>};
+class AutoTileDef 
+{ 
+	public var group:String;
+	public var name:String;
+	public var indexes:Array<Int>;
+	public var masksend:Int;
+	public var maskrecieve:Int;
+	
+	public function new(group, name, indexes, masksend, maskrecieve)
+	{
+		this.group = group; this.name = name; this.indexes = indexes;
+		this.masksend = masksend; this.maskrecieve = maskrecieve;
+	}
+	
+}
+
+
+class SpriteDef
+{
+
+	public var name : String;
+	public var sheet : XTilesheet;
+	public var idx : Int;
+	public var frames : Int;
+	
+	public function new(name, sheet, idx, frames)
+	{
+		this.name = name; this.sheet = sheet; this.idx = idx; this.frames = frames;
+	}
+	
+	@:extern public inline function getTile(frame : Int) { return sheet.tiles[idx+frame]; }
+	
+}
+
+class GraphicsResourceData
+{
+	public var tilesheet : XTilesheet;
+	public var sprite : Array<SpriteDef>;
+	public var autotile : Array<AutoTileDef>;
+
+	public var sprite_names : Hash<SpriteDef>;
+	public var autotile_names : Hash<AutoTileDef>;
+	public var autotile_groups : Hash<AutoTileDef>;
+	
+	public function new(tilesheet : XTilesheet, sprite : Array<SpriteDef>, autotile : Array<AutoTileDef>)
+	{
+		this.tilesheet = tilesheet;
+		this.sprite = sprite;
+		this.autotile = autotile;
+		
+		sprite_names = new Hash();
+		autotile_names = new Hash();
+		autotile_groups = new Hash();
+		for (n in sprite)
+		{
+			sprite_names.set(n.name, n);
+		}
+		for (n in autotile)
+		{
+			autotile_names.set(n.name, n);
+			if (!autotile_groups.exists(n.group)) // this assumes the order is canonical
+				autotile_groups.set(n.group, n);
+		}
+	}
+
+	public inline function getSprite(name : String) { return sprite_names.get(name); }
+	public inline function getAutoTile(name : String) { return autotile_names.get(name); }
+	public inline function getAutoTilegroup(name : String) { return autotile_groups.get(name); }
+	
+}
 
 class GraphicsResource
 {
@@ -31,7 +98,7 @@ class GraphicsResource
 	{
 		var data : Array<Dynamic> = TriadConfig.parse(file, TCPReject);
 		if (data[0] == file)
-			throw "you input the filename, not the file";
+			throw "you input the graphicsresource filename, not the file";
 		
 		var idx = 0;
 		var group_opcodes = new Hash<Dynamic>();
@@ -153,7 +220,7 @@ class GraphicsResource
 						for (n in 0...20)
 							atindexes.push(sheet_idx+n);
 						
-						autotiles.push({name:id,indexes:atindexes,masksend:masksend,maskrecieve:maskrecieve});
+						autotiles.push( new AutoTileDef(group, id, atindexes, masksend, maskrecieve));
 						
 					case "spritesheet":
 						
@@ -180,8 +247,7 @@ class GraphicsResource
 						
 						var spr = { offx:alignoffset[0], offy:alignoffset[1], sheet_idx:sheet_idx, sheet_len:sheet_len,
 							id:id, file:file, group:group, slices:slices, w:slice_w, h:slice_h}; // reference
-						spritesheets.push( { name:id, idx:sheet_idx, sheet:null, frames:sheet_len, 
-							xoff:alignoffset[0], yoff:alignoffset[1], w:slice_w, h:slice_h});
+						spritesheets.push( new SpriteDef(id,null,sheet_idx,sheet_len)); 
 						
 						// since the sheet contains offset data, all we need is "name, index, len," I guess.
 						
@@ -211,7 +277,7 @@ class GraphicsResource
 		for (n in spritesheets)
 			n.sheet = ts;
 		
-		return { tilesheet:ts, sprite:spritesheets, autotile:autotiles };
+		return new GraphicsResourceData(ts, spritesheets, autotiles);
 		
 	}
 	

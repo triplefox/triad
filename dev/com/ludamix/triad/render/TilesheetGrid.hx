@@ -79,7 +79,7 @@ class TilesheetGrid
 		s3dbuffer.resetCounts();
 		var offset : Point;
 		var rect : Rectangle;
-		var rect_uv : Vector<Float>;
+		var rect_uv : Rectangle;
 		var idx = 0;
 		
 		if (useDraw())
@@ -93,12 +93,13 @@ class TilesheetGrid
 					var sth = grid.theight * scale;
 					if (frame >= 0)
 					{
-						rect = sheet.rects[frame];
-						rect_uv = sheet.rects_uv[frame];
+						var tile = sheet.tiles[frame];
+						rect = tile.rect;
+						rect_uv = tile.uv;
 						var px = off_x + x * stw; var py = off_y + y * sth;
 						var pr = px + rect.width * scale; var pb = py + rect.height * scale;
-						s3dbuffer.writeColorQuad(px, py, pr, py, px, pb, pr, pb, rect_uv[0], rect_uv[1],
-							rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3],
+						s3dbuffer.writeColorQuad(px, py, pr, py, px, pb, pr, pb, rect_uv.left, rect_uv.top,
+							rect_uv.right, rect_uv.top, rect_uv.left, rect_uv.bottom, rect_uv.right, rect_uv.bottom,
 							red, green, blue, alpha);
 					}
 					idx++;
@@ -116,12 +117,13 @@ class TilesheetGrid
 					var sth = grid.theight * scale;
 					if (frame >= 0)
 					{
-						rect = sheet.rects[frame];
-						rect_uv = sheet.rects_uv[frame];
+						var tile = sheet.tiles[frame];
+						rect = tile.rect;
+						rect_uv = tile.uv;
 						var px = off_x + x * stw; var py = off_y + y * sth;
 						var pr = px + rect.width * scale; var pb = py + rect.height * scale;
-						s3dbuffer.writeQuad(px, py, pr, py, px, pb, pr, pb, rect_uv[0], rect_uv[1],
-							rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3]);
+						s3dbuffer.writeQuad(px, py, pr, py, px, pb, pr, pb, rect_uv.left, rect_uv.top,
+							rect_uv.right, rect_uv.top, rect_uv.left, rect_uv.bottom, rect_uv.right, rect_uv.bottom);
 					}
 					idx++;
 				}
@@ -378,7 +380,7 @@ class TilesheetGrid
 						var frame = cache_bitmap[cidx + 2];
 						if (frame >= 0)
 						{
-							var rect = sheet.rects[Std.int(cache_bitmap[cidx+2])];
+							var rect = sheet.tiles[Std.int(cache_bitmap[cidx+2])].rect;
 							tb.scrollRect = rect;
 							if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, rect.width, rect.height), 0);
 							var ct = new ColorTransform(red, green, blue, alpha);
@@ -407,7 +409,7 @@ class TilesheetGrid
 						var frame = Std.int(cache_bitmap[cidx + 2]);
 						if (frame >= 0)
 						{
-							var rect = sheet.rects[frame];
+							var rect = sheet.tiles[frame].rect;
 							var a = cache_bitmap[cidx + 3]; 
 							var r = cache_bitmap[cidx + 4]; var g = cache_bitmap[cidx + 5]; var b = cache_bitmap[cidx + 6];
 							if (doErase) gfx.fillRect(new Rectangle(pt.x, pt.y, rect.width, rect.height), 0);
@@ -446,7 +448,7 @@ class TilesheetGrid
 					var frame = Std.int(cache_bitmap[idx + 2]);
 					if (frame >= 0)
 					{
-						var rect = sheet.rects[frame];
+						var rect = sheet.tiles[frame].rect;
 						var a = cache_bitmap[idx + 3]; 
 						var r = cache_bitmap[idx + 4]; var g = cache_bitmap[idx + 5]; var b = cache_bitmap[idx + 6];
 						tb.scrollRect = rect;
@@ -465,7 +467,7 @@ class TilesheetGrid
 					var pt = new Point(cache_bitmap[idx], cache_bitmap[idx + 1]);
 					var frame = Std.int(cache_bitmap[idx + 2]);
 					if (frame>=0)
-						gfx.copyPixels(src, sheet.rects[frame], pt);
+						gfx.copyPixels(src, sheet.tiles[frame].rect, pt);
 				}
 			}
 		}		

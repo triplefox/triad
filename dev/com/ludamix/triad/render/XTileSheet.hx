@@ -19,32 +19,40 @@ import flash.display3D.Context3D;
 import flash.display3D.textures.Texture;
 #end
 
+class XTile
+{
+	public var rect : Rectangle;
+	public var uv : Rectangle;
+	public var offset : Point;
+	public function new(rect, uv, offset)
+	{
+		this.rect = rect;
+		this.uv = uv;
+		this.offset = offset;
+	}
+}
+
 class XTilesheet
 {
 
 	public var sheet : Tilesheet;
 	public var nmeBitmap : BitmapData;
-	public var rects : Array<Rectangle>;
-	public var points : Array<Point>;
+	public var tiles : Array<XTile>;
 	private var temp_bitmap : Bitmap;
+	
+	#if flash11	
+	public var texture : Texture;
+	#end
 
 	public function new(inImage : BitmapData)
-	{ sheet = new Tilesheet(inImage); nmeBitmap = inImage; rects = new Array(); 
-	  #if flash11
-		rects_uv = new Array(); 
-	  #end
-	  points = new Array(); 
+	{ sheet = new Tilesheet(inImage); nmeBitmap = inImage;
+	  tiles = new Array(); 
 	  temp_bitmap = new Bitmap(inImage);
 	}
 	
 	public inline function drawTiles(graphics : Graphics, tileData : Array<Float>, 
 		?smooth : Bool=false, ?flags : Int=0)
 	{ sheet.drawTiles(graphics, tileData, smooth, flags); }
-	
-	#if flash11	
-	public var texture : Texture;
-	public var rects_uv : Array<Vector<Float>>;
-	#end
 
 	public inline function blit(bitmap : BitmapData, tileData : Array<Float>, ?smooth : Bool=false, ?flags : Int = 0)
 	{
@@ -58,7 +66,7 @@ class XTilesheet
 			{
 				pt.x = Math.round(tileData[ptr]);
 				pt.y = Math.round(tileData[ptr + 1]);
-				var rect : Rectangle = rects[Std.int(tileData[ptr + 2])];
+				var rect : Rectangle = tiles[Std.int(tileData[ptr + 2])].rect;
 				
 				bitmap.copyPixels(src, rect, pt, src, new Point(rect.x,rect.y),true);
 				ptr+=3;
@@ -76,8 +84,9 @@ class XTilesheet
 			{
 				pt.x = tileData[ptr]; ptr++;
 				pt.y = tileData[ptr]; ptr++;
-				var offset : Point = points[Std.int(tileData[ptr])];
-				var rect : Rectangle = rects[Std.int(tileData[ptr])]; ptr++;				
+				var tile = tiles[Std.int(tileData[ptr])];
+				var offset : Point = tile.offset;
+				var rect : Rectangle = tile.rect; ptr++;				
 				var scale = 1.;
 				var rotation = 0.;
 				var red = 1.;
@@ -124,8 +133,9 @@ class XTilesheet
 			{
 				r.x = tileData[ptr]; ptr++;
 				r.y = tileData[ptr]; ptr++;
-				var offset : Point = points[Std.int(tileData[ptr])];
-				var rect : Rectangle = rects[Std.int(tileData[ptr])]; ptr++;
+				var tile = tiles[Std.int(tileData[ptr])];
+				var offset : Point = tile.offset;
+				var rect : Rectangle = tile.rect; ptr++;				
 				var scale = 1.;
 				if (useScale) { scale = tileData[ptr]; ptr++; }
 				if (useRotate) ptr++;
@@ -145,7 +155,7 @@ class XTilesheet
 			{
 				r.x = tileData[ptr];
 				r.y = tileData[ptr+1];
-				var rect : Rectangle = rects[Std.int(tileData[ptr + 2])];
+				var rect : Rectangle = tiles[Std.int(tileData[ptr + 2])].rect;
 				r.width = rect.width;
 				r.height = rect.height;
 				bitmap.fillRect(r, color);
@@ -157,20 +167,20 @@ class XTilesheet
 	public inline function addTileRect(rectangle : Rectangle, ?centerPoint : Point=null)
 	{
 		sheet.addTileRect(rectangle, centerPoint);
-		rects.push(rectangle);
-		#if flash11
+		
 		var left = rectangle.left / nmeBitmap.width;
 		var right = rectangle.right / nmeBitmap.width;
 		var top = rectangle.top / nmeBitmap.height;
 		var bottom = rectangle.bottom / nmeBitmap.height;
-		var vec = new nme.Vector<Float>();
-		vec.push(left); vec.push(top); vec.push(right); vec.push(bottom);
-		rects_uv.push(vec);
-		#end
+		var uv = (new Rectangle(left, top, right - left, bottom - top));
+		
+		var offset : nme.geom.Point = null;
 		if (centerPoint == null)
-			points.push(new Point(0.,0.));
+			offset = (new Point(0.,0.));
 		else
-			points.push(centerPoint);
+			offset = (centerPoint);
+		
+		tiles.push(new XTile(rectangle, uv, centerPoint));
 	}
 
 }

@@ -1,13 +1,12 @@
 package com.ludamix.triad.grid;
 
+import com.ludamix.triad.render.GraphicsResource;
 import com.ludamix.triad.grid.IntGrid;
 import nme.display.BitmapData;
 import nme.display.Graphics;
 import nme.display.Tilesheet;
 import nme.geom.Rectangle;
 import nme.Vector;
-
-typedef AutoTileDef = { name:String, indexes:Array<Int>, masksend:Int, maskrecieve:Int };
 
 class AutotileBoard
 {
@@ -31,6 +30,16 @@ class AutotileBoard
 	{
 		var x = 0;
 		var y = 0;
+		
+		while (Std.int(result.world.length) < Std.int(source.world.length) * 4)
+		{
+			result.world.push(0);
+		}
+		while (Std.int(result.world.length) > Std.int(source.world.length) * 4)
+		{
+			result.world.pop();
+		}
+		
 		for (n in 0...source.world.length)
 		{
 			rewriteAutoTiling( { x:x, y:y }, source.world[n]);

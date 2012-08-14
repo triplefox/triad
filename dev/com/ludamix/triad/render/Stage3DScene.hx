@@ -25,6 +25,17 @@ typedef VFloat = Vector<Float>;
 class Stage3DBuffer
 {
 
+	/*
+	 * Implementation of a drawTiles-esque interface for Stage3D.
+	 * 
+	 * The basic model used for Stage3DScene doesn't permit one of the biggest CPU-savers - retaining + reusing a buffer,
+	 * such as a large static background.
+	 * 
+	 * As well, it's hamstrung on the types of shaders that are available.
+	 * 
+	 * FoxQuad goes lower level to fill in that gap.
+	 * */
+
 	public var bytebuf_vert : ByteArray;
 	public var bytebuf_idx : ByteArray;
 	public var quad_count : Int;
@@ -74,18 +85,6 @@ class Stage3DBuffer
 	 * especially with regular tilemaps.
 	 * 
 	 * */
-	
-	/*
-	 * 
-	 * To further increase performance we will need to lean more on the shaders.
-	 * 
-	 * The starting place for this is to pass in another shader constant, presumably a Texture,
-	 * which contains the UV data for the sheet. (Cache as a Bytearray etc etc.)
-	 * 
-	 * Then, we can convert UV references to sheet references, and move the transforms onto the GPU.
-	 * As we do this, we eliminate the old drawQuad functionality in favor of following drawTiles format exactly.
-	 * 
-	 */
 	
 	public inline function writeVert(x : Float, y :Float, u : Float, v : Float)
 	{

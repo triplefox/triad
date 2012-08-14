@@ -3,6 +3,8 @@ package com.ludamix.triad.render;
 import nme.display.BitmapData;
 import nme.display.Graphics;
 import nme.display.Tilesheet;
+import com.ludamix.triad.render.GraphicsResource;
+import com.ludamix.triad.render.XTilesheet;
 
 #if flash11
 import flash.display3D.Context3D;
@@ -13,11 +15,7 @@ import flash.geom.Rectangle;
 import flash.Vector;
 #end
 
-typedef SpriteDef = {name:String, sheet:XTilesheet, idx:Int, frames:Int, xoff:Int, yoff:Int, w:Int, h:Int};
 typedef SpriteRun = { flags:Int, sheet:XTilesheet, run:Array<SpriteXYZ> };
-
-// Something supported in my stage3D renderer and not drawtiles is 4 color vertex mode.
-// This mode is actually quite good at creating fake highlights. It'd be nice to have it.
 
 class SpriteXYZ
 {
@@ -186,8 +184,8 @@ class SpriteRenderer
 				{
 					if (add_offsets)
 					{
-						draw_buffer.push(spr.x - spr.sheet.points[spr.idx].x);
-						draw_buffer.push(spr.y - spr.sheet.points[spr.idx].y);
+						draw_buffer.push(spr.x - spr.sheet.tiles[spr.idx].offset.x);
+						draw_buffer.push(spr.y - spr.sheet.tiles[spr.idx].offset.y);
 					}
 					else
 					{
@@ -210,8 +208,8 @@ class SpriteRenderer
 				{
 					for (spr in r.run)
 					{
-						draw_buffer.push(spr.x - spr.sheet.points[spr.idx].x);
-						draw_buffer.push(spr.y - spr.sheet.points[spr.idx].y);
+						draw_buffer.push(spr.x - spr.sheet.tiles[spr.idx].offset.x);
+						draw_buffer.push(spr.y - spr.sheet.tiles[spr.idx].offset.y);
 						draw_buffer.push(spr.idx);
 					}
 				}
@@ -253,9 +251,7 @@ class SpriteRenderer
 		r : SpriteRun, ?smooth : Bool = false)
 	{
 		var texture = r.sheet.texture;
-		var points = r.sheet.points;
-		var rects = r.sheet.rects;
-		var rects_uv = r.sheet.rects_uv;
+		var tiles = r.sheet.tiles;
 		
 		if (texture == null)
 			throw "Texture is null, add this XTilesheet to the scene first";
@@ -275,7 +271,7 @@ class SpriteRenderer
 		var br = new Point(0., 0.);
 		var pt = new Point(0., 0.);
 		var offset : Point;
-		var rect_uv : Vector<Float>;
+		var rect_uv : Rectangle;
 		var rect : Rectangle;
 		var scale : Float;
 		var rotation : Float;
@@ -283,6 +279,7 @@ class SpriteRenderer
 		var green : Float;
 		var blue : Float;
 		var alpha : Float;
+		var tile : XTile;
 		var mtx = new Matrix();
 		
 		if (buffer == null) buffer = new Stage3DBuffer();
@@ -292,9 +289,10 @@ class SpriteRenderer
 			pt.x = sprite.x;
 			pt.y = sprite.y;
 			var uv_pos = sprite.idx;
-			offset = points[uv_pos];
-			rect_uv = rects_uv[uv_pos];
-			rect = rects[uv_pos];
+			tile = tiles[uv_pos];
+			offset = tile.offset;
+			rect_uv = tile.uv;
+			rect = tile.rect;
 			scale = 1.;
 			rotation = 0.;
 			red = 1.;
@@ -338,12 +336,15 @@ class SpriteRenderer
 				red = sprite.red; green = sprite.green; blue = sprite.blue;
 				alpha = sprite.alpha;
 				buffer.writeColorQuad(tl.x, tl.y, tr.x, tr.y, bl.x, bl.y, br.x, br.y,
-				rect_uv[0], rect_uv[1], rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3],
+				rect_uv.left, rect_uv.top, rect_uv.right, rect_uv.top, 
+				rect_uv.left, rect_uv.bottom, rect_uv.right, rect_uv.bottom,
 				red,green,blue,alpha);
 			}
 			else
 			buffer.writeQuad(tl.x, tl.y, tr.x, tr.y, bl.x, bl.y, br.x, br.y,
-				rect_uv[0], rect_uv[1], rect_uv[2], rect_uv[1], rect_uv[0], rect_uv[3], rect_uv[2], rect_uv[3]);
+				rect_uv.left, rect_uv.top, rect_uv.right, rect_uv.top, 
+				rect_uv.left, rect_uv.bottom, rect_uv.right, rect_uv.bottom
+				);
 			
 		}
 		
