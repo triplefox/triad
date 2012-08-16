@@ -65,9 +65,6 @@ typedef SamplerPatch = {
  * 
  * */
  
- // moving the interpolator to SoundSample.
- // this seems like a reasonable idea. This makes the SamplerSynth part very tiny, just a thing to pipe events+patchdata.
- 
 class SamplerSynth implements SoftSynth
 {
 	

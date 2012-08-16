@@ -37,7 +37,7 @@ class SampleHeaderBuilder extends StructureBuilder<SampleHeader>
         sh.original_pitch = d.readByte();
         sh.pitch_correction = d.readSignedByte();
         sh.sample_link = d.readShort();
-        sh.sf_sample_link = d.readShort();
+        sh.sf_sample_type = d.readShort();
         data.push(sh);
         return sh;
     }     

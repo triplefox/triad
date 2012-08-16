@@ -19,7 +19,7 @@ class SampleHeader
     public var original_pitch:Int;
     public var pitch_correction:Int;
     public var sample_link:Int;
-    public var sf_sample_link:Int;
+    public var sf_sample_type:Int;
 
     public function new() 
     {
