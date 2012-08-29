@@ -70,7 +70,7 @@ class TableSynth implements SoftSynth
 	{
 		var lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] },
 			{ frequency:1.7, depth:1., delay:0., attack:0., assigns:[AS_PULSEWIDTH] }];
-		return { envelope_profiles:[Envelope2.ADSR(seq.secondsToFrames, 0.01, 0.4, 0.5, 0.01, [AS_VOLUME_ADD])],
+		return { envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 0.4, 0.5, 0.01, [AS_VOLUME_ADD])],
 				oscillator:SAW_WT,
 				lfos : lfos,
 				modulation_lfo:1.0,

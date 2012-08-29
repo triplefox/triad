@@ -21,23 +21,6 @@ import com.ludamix.triad.audio.VoiceCommon;
 import com.ludamix.triad.audio.Interpolator;
 import nme.Vector;
 
-// Some notes for our SF2 loader:
-// Its hierarchy is:
-// Preset -> Instrument -> Zone(s) -> Generator(s), Modulator(s)
-// Zones map to SFZ groups.
-// The generator and modulator enumerations more or less map to the SFZ opcodes.
-// Each generator points to an Instrument and to a sample header...
-// Which is wierd and stupid! But it means that I can assume instruments are treated as a consistent whole,
-// and if they aren't the file is dumb and corrupt.
-
-// To get the most basic SF2 sound loaded, we take the Instrument, load the first zone and first generator, and
-// take the sample header of that one.
-// To get all samples playing, we need to acknowledge that the generators map to different sample headers.
-// Fuck, why did you make this so complex, Creative??
-// Mmm. What we can do is create an internal representation/cache of each Zone, I guess.
-// Before proceeding further I need to inspect my test file and see how it set up the zones and generators.
-// Once the test file plays, I can "fix it up" later.
-
 typedef SamplerPatch = {
 	sample : SoundSample,
 	tuning : SampleTuning,
@@ -103,22 +86,18 @@ class SamplerSynth implements SoftSynth
 	// and ramp up priority when sustaining
 	public static inline var PRIORITY_RAMPUP = 1;
 	
-	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, name : String)
+	public static function patchOfSoundSample(tuning : MIDITuning, sample : SoundSample) : SamplerPatch
 	{
-		
-		var sample = SoundSample.ofWAVE(tuning, wav, name, MIP_LEVELS);
-		
 		var loops = new Array<LoopInfo>();
 		for (n in sample.loops)
 			loops.push(Reflect.copy(n));
 		
-		return new PatchGenerator(
-			{
+		return {
 			sample:sample,
 			tuning: { base_frequency:sample.tuning.base_frequency, sample_rate:sample.tuning.sample_rate },	
 			loops:loops,
 			pan:0.5,
-			envelope_profiles:[Envelope2.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[VoiceCommon.AS_VOLUME_ADD])],
+			envelope_profiles:[Envelope.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[VoiceCommon.AS_VOLUME_ADD])],
 			volume:1.0,
 			lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
 			modulation_lfo:1.0,
@@ -126,8 +105,15 @@ class SamplerSynth implements SoftSynth
 			cutoff_frequency:0.,
 			filter_mode:VoiceCommon.FILTER_OFF,
 			resonance_level:0.,
-			name:name
-			},
+			name:sample.name
+			};
+	}
+	
+	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, name : String)
+	{
+		var sample = SoundSample.ofWAVE(tuning, wav, name, MIP_LEVELS);
+		
+		return new PatchGenerator(patchOfSoundSample(tuning, sample), 
 			function(settings, seq, ev) : Array<PatchEvent> { return [new PatchEvent(ev,settings)]; }
 		);
 	}
@@ -151,7 +137,7 @@ class SamplerSynth implements SoftSynth
 				loops:loops,
 				pan:0.5,
 				volume:1.0,
-				envelope_profiles:[Envelope2.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[VoiceCommon.AS_VOLUME_ADD])],
+				envelope_profiles:[Envelope.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[VoiceCommon.AS_VOLUME_ADD])],
 				lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
 				modulation_lfo:1.0,
 				arpeggiation_rate:0.0,

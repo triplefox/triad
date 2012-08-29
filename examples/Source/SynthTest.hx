@@ -1,4 +1,5 @@
 import com.ludamix.triad.audio.Codec;
+import com.ludamix.triad.audio.SamplerBank;
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.SMFParser;
 import com.ludamix.triad.format.SMF;
@@ -83,8 +84,8 @@ class SynthTest
 	var songs : Array<Array<String>>;
 	var infos : TextField;
 	var infos2 : TextField;
-	var melodic : SFZBank;
-	var percussion : SFZBank;
+	var melodic : SamplerBank;
+	var percussion : SamplerBank;
 
 	#if debug
 		public static inline var VOICES = 4;
@@ -223,7 +224,7 @@ class SynthTest
             return content;
         }
         
-		melodic = new SFZBank(seq);
+		melodic = new SamplerBank(seq);
 		for (n in 0...128)
 		{
 			queueFunction(function(){
@@ -236,7 +237,7 @@ class SynthTest
 		}
 
 		queueFunction(function(){
-			percussion = new SFZBank(seq);
+			percussion = new SamplerBank(seq);
 			var sfz_data = SFZ.load(seq, Assets.getBytes(sfzPath + "kit-standard.sfz"));
 			var assign = new Array<Int>();
 			for (n in 0...128)

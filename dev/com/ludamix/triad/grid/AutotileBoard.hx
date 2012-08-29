@@ -148,4 +148,8 @@ class AutotileBoard
 		var idx = source.cff1(x, y); set1(idx, val); 
 	}
 	
+	public inline function get1(idx : Int) { return source.world[idx]; }
+	public inline function get2(x : Int, y : Int) { return source.c2t(x,y); }
+	public inline function getff(x : Float, y : Float) { return source.cfft(x,y); }
+	
 }

@@ -13,6 +13,7 @@ import nme.display.Sprite;
 import nme.display.Graphics;
 import nme.display.Bitmap;
 import nme.display.BitmapData;
+import nme.events.MouseEvent;
 import nme.geom.ColorTransform;
 import nme.Assets;
 import nme.geom.Rectangle;
@@ -80,6 +81,16 @@ class TileLandscape
 				{ if (zoom_level <= 0.1) zoom_level = 8; else zoom_level -= 0.05; }
 			if (ev.keyCode==Keyboard.F2)
 				{ if (zoom_level >= 8) zoom_level = 0.1; else zoom_level += 0.05; }
+		});
+		Lib.current.stage.addEventListener(nme.events.MouseEvent.CLICK, function(ev:MouseEvent)
+		{
+			var zoom_w = Main.W * zoom_level;
+			var zoom_h = Main.H * zoom_level;
+			var mx = cam.x - zoom_w / 2 + ev.stageX / Main.W * zoom_w;
+			var my = cam.y - zoom_h / 2 + ev.stageY / Main.H * zoom_h;
+			var cur = board.getff(mx, my);
+			board.setff(mx, my, (cur + 1)%3);
+			initializeScene();
 		});
 		
 		player = new SmileyCharacter((WORLD_W*25*32)>>1,(WORLD_H*25*32)>>1,0, graphics_resource);

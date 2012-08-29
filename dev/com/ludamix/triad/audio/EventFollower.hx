@@ -9,7 +9,7 @@ class EventFollower
 	// this thing holds some additional state per-event.
 	
 	public var patch_event : PatchEvent;
-	public var env : Array<Envelope2>;
+	public var env : Array<Envelope>;
 	public var lfo_pos : Int;
 	public var loop_pos : Float;
 	public var loop_state : Int;
@@ -27,7 +27,7 @@ class EventFollower
 		this.patch_event = event; 
 		env = new Array();
 		for (n in cast(event.patch.envelope_profiles,Array<Dynamic>))
-			env.push(new Envelope2(n.attack,n.release,n.assigns));
+			env.push(new Envelope(n.attack,n.release,n.assigns));
 		this.lfo_pos = 0;
 		loop_pos = 0.; loop_state = LOOP_PRE;
 		filter = new IIRFilter2(0,440.,0,44100);

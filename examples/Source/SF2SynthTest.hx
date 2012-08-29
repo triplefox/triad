@@ -1,5 +1,6 @@
 import com.ludamix.triad.audio.Codec;
 import com.ludamix.triad.audio.MIDITuning;
+import com.ludamix.triad.audio.SamplerBank;
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.sf2.SampleHeader;
 import com.ludamix.triad.audio.sf2.SF2;
@@ -47,8 +48,8 @@ class SF2SynthTest
 	var songs : Array<Array<String>>;
 	var infos : TextField;
 	var infos2 : TextField;
-	var melodic : SFZBank;
-	var percussion : SFZBank;
+	var melodic : SamplerBank;
+	var percussion : SamplerBank;
 
 	#if debug
 		public static inline var VOICES = 4;
@@ -161,11 +162,6 @@ class SF2SynthTest
 
 	public var queue : Array<Dynamic>;
 	public var loader_gui : LayoutResult;
-
-	public function log(str : String)
-	{
-		trace(str);
-	}
 
 	public function new()
 	{
@@ -357,7 +353,7 @@ class SF2SynthTest
 			var preset = sf2.presets_chunk.preset_headers.presets.get(0);
 			
 			var mip_levels = 4;
-			var tuning = new EvenTemperament();
+			sf2.init(seq, mip_levels);
 			
 			for (z in preset.zones)
 			{
@@ -369,88 +365,6 @@ class SF2SynthTest
 						Std.format("type ${g.generator_type} amount ${g.raw_amount}"));
 				}
 			}
-			
-			// SF2 spec adds a lot of complexity via the linked sample construct.
-			// When samples are linked, we toss out the data for one of the sample headers
-			// to construct a unified SoundSample. According to Creative spec this should
-			// be based on the right channel's sample always.
-			
-			// in the first pass, we extract the PCM data to a Vector<Float> array, do a preliminary assignment,
-			//		and detect which samples will need a reassignment.
-			// in the second pass, we use reassignment data to create a stereo sample.
-			// in the third pass, we emit the unique SoundSamples and ignore the linked ones momentarily.
-			// in the fourth pass, we clean up the references for the reassigned(linked) samples.
-			
-			
-			var sample_array = new Array<{left:Vector<Float>,right:Vector<Float>,header:SampleHeader}>();
-			var reassigns = new IntHash<{from:Int,to:Int}>();
-			var sample_idx = 0;
-			sf2.sample_data.sample_data.endian = Endian.LITTLE_ENDIAN;
-			
-			for (sh in sf2.presets_chunk.sample_headers.data)
-			{
-				var start = sh.start;
-				var end = sh.end;
-				
-				var vec = new Vector<Float>();
-				sf2.sample_data.sample_data.position = sh.start;
-				for (n in sh.start...sh.end)
-				{
-					vec.push(sf2.sample_data.sample_data.readShort() / 32768.);
-				}							
-				
-				sample_array.push({left:vec,right:vec,header:sh});
-				
-				if (sh.sf_sample_type == SFSampleLink.LEFT_SAMPLE)
-				{
-					if (sh.sample_link == sample_idx) 
-					{
-						log("sample #${sample_idx} ${sh.sample_name} tried to link to itself - corrupt?");
-					}
-					else
-						reassigns.set(sample_idx, {from:sample_idx,to:sh.sample_link});
-				}
-				
-				sample_idx++;
-			}
-			
-			for (ra in reassigns)
-			{
-				sample_array[ra.to].left = sample_array[ra.from].left;
-			}
-			
-			var result = new Array<SoundSample>();
-			var sample_idx = 0;
-			for (cur_smp in sample_array)
-			{
-				if (reassigns.exists(sample_idx)) // don't emit the linked yet
-				{
-					result.push(null);
-				}
-				else
-				{
-					var left = cur_smp.left; var right = cur_smp.right; var sh = cur_smp.header;
-					var sample = SoundSample.ofVector(left,right,sh.sample_rate,
-						tuning.midiNoteBentToFrequency(sh.original_pitch, sh.pitch_correction),
-						sh.sample_name, mip_levels, [
-							{loop_mode:SoundSample.LOOP_FORWARD,
-							 loop_start:sh.start_loop,loop_end:sh.end_loop}]);			
-					result.push(sample);
-				}
-				
-				sample_idx++;
-			}
-			
-			for (r in reassigns.keys())
-			{
-				result[r] = result[reassigns.get(r).to];
-			}
-			
-			trace(reassigns);
-			trace(result);
-			
-			// we did it! the next step is to link this into the preset and instrument data, so that
-			// sampler patches can be derived.
 			
 		});
 

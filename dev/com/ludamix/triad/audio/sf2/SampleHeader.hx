@@ -7,6 +7,7 @@
 // Please get in touch and let me know of any bugs you find, enhancements you would like,
 // and apps you have written
 package com.ludamix.triad.audio.sf2;
+import com.ludamix.triad.audio.SoundSample;
 
 class SampleHeader 
 {
@@ -20,6 +21,8 @@ class SampleHeader
     public var pitch_correction:Int;
     public var sample_link:Int;
     public var sf_sample_type:Int;
+	
+	public var triad_soundsample:SoundSample;
 
     public function new() 
     {
