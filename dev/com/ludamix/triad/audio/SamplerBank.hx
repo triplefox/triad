@@ -22,7 +22,8 @@ class SamplerBank
 	public function configure(opcode_group : SamplerOpcodeGroup, programs : Array<Int>, 
 		patchGenerator : String -> PatchGenerator, ?recache : Bool=true)
 	{
-		var req_samples = opcode_group.getSamples();
+		// build patches for each sample
+		var req_samples = opcode_group.getSampleNames();
 		for (n in req_samples)
 		{
 			if (!samples.exists(n))
@@ -33,8 +34,21 @@ class SamplerBank
 		}
 		for (program in programs)
 			this.programs.set(program, opcode_group);
-		if (recache)
-			opcode_group.cacheRegions(seq, samples);
+		if (recache) // we're creating new region data
+		{
+			// assign the sample_data parameter
+			for (program in this.programs)
+			{
+				if (program.group_opcodes.exists('sample'))
+					program.group_opcodes.set('sample_data', samples.get(program.group_opcodes.get('sample')));
+				for (region in program.regions)
+				{
+					if (region.exists('sample'))
+						region.set('sample_data', samples.get(region.get('sample')));
+				}
+			}
+			opcode_group.cacheRegions(seq);
+		}
 	}
 
 	public function getProgramOfEvent(ev : SequencerEvent, program_number : Int) : Array<PatchEvent>

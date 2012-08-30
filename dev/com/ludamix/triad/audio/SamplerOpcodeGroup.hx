@@ -20,7 +20,7 @@ class SamplerOpcodeGroup
 		regions.push(new Hash<Dynamic>()); // the empty region, representing group-global
 	}
 
-	public function getSamples()
+	public function getSampleNames()
 	{
 		var set = new Array<String>();
 		if (group_opcodes.exists("sample"))
@@ -37,16 +37,16 @@ class SamplerOpcodeGroup
 		return set;
 	}
 
-	public function cacheRegions(seq : Sequencer, samples : Hash<SamplerPatch>)
+	public function cacheRegions(seq : Sequencer)
 	{
 		region_cache = new Array();
 		for (region in regions)
 		{
 			var sampler_patch : SamplerPatch = null;
-			if (region.exists('sample'))
-				sampler_patch = Reflect.copy(samples.get(region.get('sample')));
-			else if (group_opcodes.exists('sample'))
-				sampler_patch = Reflect.copy(samples.get(group_opcodes.get('sample')));
+			if (region.exists('sample_data'))
+				sampler_patch = Reflect.copy(region.get('sample_data'));
+			else if (group_opcodes.exists('sample_data'))
+				sampler_patch = Reflect.copy(group_opcodes.get('sample_data'));
 			if (sampler_patch == null) continue; // no sample found...
 			
 			// ampeg directives are all in % and seconds.
@@ -55,11 +55,18 @@ class SamplerOpcodeGroup
 			var fil_depth = 0.;
 
 			var midinote : Float = 60.0;
+			
+			// in the sfz spec: "+6db = power*2, -6db = power/2"
+			// but I am using "real" dbs (+/- 10db = power*/2) here because it seems a little better.
+			// this can be modified with the db_convention directive.
+			var db = 10.;
+			var vol_db = 0.;
+			
 			for (directives in [group_opcodes, region])
 			{
 				if (directives.exists("pitch_keycenter"))
 					midinote = directives.get("pitch_keycenter");
-					
+				
 				// rewrite the tuning data
 				if (directives.exists("tune")) { midinote -= (directives.get("tune")/100); }
 				if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
@@ -101,11 +108,8 @@ class SamplerOpcodeGroup
 				if (directives.exists("loop_end")) { sampler_patch.loops[0].loop_end = directives.get("loop_end"); }
 
 				if (directives.exists("pan")) { sampler_patch.pan = ((directives.get("pan")/100)+1)/2; }
-				if (directives.exists("volume")) { sampler_patch.volume = 1.0 *
-					//1.0; }
-					// in the sfz spec: "+6db = power*2, -6db = power/2"
-					// but I am using "real" dbs (+/- 10db = power*/2) here because it seems a little better.
-					Math.pow(2, directives.get("volume") / 10);  }
+				if (directives.exists("db_convention")) { db = directives.get("db_convention"); }
+				if (directives.exists("volume")) { vol_db = directives.get("volume"); }
 
 				if (directives.exists("cutoff")) { sampler_patch.cutoff_frequency = directives.get("cutoff"); }
 				if (directives.exists("resonance")) { sampler_patch.resonance_level = directives.get("resonance"); }
@@ -123,7 +127,9 @@ class SamplerOpcodeGroup
 				}
 
 			}
-
+			
+			sampler_patch.volume = 1.0 * Math.pow(2, vol_db / db);
+			
 			// create envelopes
 			var ampeg = Envelope.DSAHDSHR(seq.secondsToFrames, amp_vals[0], amp_vals[1], amp_vals[2], amp_vals[3],
 				amp_vals[4], amp_vals[5], 0., amp_vals[6], 1., 1., 1., [VoiceCommon.AS_VOLUME_ADD]);

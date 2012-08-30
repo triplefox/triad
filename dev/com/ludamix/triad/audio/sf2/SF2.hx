@@ -166,23 +166,20 @@ class SF2
 			sample_idx++;
 		}
 		
-		// we add a hash version of the samples in patch form(expected by SamplerOpcodeGroup)
-		
-		var usable_samples_hash = new Hash<SamplerPatch>();
-		for (i in 0...usable_samples.length)
-		{
-			usable_samples_hash.set(Std.string(i), SamplerSynth.patchOfSoundSample(seq.tuning, usable_samples[i]));
-		}
-		
 		// now create the preset cache
 		
 		usable_banks = new IntHash();
 		
-		for (p in presets_chunk.preset_headers.data) addPreset(seq, p, usable_samples_hash);
+		for (p in presets_chunk.preset_headers.data) addPreset(seq, p);
 		
 	}
 	
-	public function addPreset(seq : Sequencer, p : Preset, usable_samples_hash : Hash<SamplerPatch>)
+	public static inline function secondsOfTimeCents(data : Float) { return Math.pow(2.0, data / 1200.0); }
+	public static inline function attentuationCBtoPct(data : Float) { return Math.pow(2.0, CBtoDB(data)); }
+	public static inline function DBtoCB(data : Float) { return data * 10.; }
+	public static inline function CBtoDB(data : Float) { return data / 10.; }
+	
+	public function addPreset(seq : Sequencer, p : Preset)
 	{
 		var bank : SF2Bank = null;
 		if (usable_banks.exists(p.bank)) bank = usable_banks.get(p.bank);
@@ -197,6 +194,8 @@ class SF2
 		opcode_group.group_opcodes = new Hash<Dynamic>();
 		
 		// to review how this is laid out:
+		// Each zone contains any number of generators and modulators.
+		
 		// each generator can contain an _optional_ sampleheader, a generator typeenum(various opcodes),
 		// and a quantity.
 		
@@ -206,23 +205,52 @@ class SF2
 		// Our process is to parse this "loosely-coupled" system into the tighter one used by SamplerOpcodeGroup,
 		// and then use SampleOpcodeGroup's method to create patch data.
 		
+		// One of the tricky points is to account for the difference between presets and instruments:
+		// Any zone can reference an instrument, but it's presumed that only preset zones will do so.
+		
 		for (z in p.zones)
 		{
 			var cur_zone = new Hash<Dynamic>();
 			opcode_group.regions.push(cur_zone);
 			
+			var loop_coarse_start = 0;
+			var loop_fine_start = 0;
+			var loop_coarse_end = 0;
+			var loop_fine_end = 0;
+			var sample : SoundSample = null;
+			var header : SampleHeader = null;
 			
+			// Aggregate referenced instrument generators and modulators into this zone:
+			
+			var agg_generator = z.generators.copy();
+			var agg_modulator = z.modulators.copy();
+			
+			var gen_zones : Array<Zone> = null;
 			for (generator in z.generators)
+			{
+				for (z in generator.instrument.zones)
+				{
+					for (g in z.generators)
+						agg_generator.insert(0,g);
+					for (m in z.modulators)
+						agg_modulator.insert(0,m);
+				}
+			}
+			
+			// now we can use the aggregates to produce a complete profile.
+			
+			for (generator in agg_generator)
 			{
 				if (generator.sample_header != null)
 				{
-					cur_zone.set("sample",
-						SamplerSynth.patchOfSoundSample(seq.tuning, generator.sample_header.triad_soundsample));
+					header = generator.sample_header;
+					sample = header.triad_soundsample;
+					cur_zone.set("sample_data", 
+						SamplerSynth.patchOfSoundSample(seq.tuning, sample));
 				}
 				
-				// these offsets... I already looked at the start and end address to make the sample.
-				// for the loops, I guess I should insert these starts and ends at the front always.
-				// I have to build them up gradually since we have coarse and fine :(
+				// these offsets... the coarse and fine are a per-patch thing. 
+				//     For now we ignore, later we could extend SampleSynth to use them.
 				
 				// a lot of these, we can ignore for now.
 				
@@ -232,8 +260,10 @@ class SF2
 					case EndAddressOffset:
 					case StartAddressCoarseOffset:
 					case EndAddressCoarseOffset:
-					case StartLoopAddressOffset:
-					case EndLoopAddressOffset:
+					case StartLoopAddressOffset: 
+					case EndLoopAddressOffset: 
+					case StartLoopAddressCoarseOffset:
+					case EndLoopAddressCoarseOffset:
 					case ModulationLFOToPitch:
 					case VibratoLFOToPitch:
 					case ModulationEnvelopeToPitch:
@@ -245,7 +275,7 @@ class SF2
 					case Unused1:
 					case ChorusEffectsSend:
 					case ReverbEffectsSend:
-					case Pan:
+					case Pan: cur_zone.set("pan", generator.raw_amount/10.);
 					case Unused2:
 					case Unused3:
 					case Unused4:
@@ -261,44 +291,58 @@ class SF2
 					case ReleaseModulationEnvelope:
 					case KeyNumberToModulationEnvelopeHold:
 					case KeyNumberToModulationEnvelopeDecay:
-					case DelayVolumeEnvelope:
-					case AttackVolumeEnvelope:
-					case HoldVolumeEnvelope:
-					case DecayVolumeEnvelope:
-					case SustainVolumeEnvelope:
+					case DelayVolumeEnvelope: 
+						cur_zone.set("ampeg_start", secondsOfTimeCents(generator.raw_amount));
+					case AttackVolumeEnvelope: 
+						cur_zone.set("ampeg_attack", secondsOfTimeCents(generator.raw_amount));
+					case HoldVolumeEnvelope: 
+						cur_zone.set("ampeg_hold", secondsOfTimeCents(generator.raw_amount));
+					case DecayVolumeEnvelope: 
+						cur_zone.set("ampeg_decay", secondsOfTimeCents(generator.raw_amount));
+					case SustainVolumeEnvelope: 
+						cur_zone.set("ampeg_sustain", attentuationCBtoPct(-generator.raw_amount));
 					case ReleaseVolumeEnvelope:
+						cur_zone.set("ampeg_release", secondsOfTimeCents(generator.raw_amount));
 					case KeyNumberToVolumeEnvelopeHold:
 					case KeyNumberToVolumeEnvelopeDecay:
 					case Instrument:
 					case Reserved1:
 					case KeyRange:
 					case VelocityRange:
-					case StartLoopAddressCoarseOffset:
 					case KeyNumber:
 					case Velocity:
 					case InitialAttenuation:
+						cur_zone.set("volume", CBtoDB(-generator.raw_amount));
+						cur_zone.set("db_convention", 1.);
 					case Reserved2:
-					case EndLoopAddressCoarseOffset:
-					case CoarseTune:
-					case FineTune:
+					case CoarseTune: cur_zone.set("transpose", generator.raw_amount);
+					case FineTune: cur_zone.set("tune", generator.raw_amount);
 					case SampleID:
 					case SampleModes:
 					case Reserved3:
 					case ScaleTuning:
 					case ExclusiveClass:
 					case OverridingRootKey:
+						if (generator.raw_amount >= 0) cur_zone.set("pitch_keycenter", generator.raw_amount);
 					case Unused5:
 					case UnusedEnd:
 				}
 				
 			}
-			for (modulator in z.modulators)
+			for (modulator in agg_modulator)
 			{
 				// some more things in sampler_patch get set here!
 			}
+			
+			if (header != null)
+			{
+				cur_zone.set("loop_start", header.start_loop + loop_coarse_start * 32768 + loop_fine_start);
+				cur_zone.set("loop_end", header.end_loop + loop_coarse_end * 32768 + loop_fine_end);
+			}
+			
 		}
 		
-		opcode_group.cacheRegions(seq, usable_samples_hash);
+		opcode_group.cacheRegions(seq);
 		
 		return opcode_group;
 		

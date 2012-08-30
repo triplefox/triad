@@ -229,7 +229,7 @@ class SynthTest
 		{
 			queueFunction(function(){
 				var sfz_loadable = SFZ.load(seq, Assets.getBytes(sfzPath + Std.string(n+1) + ".sfz"));
-				melodic.assignSFZ(sfz_loadable[0], [n], patchGenerator);
+				melodic.configure(sfz_loadable[0], [n], patchGenerator);
 				loader_gui.keys.infos.text = "Loaded instrument " + Std.string(n + 1);
 				loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 			});
@@ -242,7 +242,7 @@ class SynthTest
 			var assign = new Array<Int>();
 			for (n in 0...128)
 				assign.push(n);
-			percussion.assignSFZ(sfz_data[0], assign, patchGenerator);
+			percussion.configure(sfz_data[0], assign, patchGenerator);
 			loader_gui.keys.infos.text = "Loaded percussion";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});
