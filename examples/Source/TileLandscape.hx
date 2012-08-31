@@ -40,6 +40,7 @@ class TileLandscape
 	public var spr : Sprite;
 	public var scene : FoxQuadScene;
 	public var shader : ShaderGeneral2D;
+	public var shaderZ : ShaderGeneral2PointFiveD;
 	
 	public var zoom_level : Float;
 	public var day_cycle : Float;
@@ -58,6 +59,7 @@ class TileLandscape
 		graphics_resource = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, true, "assets/", 2);
 		sprite_quads = new Quads2D(scene.c);
 		shader = new ShaderGeneral2D(scene.c);
+		shaderZ = new ShaderGeneral2PointFiveD(scene.c);
 		scene.addTilesheet(graphics_resource.tilesheet);
 		grid = new FQGrid(graphics_resource.tilesheet, WORLD_W * 25, WORLD_H * 25, 16, 16, [0]);
 		
@@ -94,7 +96,7 @@ class TileLandscape
 				var cur = board.getff(mx, my);
 				board.setff(mx, my, (cur + 1) % 3);
 				var pos = board.result.cffp(mx, my);
-				updateScene(pos.x, pos.y, 1, 1);			
+				updateScene(pos.x-2, pos.y-2, 6, 6);			
 			}
 			
 		});
@@ -263,7 +265,7 @@ class TileLandscape
 		translate.appendTranslation(Main.W/2,Main.H/2, 0.);
 		
 		scene.clear(1.0);
-		grid.runShader(shader,
+		grid.runShader(shaderZ,
 			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, -1., 1.), 
 			 mtrans : translate,
 			 rgba : new Vector3D(colors.r, colors.g, colors.b, 1.) },			 

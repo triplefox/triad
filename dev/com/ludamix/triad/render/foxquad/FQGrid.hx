@@ -21,7 +21,7 @@ class FQGrid
 	// A basic 2d grid renderer,
 	// intended for large maps of finite size.
 	
-	public var chunks : Array<Quads2D>;
+	public var chunks : Array<Quads2PointFiveD>;
 	public var sheet : XTilesheet;
 	public var grid : IntGrid;
 	public var chunk_dimensions : Int;
@@ -47,8 +47,8 @@ class FQGrid
 	{
 		var cx = Std.int(tile_x / chunk_dimensions);
 		var cy = Std.int(tile_y / chunk_dimensions);
-		var cw = Std.int(tile_w / chunk_dimensions) + 1;
-		var ch = Std.int(tile_h / chunk_dimensions) + 1;
+		var cw = Std.int((tile_x+tile_w) / chunk_dimensions) - cx + 1;
+		var ch = Std.int((tile_y+tile_h) / chunk_dimensions) - cy + 1;
 		
 		for (y in cy...(cy+ch))
 		{
@@ -83,7 +83,7 @@ class FQGrid
 				if (frame >= 0)
 				{
 					pt.x = x * stw; pt.y = y * sth;
-					ck.writeSprite(pt, sheet.tiles[frame].rect, sheet.tiles[frame].uv, offset);
+					ck.writeSprite(pt, sheet.tiles[frame].rect, 0., 0., 0., 0., sheet.tiles[frame].uv, offset);
 				}
 			}
 		}
@@ -97,7 +97,7 @@ class FQGrid
 		chunks_height = Math.ceil(grid.worldH * inv_chunk_dimensions);
 		while (chunks.length < chunks_width * chunks_height)		
 		{
-			chunks.push(new Quads2D(context));
+			chunks.push(new Quads2PointFiveD(context));
 		}
 		while (chunks.length > chunks_width * chunks_height)
 		{

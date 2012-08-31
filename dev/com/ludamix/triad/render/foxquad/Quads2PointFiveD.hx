@@ -1,9 +1,9 @@
 package com.ludamix.triad.render.foxquad;
 import com.ludamix.triad.grid.AutotileBoard;
+import com.ludamix.triad.render.foxquad.FoxQuadScene;
 import com.ludamix.triad.render.SpriteRenderer;
 import com.ludamix.triad.render.GraphicsResource;
 import com.ludamix.triad.render.XTilesheet;
-import com.ludamix.triad.tools.FloatPlayhead;
 import flash.display3D.textures.Texture;
 import flash.geom.Matrix;
 import nme.geom.Point;
@@ -41,7 +41,7 @@ class Quads2PointFiveD
 		buffer.dispose();
 	}
 	
-	public static inline var BYTES_PER_VERTEX = 5;
+	public static inline var FLOATS_PER_VERTEX = 5;
 	
 	public inline function bytesInfo() : FQBytesInfo
 	{
@@ -100,9 +100,6 @@ class Quads2PointFiveD
 		quad_count++;		
 	}
 	
-	// how do we deal with the additional coordinate on these functions?
-	// z per vert is one way, I guess.
-	
 	@:extern public inline function writeRect(pos : Rectangle, tlz : Float, trz : Float, blz : Float, brz : Float, 
 		uv : Rectangle, offset : Point)
 	{
@@ -110,7 +107,7 @@ class Quads2PointFiveD
 						pos.right - offset.x, pos.top - offset.y, trz,
 						pos.left - offset.x, pos.bottom - offset.y, blz,
 						pos.right - offset.x, pos.bottom - offset.y, brz,
-						uv.left, uv.top,   uv.right,  uv.top,  uv.left,  uv.bottom,  uv.right,  uv.bottom);		
+						uv.left, uv.top, uv.right,  uv.top,  uv.left,  uv.bottom,  uv.right,  uv.bottom);						
 	}
 	
 	@:extern public inline function writeTransformedRect(pos : Rectangle, 
@@ -181,7 +178,7 @@ class Quads2PointFiveD
 		tlz : Float, trz : Float, blz : Float, brz : Float, 
 		tile : XTile)
 	{
-		writeSprite(pos, tlz, trz, blz, brz, tile.rect, tile.uv, tile.offset);
+		writeSprite(pos, tile.rect, tlz, trz, blz, brz, tile.uv, tile.offset);
 	}
 	
 	@:extern public inline function writeTransformedXTile(pos : Point, 
@@ -189,7 +186,7 @@ class Quads2PointFiveD
 		tile : XTile, radians : Float, 
 		scaleX : Float, scaleY : Float)
 	{
-		writeTransformedSprite(pos, tlz, trz, blz, brz, tile.rect, tile.uv, tile.offset, radians, scaleX, scaleY);
+		writeTransformedSprite(pos, tile.rect, tlz, trz, blz, brz, tile.uv, tile.offset, radians, scaleX, scaleY);
 	}
 
 }
