@@ -150,6 +150,16 @@ class AutotileBoard
 	
 	public inline function get1(idx : Int) { return source.world[idx]; }
 	public inline function get2(x : Int, y : Int) { return source.c2t(x,y); }
-	public inline function getff(x : Float, y : Float) { return source.cfft(x,y); }
+	public inline function getff(x : Float, y : Float) { return source.cfft(x, y); }
+	
+	public inline function pixelInBounds(x : Float, y : Float)
+	{
+		var pos = source.cffp(x, y); return sourceTileInBounds(pos.x, pos.y);
+	}
+	
+	public inline function sourceTileInBounds(x : Int, y : Int)
+	{
+		return (x >= 0 && y >= 0 && x < source.worldW && y < source.worldH);
+	}
 	
 }

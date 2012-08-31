@@ -42,12 +42,55 @@ class FQGrid
 	}
 	
 	public inline function chunk(x) { return Std.int(x * inv_chunk_dimensions); }
+
+	public function updateChunkRect(tile_x, tile_y, tile_w, tile_h)
+	{
+		var cx = Std.int(tile_x / chunk_dimensions);
+		var cy = Std.int(tile_y / chunk_dimensions);
+		var cw = Std.int(tile_w / chunk_dimensions) + 1;
+		var ch = Std.int(tile_h / chunk_dimensions) + 1;
+		
+		for (y in cy...(cy+ch))
+		{
+			for (x in cx...(cx+cw))
+			{
+				updateChunk(x, y);
+			}
+		}
+		
+	}
 	
+	public function updateChunk(ck_x : Int, ck_y : Int)
+	{
+		
+		var ck = chunks[Std.int(ck_x + ck_y * chunks_width)];
+		ck.reset();
+		
+		var tx = ck_x * chunk_dimensions;
+		var ty = ck_y * chunk_dimensions;
+		
+		var pt = new Point(0., 0.);
+		var offset = new Point(0., 0.);
+		var uv = new Rectangle(0., 0., 1., 1.);
+		var stw = grid.twidth;
+		var sth = grid.theight;
+		
+		for (y in ty...(ty+chunk_dimensions))
+		{
+			for (x in tx...(tx+chunk_dimensions))
+			{
+				var frame = grid.c2t(x,y);
+				if (frame >= 0)
+				{
+					pt.x = x * stw; pt.y = y * sth;
+					ck.writeSprite(pt, sheet.tiles[frame].rect, sheet.tiles[frame].uv, offset);
+				}
+			}
+		}
+	}
+
 	public function recache(context : Context3D)
 	{
-		for (q in chunks)
-			q.reset();
-		
 		this.inv_chunk_dimensions = 1./chunk_dimensions;
 		
 		chunks_width = Math.ceil(grid.worldW * inv_chunk_dimensions);
@@ -62,31 +105,13 @@ class FQGrid
 			ck.dispose();
 		}
 		
-		var pt = new Point(0., 0.);
-		var offset = new Point(0., 0.);
-		var uv = new Rectangle(0., 0., 1., 1.);
-		
-		var idx = 0;
-		for (y in 0...grid.worldH)
+		for (y in 0...chunks_height)
 		{
-			var chunk_y = chunk(y) * chunks_width;
-			for (x in 0...grid.worldW)
+			for (x in 0...chunks_width)
 			{
-				var frame = grid.c1t(idx);
-				var stw = grid.twidth;
-				var sth = grid.theight;
-				var chunk_x = chunk(x);
-				if (frame >= 0)
-				{
-				try {
-					pt.x = x * stw; pt.y = y * sth;
-					chunks[chunk_x + chunk_y].writeSprite(pt, 
-						sheet.tiles[frame].rect, sheet.tiles[frame].uv, offset);
-				} catch (d:Dynamic) { trace([chunk_x,chunk_y,chunks_width,chunks_height,chunks.length]); }
-				}
-				idx++;
+				updateChunk(x, y);
 			}
-		}		
+		}
 		
 	}
 	

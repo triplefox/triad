@@ -101,7 +101,9 @@ class SF2
 			for (n in sh.start...sh.end)
 			{
 				vec.push(this.sample_data.sample_data.readShort() / 32768.);
-			}							
+			}
+			trace(["*****", start, end, sh.start_loop, sh.end_loop]);
+			// something tells me we are 2x off in our measurement of the sizes... hmm
 			
 			sample_array.push({left:vec,right:vec,header:sh});
 			
@@ -142,7 +144,7 @@ class SF2
 					tuning.midiNoteBentToFrequency(sh.original_pitch, sh.pitch_correction),
 					sh.sample_name, mip_levels, [
 						{loop_mode:SoundSample.LOOP_FORWARD,
-						 loop_start:sh.start_loop,loop_end:sh.end_loop}]);			
+						 loop_start:sh.start_loop-sh.start,loop_end:sh.end_loop-sh.start}]);
 				result.push(sample);
 			}
 			
@@ -338,6 +340,8 @@ class SF2
 			{
 				cur_zone.set("loop_start", header.start_loop + loop_coarse_start * 32768 + loop_fine_start);
 				cur_zone.set("loop_end", header.end_loop + loop_coarse_end * 32768 + loop_fine_end);
+				trace([header.start_loop, loop_coarse_start, loop_fine_start,
+					   header.end_loop,loop_coarse_end,loop_fine_end]);
 			}
 			
 		}

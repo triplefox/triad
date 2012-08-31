@@ -233,7 +233,7 @@ class SamplerSynth implements SoftSynth
 			}
 			
 		}
-			
+		
 	}
 	
 	private inline function runLoop(cur_follower : EventFollower, buffer : FastFloatBuffer, inc : Float, 

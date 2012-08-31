@@ -88,9 +88,15 @@ class TileLandscape
 			var zoom_h = Main.H * zoom_level;
 			var mx = cam.x - zoom_w / 2 + ev.stageX / Main.W * zoom_w;
 			var my = cam.y - zoom_h / 2 + ev.stageY / Main.H * zoom_h;
-			var cur = board.getff(mx, my);
-			board.setff(mx, my, (cur + 1)%3);
-			initializeScene();
+			
+			if (board.pixelInBounds(mx,my))
+			{
+				var cur = board.getff(mx, my);
+				board.setff(mx, my, (cur + 1) % 3);
+				var pos = board.result.cffp(mx, my);
+				updateScene(pos.x, pos.y, 1, 1);			
+			}
+			
 		});
 		
 		player = new SmileyCharacter((WORLD_W*25*32)>>1,(WORLD_H*25*32)>>1,0, graphics_resource);
@@ -217,14 +223,18 @@ class TileLandscape
 			}
 		}
 		
-		grid.recache(scene.c);
 	}
 	
 	public function initializeScene()
 	{
-		
 		copy(board.result, 0);
-		
+		grid.recache(scene.c);
+	}
+	
+	public function updateScene(tx, ty, tw, th)
+	{
+		copy(board.result, 0);
+		grid.updateChunkRect(tx, ty, tw, th);
 	}
 	
 	public function update(_)

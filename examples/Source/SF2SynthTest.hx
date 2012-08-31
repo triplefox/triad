@@ -360,14 +360,23 @@ class SF2SynthTest
 				for (g in z.generators)
 				{
 					var inst_name = g.instrument == null ? "NONE" : g.instrument.name;
+					if (g.instrument != null)
+					{
+						for (zz in g.instrument.zones)
+						{
+							for (gg in zz.generators)
+							{
+								var sample_name = gg.sample_header == null ? "NONE" : gg.sample_header.sample_name;
+								trace(Std.format("inst-generator: smp $sample_name ") +
+									Std.format("type ${gg.generator_type} amount ${gg.raw_amount}"));
+							}
+						}
+					}
 					var sample_name = g.sample_header == null ? "NONE" : g.sample_header.sample_name;
 					trace(Std.format("generator: inst $inst_name smp $sample_name ") +
 						Std.format("type ${g.generator_type} amount ${g.raw_amount}"));
 				}
 			}
-			
-			// now, we have voices but nothing plays.
-			// who knows why...gotta look and see if the generator is getting anything.
 			
 			var voices : Array<SoftSynth> = [new SamplerSynth()];
 			var vg = [new VoiceGroup(voices, 64)];
