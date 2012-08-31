@@ -278,7 +278,7 @@ class SF2SynthTest
 		*/
 		
 		queueFunction(function() {
-			var sf2 = SF2.load(Assets.getBytes("assets/TestSF2.sf2"));
+			var sf2 = SF2.load(seq, Assets.getBytes("assets/TestSF2.sf2"));
 			//trace(sf2.info);
 			//trace(sf2.sample_data.sample_data.length);
 				/*
@@ -365,6 +365,19 @@ class SF2SynthTest
 						Std.format("type ${g.generator_type} amount ${g.raw_amount}"));
 				}
 			}
+			
+			// now, we have voices but nothing plays.
+			// who knows why...gotta look and see if the generator is getting anything.
+			
+			var voices : Array<SoftSynth> = [new SamplerSynth()];
+			var vg = [new VoiceGroup(voices, 64)];
+			
+			for (v in voices)
+				seq.addSynth(v);
+			for (n in 0...16)
+				seq.addChannel(vg, sf2.getGenerator());
+			seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, { freq:440., velocity:127 }, 0, 0, 0, 0));
+			seq.play("synth","Volume");
 			
 		});
 

@@ -21,8 +21,7 @@ import nme.utils.ByteArray;
 import nme.utils.Endian;
 import nme.Vector;
 
-typedef PresetSet = Array<Preset>;
-typedef SF2Bank = IntHash<PresetSet>;
+typedef SF2Bank = IntHash<SamplerOpcodeGroup>;
 
 class SF2 
 {
@@ -31,14 +30,16 @@ class SF2
     public var sample_data:SampleDataChunk;
     public var usable_samples:Array<SoundSample>;
 	public var usable_banks:IntHash<SF2Bank>;
+	public var sequencer : Sequencer;
 
     public function new() 
     {
     }
     
-    public static function load(data:ByteArray) : SF2
+    public static function load(seq : Sequencer, data:ByteArray) : SF2
     {
         var sf2 = new SF2();
+		sf2.sequencer = seq;
 		data.endian = Endian.LITTLE_ENDIAN;
         var riff:RiffChunk = RiffChunk.getTopLevelChunk(data);
         if(riff.chunk_id == "RIFF") 
@@ -170,7 +171,15 @@ class SF2
 		
 		usable_banks = new IntHash();
 		
-		for (p in presets_chunk.preset_headers.data) addPreset(seq, p);
+		for (p in presets_chunk.preset_headers.data) 
+		{
+			var bank : SF2Bank = null;
+			if (usable_banks.exists(p.bank))
+				bank = usable_banks.get(p.bank);
+			else
+				{ bank = new SF2Bank(); usable_banks.set(p.bank, bank); }
+			bank.set(p.patch_number, parsePreset(seq, p));
+		}
 		
 	}
 	
@@ -179,17 +188,8 @@ class SF2
 	public static inline function DBtoCB(data : Float) { return data * 10.; }
 	public static inline function CBtoDB(data : Float) { return data / 10.; }
 	
-	public function addPreset(seq : Sequencer, p : Preset)
-	{
-		var bank : SF2Bank = null;
-		if (usable_banks.exists(p.bank)) bank = usable_banks.get(p.bank);
-		else { bank = new SF2Bank(); usable_banks.set(p.bank, bank); }
-		
-		var preset_set : PresetSet = null;
-		if (bank.exists(p.patch_number)) preset_set = bank.get(p.patch_number)
-		else { preset_set = new PresetSet(); bank.set(p.patch_number, preset_set); }
-		preset_set.push(p);
-		
+	public function parsePreset(seq : Sequencer, p : Preset) : SamplerOpcodeGroup
+	{		
 		var opcode_group = new SamplerOpcodeGroup();		
 		opcode_group.group_opcodes = new Hash<Dynamic>();
 		
@@ -356,11 +356,8 @@ class SF2
 		{
 			if (b.exists(patch_number))
 			{
-				var preset_set = b.get(patch_number);
-				for (p in preset_set)
-				{
-					// reuse the cached opcode groups
-				}
+				var opcode_group = b.get(patch_number);
+				result = result.concat(opcode_group.query(ev, sequencer));
 			}
 		}
 		return result;
