@@ -28,16 +28,18 @@ class FQGrid
 	public var inv_chunk_dimensions : Float;
 	public var chunks_width : Int;
 	public var chunks_height : Int;
+	public var z_multiplier : Float; // modifies z depth of each tile based on some multiple of the tile_y coordinate.
 	
 	public function new(sheet : XTilesheet, 
 		worldw : Int, worldh : Int, twidth : Int, theight : Int, populate : Array<Int>, 
-		?chunk_dimensions : Int = 96)
+		?chunk_dimensions : Int = 96, ?z_multiplier : Float = -0.00001)
 	{
 		grid = new IntGrid(worldw, worldh, twidth, theight, populate);
 		this.sheet = sheet;
 		chunks = new Array();
 		
 		this.chunk_dimensions = chunk_dimensions;
+		this.z_multiplier = z_multiplier;
 		
 	}
 	
@@ -77,13 +79,15 @@ class FQGrid
 		
 		for (y in ty...(ty+chunk_dimensions))
 		{
+			var z = y * z_multiplier;
+			var z1 = z + z_multiplier;
 			for (x in tx...(tx+chunk_dimensions))
 			{
 				var frame = grid.c2t(x,y);
 				if (frame >= 0)
 				{
 					pt.x = x * stw; pt.y = y * sth;
-					ck.writeSprite(pt, sheet.tiles[frame].rect, 0., 0., 0., 0., sheet.tiles[frame].uv, offset);
+					ck.writeSprite(pt, sheet.tiles[frame].rect, z, z, z1, z1, sheet.tiles[frame].uv, offset);
 				}
 			}
 		}
@@ -123,6 +127,11 @@ class FQGrid
 	{
 		for (q in chunks)
 			q.runShader(shader, shader_vertex, shader_fragment);
+	}
+	
+	public inline function zOfY(ypixels : Float, ytiles : Float)
+	{
+		return ((ypixels / grid.theight) + ytiles) * z_multiplier;
 	}
 	
 }

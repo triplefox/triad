@@ -259,20 +259,23 @@ class TileLandscape
 		
 		var translate = new Matrix3D();
 		translate.identity();
-		translate.appendTranslation(-cam.x, -cam.y, 0.);
+		translate.appendTranslation( -cam.x, -cam.y, 0.5);
 		translate.appendRotation(0., new Vector3D(0., 0., 1., 0.));
 		translate.appendScale(view.output_scale, view.output_scale, 1.);
 		translate.appendTranslation(Main.W/2,Main.H/2, 0.);
 		
 		scene.clear(1.0);
+		var minZ = -1.;
+		var maxZ = 1.;
 		grid.runShader(shaderZ,
-			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, -1., 1.), 
+			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, minZ, maxZ), 
 			 mtrans : translate,
 			 rgba : new Vector3D(colors.r, colors.g, colors.b, 1.) },			 
 			{tex : graphics_resource.tilesheet.texture }
 		);
+		translate.appendTranslation(0., 0., grid.zOfY(player.py + 64, 0.));
 		sprite_quads.runShader(shader,
-			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, -1., 1.), 
+			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, minZ, maxZ), 
 			 mtrans : translate,
 			 rgba : new Vector3D(colors.r * 2, colors.g * 2, colors.b * 2, 1.) },			 
 			{tex : graphics_resource.tilesheet.texture }

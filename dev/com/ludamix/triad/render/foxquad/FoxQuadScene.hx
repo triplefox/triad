@@ -136,10 +136,7 @@ class FoxQuadScene
 	{
 		c = s.context3D;
 		c.enableErrorChecking = false;
-		c.configureBackBuffer( stage.stageWidth, stage.stageHeight, 0, true );
-		
-		//shader = new Texture2DShader(c);		
-		//color_shader = new TextureColor2DShader(c);
+		c.configureBackBuffer( stage.stageWidth, stage.stageHeight, 0, true );		
 	}
 	
 	public function addTilesheet(ts : XTilesheet)
