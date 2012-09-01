@@ -96,14 +96,25 @@ class SF2
 			var start = sh.start;
 			var end = sh.end;
 			
+			sh.triad_start_loop = sh.start_loop - sh.start;
+			sh.triad_end_loop = sh.end_loop - sh.start;
+			
 			var vec = new Vector<Float>();
 			this.sample_data.sample_data.position = sh.start;
 			for (n in sh.start...sh.end)
 			{
 				vec.push(this.sample_data.sample_data.readShort() / 32768.);
 			}
-			trace(["*****", start, end, sh.start_loop, sh.end_loop]);
+			trace(["*****", start, end, sh.start_loop, sh.end_loop, vec.length, vec[vec.length-1]]);
 			// something tells me we are 2x off in our measurement of the sizes... hmm
+			// it doesn't appear to be a problem with stereo playback either.
+			// no, the problem is with the loops we're using.
+			// for some reason we have managed to make the patch specify a loop that is beyond the sample's length,
+			// even after adjusting it down to 0.83 rate.
+			// the soundsamples themselves contain correct loop information, so it's just the patch that's wrong.
+			// do we not adjust patch loops to correspond to mipmaps?
+			// if I change the rate of the sample it plays lower but the loop points are simply farther out.
+			// so that isn't it...
 			
 			sample_array.push({left:vec,right:vec,header:sh});
 			
@@ -144,7 +155,7 @@ class SF2
 					tuning.midiNoteBentToFrequency(sh.original_pitch, sh.pitch_correction),
 					sh.sample_name, mip_levels, [
 						{loop_mode:SoundSample.LOOP_FORWARD,
-						 loop_start:sh.start_loop-sh.start,loop_end:sh.end_loop-sh.start}]);
+						 loop_start:sh.triad_start_loop,loop_end:sh.triad_end_loop}]);
 				result.push(sample);
 			}
 			
@@ -338,10 +349,11 @@ class SF2
 			
 			if (header != null)
 			{
-				cur_zone.set("loop_start", header.start_loop + loop_coarse_start * 32768 + loop_fine_start);
-				cur_zone.set("loop_end", header.end_loop + loop_coarse_end * 32768 + loop_fine_end);
+				cur_zone.set("loop_start", header.triad_start_loop + loop_coarse_start * 32768 + loop_fine_start);
+				cur_zone.set("loop_end", header.triad_end_loop + loop_coarse_end * 32768 + loop_fine_end);
 				trace([header.start_loop, loop_coarse_start, loop_fine_start,
-					   header.end_loop,loop_coarse_end,loop_fine_end]);
+					   header.end_loop, loop_coarse_end, loop_fine_end]);
+				// the loop start and end are somehow including "start" and "end"
 			}
 			
 		}

@@ -27,14 +27,16 @@ import nme.geom.Point;
 import nme.ui.Keyboard;
 import nme.Vector;
 
+typedef CameraView = { tx:Float, ty:Float, tw:Float, th:Float, 
+			scale_x:Float, scale_y:Float, output_scale:Float,
+			off_x:Float, off_y:Float, center_x:Float, center_y:Float };
+
 class TileLandscape
 {
 
 	public var graphics_resource : GraphicsResourceData;
-	//public var grid : TilesheetGrid;
 	public var grid : FQGrid;
 	public var board : AutotileBoard;
-	//public var sprite : SpriteRenderer;
 	public var sprite_quads : Quads2D;	
 	public var gfx : Graphics;
 	public var spr : Sprite;
@@ -174,7 +176,7 @@ class TileLandscape
 		return worldmap.c2t(x + cam.x, y + cam.y);
 	}
 	
-	public function viewOfCamera(camera_view : Rectangle, screen_view : Rectangle)
+	public function viewOfCamera(camera_view : Rectangle, screen_view : Rectangle) : CameraView
 	{
 		var tile_tl = worldmap.cffp(camera_view.left, camera_view.top);
 		var tile_br = worldmap.cffp(camera_view.right, camera_view.bottom);
@@ -195,7 +197,9 @@ class TileLandscape
 		
 		return { tx:tile_x, ty:tile_y, tw:tile_w, th:tile_h, 
 			scale_x:scale_x, scale_y:scale_y, output_scale:output_scale,
-			off_x:off_x, off_y:off_y };			
+			off_x:off_x, off_y:off_y, 
+			center_x:camera_view.x + camera_view.width / 2,			
+			center_y:camera_view.y + camera_view.height / 2 };			
 	}
 	
 	public function copy(input : IntGrid, fallback : Int)
@@ -239,6 +243,17 @@ class TileLandscape
 		grid.updateChunkRect(tx, ty, tw, th);
 	}
 	
+	public inline function getCameraTranslation(mod_x : Float, mod_y : Float, mod_z : Float, view : CameraView)
+	{
+		var translate = new Matrix3D();
+		translate.identity();
+		translate.appendTranslation( mod_x - view.center_x, mod_y - view.center_y, mod_z);
+		translate.appendRotation(0., new Vector3D(0., 0., 1., 0.));		
+		translate.appendScale(view.output_scale, view.output_scale, 1.);
+		translate.appendTranslation(Main.W / 2, Main.H / 2, 0.);		
+		return translate;
+	}
+	
 	public function update(_)
 	{
 		//spawnParticles();
@@ -257,26 +272,21 @@ class TileLandscape
 		var view = viewOfCamera(new Rectangle(cam.x - zoom_w / 2, cam.y - zoom_h / 2, zoom_w, zoom_h), 
 					 new Rectangle(0, 0, Main.W, Main.H));
 		
-		var translate = new Matrix3D();
-		translate.identity();
-		translate.appendTranslation( -cam.x, -cam.y, 0.5);
-		translate.appendRotation(0., new Vector3D(0., 0., 1., 0.));
-		translate.appendScale(view.output_scale, view.output_scale, 1.);
-		translate.appendTranslation(Main.W/2,Main.H/2, 0.);
-		
-		scene.clear(1.0);
 		var minZ = -1.;
 		var maxZ = 1.;
+		var defaultZ = 0.5;
+		
+		scene.clear(1.0);
 		grid.runShader(shaderZ,
 			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, minZ, maxZ), 
-			 mtrans : translate,
+			 mtrans : getCameraTranslation(0.,0.,defaultZ,view),
 			 rgba : new Vector3D(colors.r, colors.g, colors.b, 1.) },			 
 			{tex : graphics_resource.tilesheet.texture }
 		);
-		translate.appendTranslation(0., 0., grid.zOfY(player.py + 64, 0.));
+		
 		sprite_quads.runShader(shader,
 			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, minZ, maxZ), 
-			 mtrans : translate,
+			 mtrans : getCameraTranslation(0.,0.,defaultZ+grid.zOfY(player.py + 64, 0.),view),
 			 rgba : new Vector3D(colors.r * 2, colors.g * 2, colors.b * 2, 1.) },			 
 			{tex : graphics_resource.tilesheet.texture }
 		);

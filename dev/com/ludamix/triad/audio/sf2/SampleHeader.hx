@@ -23,6 +23,8 @@ class SampleHeader
     public var sf_sample_type:Int;
 	
 	public var triad_soundsample:SoundSample;
+	public var triad_start_loop:Int;
+	public var triad_end_loop:Int;
 
     public function new() 
     {

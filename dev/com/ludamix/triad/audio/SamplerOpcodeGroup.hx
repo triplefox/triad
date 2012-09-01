@@ -103,7 +103,7 @@ class SamplerOpcodeGroup
 						case "loop_sustain": sampler_patch.loops[0].loop_mode = SamplerSynth.SUSTAIN_FORWARD;						
 					}
 				}
-
+				
 				if (directives.exists("loop_start")) { sampler_patch.loops[0].loop_start = directives.get("loop_start"); }
 				if (directives.exists("loop_end")) { sampler_patch.loops[0].loop_end = directives.get("loop_end"); }
 
