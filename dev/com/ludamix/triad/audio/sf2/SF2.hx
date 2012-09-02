@@ -288,7 +288,7 @@ class SF2
 					case Unused1:
 					case ChorusEffectsSend:
 					case ReverbEffectsSend:
-					case Pan: cur_zone.set("pan", generator.raw_amount/10.);
+					case Pan: cur_zone.set("pan", generator.raw_amount/1000. + 0.5);
 					case Unused2:
 					case Unused3:
 					case Unused4:
