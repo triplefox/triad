@@ -190,7 +190,7 @@ class SF2SynthTest
         }
         
 		queueFunction(function() {
-			sf2 = SF2.load(seq, Assets.getBytes("assets/TestSF2.sf2"));
+			sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 8.0 MB GS FX Rev B.sf2"));
 			sf2.init(seq, MIP_LEVELS);
 			loader_gui.keys.infos.text = "Loaded SF2";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;

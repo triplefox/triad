@@ -29,7 +29,10 @@ class ModulatorBuilder extends StructureBuilder<Modulator>
         m.destination_generator = Type.createEnumIndex(GeneratorEnum, d.readShort());
         m.amount = d.readShort();
         m.source_modulation_amount = new ModulatorType(d.readShort());
-        m.source_transform = Type.createEnumIndex(TransformEnum, d.readShort());
+		try {
+			m.source_transform = Type.createEnumIndex(TransformEnum, d.readShort());
+		}
+		catch (_:Dynamic) { m.source_transform = Type.createEnumIndex(TransformEnum, 0); }
         data.push(m);
         return m;
     } 

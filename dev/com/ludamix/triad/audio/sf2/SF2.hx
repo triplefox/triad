@@ -241,12 +241,21 @@ class SF2
 			var gen_zones : Array<Zone> = null;
 			for (generator in z.generators)
 			{
-				for (z in generator.instrument.zones)
+				if (generator.instrument != null)
 				{
-					for (g in z.generators)
-						agg_generator.insert(0,g);
-					for (m in z.modulators)
-						agg_modulator.insert(0,m);
+					for (z in generator.instrument.zones)
+					{
+						for (g in z.generators)
+						{
+							if (g!=null)
+								agg_generator.insert(0, g);
+						}
+						for (m in z.modulators)
+						{
+							if (m!=null)
+								agg_modulator.insert(0, m);
+						}
+					}
 				}
 			}
 			
