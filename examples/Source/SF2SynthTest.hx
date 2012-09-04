@@ -48,8 +48,9 @@ class SF2SynthTest
 	var songs : Array<Array<String>>;
 	var infos : TextField;
 	var infos2 : TextField;
-	var melodic : SamplerBank;
-	var percussion : SamplerBank;
+	var sf2 : SF2;
+	
+	public static inline var MIP_LEVELS = 4;
 
 	#if debug
 		public static inline var VOICES = 4;
@@ -79,9 +80,9 @@ class SF2SynthTest
 			var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
 
 			if (n == 9)
-				seq.addChannel([vgroup], percussion.getGenerator());
+				seq.addChannel([vgroup], sf2.getGenerator());
 			else
-				seq.addChannel([vgroup], melodic.getGenerator());
+				seq.addChannel([vgroup], sf2.getGenerator());
 
 			/*seq.addChannel([vgroup], SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 
@@ -114,7 +115,7 @@ class SF2SynthTest
 			if (n == 9)
 			{
 				var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
-				seq.addChannel([vgroup], percussion.getGenerator());
+				seq.addChannel([vgroup], sf2.getGenerator());
 			}
 			else
 			{
@@ -188,21 +189,15 @@ class SF2SynthTest
             return content;
         }
         
-		/*
-		melodic = new SFZBank(seq);
-		for (n in 0...128)
-		{
-			queueFunction(function(){
-				var sfz_loadable = SFZ.load(seq, Assets.getBytes(sfzPath + Std.string(n+1) + ".sfz"));
-				melodic.assignSFZ(sfz_loadable[0], [n], patchGenerator);
-				loader_gui.keys.infos.text = "Loaded instrument " + Std.string(n + 1);
-				loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
-			});
+		queueFunction(function() {
+			sf2 = SF2.load(seq, Assets.getBytes("assets/TestSF2.sf2"));
+			sf2.init(seq, MIP_LEVELS);
+			loader_gui.keys.infos.text = "Loaded SF2";
+			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
+		});
 
-		}
-
-		queueFunction(function(){
-			percussion = new SFZBank(seq);
+		/*queueFunction(function(){
+			percussion = new SamplerBank(seq);
 			var sfz_data = SFZ.load(seq, Assets.getBytes(sfzPath + "kit-standard.sfz"));
 			var assign = new Array<Int>();
 			for (n in 0...128)
@@ -211,6 +206,7 @@ class SF2SynthTest
 			loader_gui.keys.infos.text = "Loaded percussion";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});
+		*/
 
 		queueFunction(function(){
 
@@ -275,10 +271,8 @@ class SF2SynthTest
 			//drawDebugwaveform();
 
 		});
-		*/
 		
-		queueFunction(function() {
-			var sf2 = SF2.load(seq, Assets.getBytes("assets/TestSF2.sf2"));
+		//queueFunction(function() {
 			//trace(sf2.info);
 			//trace(sf2.sample_data.sample_data.length);
 				/*
@@ -305,6 +299,7 @@ class SF2SynthTest
 				trace(["sf_sample_link",d.sf_sample_link]); // enumeration of sample type
 			}
 				*/
+			/*
 			for (d in sf2.presets_chunk.instruments.data)
 			{
 				trace("**");
@@ -378,17 +373,23 @@ class SF2SynthTest
 				}
 			}
 			
-			var voices : Array<SoftSynth> = [new SamplerSynth()];
+			doLoop(null);
+			*/
+			/*
+			var voices = new Array<SoftSynth>();
+			for (n in 0...64)
+				VoiceGroup.push(new SamplerSynth());
 			var vg = [new VoiceGroup(voices, 64)];
 			
 			for (v in voices)
 				seq.addSynth(v);
 			for (n in 0...16)
 				seq.addChannel(vg, sf2.getGenerator());
-			seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, { freq:440., velocity:127 }, 0, 0, 0, 0));
-			seq.play("synth","Volume");
+			//seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, { freq:440., velocity:127 }, 0, 0, 0, 0));
+			*/
+			/*seq.play("synth","Volume");
 			
-		});
+		});*/
 
 		startQueue();
 

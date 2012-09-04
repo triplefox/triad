@@ -373,7 +373,9 @@ class SF2
 			if (b.exists(patch_number))
 			{
 				var opcode_group = b.get(patch_number);
-				result = result.concat(opcode_group.query(ev, sequencer));
+				var q = opcode_group.query(ev, sequencer);
+				if (q!=null)
+					result = result.concat(q);
 			}
 		}
 		return result;
