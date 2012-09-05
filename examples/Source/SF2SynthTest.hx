@@ -207,7 +207,6 @@ class SF2SynthTest
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});
 		*/
-
 		queueFunction(function(){
 
 			var gui_data = 

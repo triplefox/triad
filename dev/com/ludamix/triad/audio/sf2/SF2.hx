@@ -101,20 +101,11 @@ class SF2
 			
 			var vec = new Vector<Float>();
 			this.sample_data.sample_data.position = sh.start;
-			for (n in sh.start...sh.end)
+			for (n in start...end)
 			{
 				vec.push(this.sample_data.sample_data.readShort() / 32768.);
 			}
-			trace(["*****", start, end, sh.start_loop, sh.end_loop, vec.length, vec[vec.length-1]]);
-			// something tells me we are 2x off in our measurement of the sizes... hmm
-			// it doesn't appear to be a problem with stereo playback either.
-			// no, the problem is with the loops we're using.
-			// for some reason we have managed to make the patch specify a loop that is beyond the sample's length,
-			// even after adjusting it down to 0.83 rate.
-			// the soundsamples themselves contain correct loop information, so it's just the patch that's wrong.
-			// do we not adjust patch loops to correspond to mipmaps?
-			// if I change the rate of the sample it plays lower but the loop points are simply farther out.
-			// so that isn't it...
+			trace(["*****", start, end, sh.triad_start_loop, sh.triad_end_loop, vec.length, vec[vec.length-1]]);
 			
 			sample_array.push({left:vec,right:vec,header:sh});
 			
@@ -200,6 +191,7 @@ class SF2
 	public static inline function attentuationCBtoPct(data : Float) { return Math.pow(2.0, CBtoDB(data)); }
 	public static inline function DBtoCB(data : Float) { return data * 10.; }
 	public static inline function CBtoDB(data : Float) { return data / 10.; }
+	public static inline function getLSMS(lsms : Int) { return [ lsms & 0xFF, lsms >> 8 ]; }
 	
 	public function parsePreset(seq : Sequencer, p : Preset) : SamplerOpcodeGroup
 	{		
@@ -272,20 +264,20 @@ class SF2
 				}
 				
 				// these offsets... the coarse and fine are a per-patch thing. 
-				//     For now we ignore, later we could extend SampleSynth to use them.
+				// we don't have a good mechanism for supporting the start/end address offsets right now.
 				
 				// a lot of these, we can ignore for now.
 				
 				switch(generator.generator_type)
 				{
-					case StartAddressOffset:
-					case EndAddressOffset:
+					case StartAddressOffset: trace(generator.raw_amount);
+					case EndAddressOffset: trace(generator.raw_amount);
 					case StartAddressCoarseOffset:
-					case EndAddressCoarseOffset:
-					case StartLoopAddressOffset: 
-					case EndLoopAddressOffset: 
-					case StartLoopAddressCoarseOffset:
-					case EndLoopAddressCoarseOffset:
+					case EndAddressCoarseOffset: trace(generator.raw_amount);
+					case StartLoopAddressOffset: loop_fine_start = generator.raw_amount;
+					case EndLoopAddressOffset: loop_fine_end = generator.raw_amount;
+					case StartLoopAddressCoarseOffset: loop_coarse_start = generator.raw_amount;
+					case EndLoopAddressCoarseOffset: loop_coarse_end = generator.raw_amount;
 					case ModulationLFOToPitch:
 					case VibratoLFOToPitch:
 					case ModulationEnvelopeToPitch:
@@ -329,8 +321,12 @@ class SF2
 					case KeyNumberToVolumeEnvelopeDecay:
 					case Instrument:
 					case Reserved1:
-					case KeyRange:
-					case VelocityRange:
+					case KeyRange: var lsms = getLSMS(generator.raw_amount); 
+								   cur_zone.set("lokey", lsms[0]);
+								   cur_zone.set("hikey", lsms[1]);
+					case VelocityRange: var lsms = getLSMS(generator.raw_amount); 
+								   cur_zone.set("lovel", lsms[0]);
+								   cur_zone.set("hivel", lsms[1]);
 					case KeyNumber:
 					case Velocity:
 					case InitialAttenuation:
@@ -360,24 +356,22 @@ class SF2
 			{
 				cur_zone.set("loop_start", header.triad_start_loop + loop_coarse_start * 32768 + loop_fine_start);
 				cur_zone.set("loop_end", header.triad_end_loop + loop_coarse_end * 32768 + loop_fine_end);
-				trace([header.start_loop, loop_coarse_start, loop_fine_start,
-					   header.end_loop, loop_coarse_end, loop_fine_end]);
 				// the loop start and end are somehow including "start" and "end"
 			}
 			
-		}
-		
+		}		
 		opcode_group.cacheRegions(seq);
 		
 		return opcode_group;
 		
 	}
 	
-	public function getPatchOfEvent(ev : SequencerEvent, patch_number : Int) : Array<PatchEvent>
+	public function getPatchOfEvent(ev : SequencerEvent, patch_number : Int, bank_number : Int) : Array<PatchEvent>
 	{
 		
 		var result = new Array<PatchEvent>();
-		for (b in usable_banks)
+		var b = usable_banks.get(bank_number);
+		if (b!=null)
 		{
 			if (b.exists(patch_number))
 			{
@@ -387,6 +381,9 @@ class SF2
 					result = result.concat(q);
 			}
 		}
+		
+		if (result.length>0)
+			trace(result[0].patch); // a clue - we don't seem to be using zones properly because multisampling is gone.
 		return result;
 		
 	}
@@ -395,7 +392,7 @@ class SF2
     {
 		return new PatchGenerator(this, function(settings, seq, seq_event) : Array<PatchEvent> 
 		{
-			return getPatchOfEvent(seq_event, seq.channels[seq_event.channel].patch_id);
+			return getPatchOfEvent(seq_event, seq.channels[seq_event.channel].patch_id, 0);
 		} );
     } 
 	
