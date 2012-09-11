@@ -105,7 +105,7 @@ class SF2
 			{
 				vec.push(this.sample_data.sample_data.readShort() / 32768.);
 			}
-			trace(["*****", start, end, sh.triad_start_loop, sh.triad_end_loop, vec.length, vec[vec.length-1]]);
+			//trace(["*****", sh.sample_name, start, end, sh.triad_start_loop, sh.triad_end_loop, vec.length, vec[vec.length-1]]);
 			
 			sample_array.push({left:vec,right:vec,header:sh});
 			
@@ -168,6 +168,8 @@ class SF2
 		for (cur_smp in sample_array)
 		{
 			cur_smp.header.triad_soundsample = usable_samples[sample_idx];
+			if (sample_idx < 20) trace([sample_idx, 
+				usable_samples[sample_idx].loops[0].loop_start , cur_smp.header.start_loop - cur_smp.header.start ]);
 			sample_idx++;
 		}
 		
@@ -193,6 +195,128 @@ class SF2
 	public static inline function CBtoDB(data : Float) { return data / 10.; }
 	public static inline function getLSMS(lsms : Int) { return [ lsms & 0xFF, lsms >> 8 ]; }
 	
+	inline function parseZone(seq : Sequencer, z : Zone) : Hash<Dynamic>
+	{
+		var cur_zone = new Hash<Dynamic>();
+		
+		var loop_coarse_start = 0;
+		var loop_fine_start = 0;
+		var loop_coarse_end = 0;
+		var loop_fine_end = 0;
+		var sample : SoundSample = null;
+		var header : SampleHeader = null;
+		
+		for (generator in z.generators)
+		{
+			if (generator == null) continue; // yeah this actually happens
+			if (generator.sample_header != null)
+			{
+				header = generator.sample_header;
+				sample = header.triad_soundsample;
+				cur_zone.set("sample_data", 
+					SamplerSynth.patchOfSoundSample(seq.tuning, sample));
+			}
+			
+			// these offsets... the coarse and fine are a per-patch thing. 
+			// we don't have a good mechanism for supporting the start/end address offsets right now.
+			
+			// a lot of these, we can ignore for now.
+			
+			switch(generator.generator_type)
+			{
+				case StartAddressOffset: trace(generator.raw_amount);
+				case EndAddressOffset: trace(generator.raw_amount);
+				case StartAddressCoarseOffset:
+				case EndAddressCoarseOffset: trace(generator.raw_amount);
+				case StartLoopAddressOffset: loop_fine_start = generator.raw_amount;
+				case EndLoopAddressOffset: loop_fine_end = generator.raw_amount;
+				case StartLoopAddressCoarseOffset: loop_coarse_start = generator.raw_amount;
+				case EndLoopAddressCoarseOffset: loop_coarse_end = generator.raw_amount;
+				case ModulationLFOToPitch:
+				case VibratoLFOToPitch:
+				case ModulationEnvelopeToPitch:
+				case InitialFilterCutoffFrequency:
+				case InitialFilterQ:
+				case ModulationLFOToFilterCutoffFrequency:
+				case ModulationEnvelopeToFilterCutoffFrequency:
+				case ModulationLFOToVolume:
+				case Unused1:
+				case ChorusEffectsSend:
+				case ReverbEffectsSend:
+				case Pan: cur_zone.set("pan", generator.raw_amount/1000. + 0.5);
+				case Unused2:
+				case Unused3:
+				case Unused4:
+				case DelayModulationLFO:
+				case FrequencyModulationLFO:
+				case DelayVibratoLFO:
+				case FrequencyVibratoLFO:
+				case DelayModulationEnvelope:
+				case AttackModulationEnvelope:
+				case HoldModulationEnvelope:
+				case DecayModulationEnvelope:
+				case SustainModulationEnvelope:
+				case ReleaseModulationEnvelope:
+				case KeyNumberToModulationEnvelopeHold:
+				case KeyNumberToModulationEnvelopeDecay:
+				case DelayVolumeEnvelope: 
+					cur_zone.set("ampeg_start", secondsOfTimeCents(generator.raw_amount));
+				case AttackVolumeEnvelope: 
+					cur_zone.set("ampeg_attack", secondsOfTimeCents(generator.raw_amount));
+				case HoldVolumeEnvelope: 
+					cur_zone.set("ampeg_hold", secondsOfTimeCents(generator.raw_amount));
+				case DecayVolumeEnvelope: 
+					cur_zone.set("ampeg_decay", secondsOfTimeCents(generator.raw_amount));
+				case SustainVolumeEnvelope: 
+					cur_zone.set("ampeg_sustain", attentuationCBtoPct(-generator.raw_amount));
+				case ReleaseVolumeEnvelope:
+					cur_zone.set("ampeg_release", secondsOfTimeCents(generator.raw_amount));
+				case KeyNumberToVolumeEnvelopeHold:
+				case KeyNumberToVolumeEnvelopeDecay:
+				case Instrument:
+				case Reserved1:
+				case KeyRange: var lsms = getLSMS(generator.raw_amount); 
+							   cur_zone.set("lokey", lsms[0]);
+							   cur_zone.set("hikey", lsms[1]);
+				case VelocityRange: var lsms = getLSMS(generator.raw_amount); 
+							   cur_zone.set("lovel", lsms[0]);
+							   cur_zone.set("hivel", lsms[1]);
+				case KeyNumber:
+				case Velocity:
+				case InitialAttenuation:
+					cur_zone.set("volume", CBtoDB(-generator.raw_amount));
+					cur_zone.set("db_convention", 1.);
+				case Reserved2:
+				case CoarseTune: cur_zone.set("transpose", generator.raw_amount);
+				case FineTune: cur_zone.set("tune", generator.raw_amount);
+				case SampleID:
+				case SampleModes:
+				case Reserved3:
+				case ScaleTuning:
+				case ExclusiveClass:
+				case OverridingRootKey:
+					if (generator.raw_amount >= 0) cur_zone.set("pitch_keycenter", generator.raw_amount);
+				case Unused5:
+				case UnusedEnd:
+			}
+			
+		}
+		for (modulator in z.modulators)
+		{
+			if (modulator == null) continue;
+			// some more things in sampler_patch get set here!
+		}
+		
+		if (header != null)
+		{
+			cur_zone.set("loop_start", header.triad_start_loop + loop_coarse_start * 32768 + loop_fine_start);
+			cur_zone.set("loop_end", header.triad_end_loop + loop_coarse_end * 32768 + loop_fine_end);
+			// the loop start and end are somehow including "start" and "end"
+		}
+		
+		return cur_zone;
+	}
+	
 	public function parsePreset(seq : Sequencer, p : Preset) : SamplerOpcodeGroup
 	{		
 		var opcode_group = new SamplerOpcodeGroup();		
@@ -213,153 +337,24 @@ class SF2
 		// One of the tricky points is to account for the difference between presets and instruments:
 		// Any zone can reference an instrument, but it's presumed that only preset zones will do so.
 		
+		if (p.zones.length>1) log(Std.format("WARNING: more than one zone in preset ${p.name} - using last one"));
 		for (z in p.zones)
 		{
-			var cur_zone = new Hash<Dynamic>();
-			opcode_group.regions.push(cur_zone);
+			// group = the preset zone
+			opcode_group.group_opcodes = parseZone(seq, z);
 			
-			var loop_coarse_start = 0;
-			var loop_fine_start = 0;
-			var loop_coarse_end = 0;
-			var loop_fine_end = 0;
-			var sample : SoundSample = null;
-			var header : SampleHeader = null;
-			
-			// Aggregate referenced instrument generators and modulators into this zone:
-			
-			var agg_generator = z.generators.copy();
-			var agg_modulator = z.modulators.copy();
-			
-			var gen_zones : Array<Zone> = null;
 			for (generator in z.generators)
 			{
 				if (generator.instrument != null)
 				{
-					for (z in generator.instrument.zones)
+					// regions = the instrument zones
+					for (z2 in generator.instrument.zones)
 					{
-						for (g in z.generators)
-						{
-							if (g!=null)
-								agg_generator.insert(0, g);
-						}
-						for (m in z.modulators)
-						{
-							if (m!=null)
-								agg_modulator.insert(0, m);
-						}
+						opcode_group.regions.push(parseZone(seq, z2));	
 					}
 				}
 			}
-			
-			// now we can use the aggregates to produce a complete profile.
-			
-			for (generator in agg_generator)
-			{
-				if (generator.sample_header != null)
-				{
-					header = generator.sample_header;
-					sample = header.triad_soundsample;
-					cur_zone.set("sample_data", 
-						SamplerSynth.patchOfSoundSample(seq.tuning, sample));
-				}
-				
-				// these offsets... the coarse and fine are a per-patch thing. 
-				// we don't have a good mechanism for supporting the start/end address offsets right now.
-				
-				// a lot of these, we can ignore for now.
-				
-				switch(generator.generator_type)
-				{
-					case StartAddressOffset: trace(generator.raw_amount);
-					case EndAddressOffset: trace(generator.raw_amount);
-					case StartAddressCoarseOffset:
-					case EndAddressCoarseOffset: trace(generator.raw_amount);
-					case StartLoopAddressOffset: loop_fine_start = generator.raw_amount;
-					case EndLoopAddressOffset: loop_fine_end = generator.raw_amount;
-					case StartLoopAddressCoarseOffset: loop_coarse_start = generator.raw_amount;
-					case EndLoopAddressCoarseOffset: loop_coarse_end = generator.raw_amount;
-					case ModulationLFOToPitch:
-					case VibratoLFOToPitch:
-					case ModulationEnvelopeToPitch:
-					case InitialFilterCutoffFrequency:
-					case InitialFilterQ:
-					case ModulationLFOToFilterCutoffFrequency:
-					case ModulationEnvelopeToFilterCutoffFrequency:
-					case ModulationLFOToVolume:
-					case Unused1:
-					case ChorusEffectsSend:
-					case ReverbEffectsSend:
-					case Pan: cur_zone.set("pan", generator.raw_amount/1000. + 0.5);
-					case Unused2:
-					case Unused3:
-					case Unused4:
-					case DelayModulationLFO:
-					case FrequencyModulationLFO:
-					case DelayVibratoLFO:
-					case FrequencyVibratoLFO:
-					case DelayModulationEnvelope:
-					case AttackModulationEnvelope:
-					case HoldModulationEnvelope:
-					case DecayModulationEnvelope:
-					case SustainModulationEnvelope:
-					case ReleaseModulationEnvelope:
-					case KeyNumberToModulationEnvelopeHold:
-					case KeyNumberToModulationEnvelopeDecay:
-					case DelayVolumeEnvelope: 
-						cur_zone.set("ampeg_start", secondsOfTimeCents(generator.raw_amount));
-					case AttackVolumeEnvelope: 
-						cur_zone.set("ampeg_attack", secondsOfTimeCents(generator.raw_amount));
-					case HoldVolumeEnvelope: 
-						cur_zone.set("ampeg_hold", secondsOfTimeCents(generator.raw_amount));
-					case DecayVolumeEnvelope: 
-						cur_zone.set("ampeg_decay", secondsOfTimeCents(generator.raw_amount));
-					case SustainVolumeEnvelope: 
-						cur_zone.set("ampeg_sustain", attentuationCBtoPct(-generator.raw_amount));
-					case ReleaseVolumeEnvelope:
-						cur_zone.set("ampeg_release", secondsOfTimeCents(generator.raw_amount));
-					case KeyNumberToVolumeEnvelopeHold:
-					case KeyNumberToVolumeEnvelopeDecay:
-					case Instrument:
-					case Reserved1:
-					case KeyRange: var lsms = getLSMS(generator.raw_amount); 
-								   cur_zone.set("lokey", lsms[0]);
-								   cur_zone.set("hikey", lsms[1]);
-					case VelocityRange: var lsms = getLSMS(generator.raw_amount); 
-								   cur_zone.set("lovel", lsms[0]);
-								   cur_zone.set("hivel", lsms[1]);
-					case KeyNumber:
-					case Velocity:
-					case InitialAttenuation:
-						cur_zone.set("volume", CBtoDB(-generator.raw_amount));
-						cur_zone.set("db_convention", 1.);
-					case Reserved2:
-					case CoarseTune: cur_zone.set("transpose", generator.raw_amount);
-					case FineTune: cur_zone.set("tune", generator.raw_amount);
-					case SampleID:
-					case SampleModes:
-					case Reserved3:
-					case ScaleTuning:
-					case ExclusiveClass:
-					case OverridingRootKey:
-						if (generator.raw_amount >= 0) cur_zone.set("pitch_keycenter", generator.raw_amount);
-					case Unused5:
-					case UnusedEnd:
-				}
-				
-			}
-			for (modulator in agg_modulator)
-			{
-				// some more things in sampler_patch get set here!
-			}
-			
-			if (header != null)
-			{
-				cur_zone.set("loop_start", header.triad_start_loop + loop_coarse_start * 32768 + loop_fine_start);
-				cur_zone.set("loop_end", header.triad_end_loop + loop_coarse_end * 32768 + loop_fine_end);
-				// the loop start and end are somehow including "start" and "end"
-			}
-			
-		}		
+		}
 		opcode_group.cacheRegions(seq);
 		
 		return opcode_group;
