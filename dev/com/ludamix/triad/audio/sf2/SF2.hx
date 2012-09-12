@@ -283,7 +283,7 @@ class SF2
 				case Velocity:
 				case InitialAttenuation:
 					cur_zone.set("volume", CBtoDB(-generator.raw_amount));
-					cur_zone.set("db_convention", 1.);
+					cur_zone.set("db_convention", 10.);
 				case Reserved2:
 				case CoarseTune: cur_zone.set("transpose", generator.raw_amount);
 				case FineTune: cur_zone.set("tune", generator.raw_amount);
