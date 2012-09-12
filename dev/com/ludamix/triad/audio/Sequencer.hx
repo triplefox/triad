@@ -39,6 +39,7 @@ class SequencerEvent
 	public static inline var SUSTAIN_PEDAL = 7;
 	public static inline var ALL_NOTES_OFF = 8;
 	public static inline var SET_BPM = 9;
+	public static inline var SET_BANK = 10;
 	
 }
 
@@ -198,6 +199,7 @@ class SequencerChannel
 	public var modulation : Float;
 	public var pan : Float;	
 	public var patch_id : Int;	
+	public var bank_id : Int;	
 	public var sustain : Bool;
 	
 	public var patch_generator : PatchGenerator;
@@ -212,6 +214,7 @@ class SequencerChannel
 		this.velocity_curve = velocity_curve;
 		this.patch_generator = patch_generator;
 		patch_id = 0;
+		bank_id = 0;
 		var ct = 0;
 		pitch_bend = 0;
 		channel_volume = 1.0;
@@ -239,6 +242,8 @@ class SequencerChannel
 					pan = ev.data;
 				case SequencerEvent.SET_PATCH:
 					patch_id = ev.data;
+				case SequencerEvent.SET_BANK:
+					bank_id = ev.data;
 				case SequencerEvent.SUSTAIN_PEDAL:
 					sustain = (ev.data > 63);
 					if (!sustain)

@@ -226,6 +226,13 @@ class SMFParser
 												SequencerEvent.CHANNEL_EVENT,
 												frames,
 												-1));
+					case SMF.CC_BANK_SELECT_MSB: // we assume this is the "bank" commonly used in GM...
+						return (new SequencerEvent(SequencerEvent.SET_BANK,
+												smf.data,
+												smf.channel,
+												SequencerEvent.CHANNEL_EVENT,
+												frames,
+												-1));					
 					default:
 						errors.push(["unimplemented cc", smf.data].join(" "));
 						return null;

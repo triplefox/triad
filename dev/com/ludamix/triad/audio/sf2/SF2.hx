@@ -365,6 +365,7 @@ class SF2
 		var b = usable_banks.get(bank_number);
 		if (b!=null)
 		{
+			//trace(Std.format("${ev.channel}:${bank_number}:${patch_number}"));
 			if (b.exists(patch_number))
 			{
 				var opcode_group = b.get(patch_number);
@@ -374,8 +375,6 @@ class SF2
 			}
 		}
 		
-		if (result.length>0)
-			trace(result[0].patch); // a clue - we don't seem to be using zones properly because multisampling is gone.
 		return result;
 		
 	}
@@ -384,7 +383,9 @@ class SF2
     {
 		return new PatchGenerator(this, function(settings, seq, seq_event) : Array<PatchEvent> 
 		{
-			return getPatchOfEvent(seq_event, seq.channels[seq_event.channel].patch_id, 0);
+			return getPatchOfEvent(seq_event, 
+				seq.channels[seq_event.channel].patch_id, 
+				seq.channels[seq_event.channel].bank_id);
 		} );
     } 
 	

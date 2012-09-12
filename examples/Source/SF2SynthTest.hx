@@ -80,7 +80,10 @@ class SF2SynthTest
 			var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
 
 			if (n == 9)
+			{
 				seq.addChannel([vgroup], sf2.getGenerator());
+				vgroup.channel.bank_id = 128;
+			}
 			else
 				seq.addChannel([vgroup], sf2.getGenerator());
 
@@ -116,6 +119,7 @@ class SF2SynthTest
 			{
 				var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
 				seq.addChannel([vgroup], sf2.getGenerator());
+				vgroup.channel.bank_id = 128;
 			}
 			else
 			{
