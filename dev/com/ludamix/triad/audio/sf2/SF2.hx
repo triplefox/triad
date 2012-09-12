@@ -97,7 +97,7 @@ class SF2
 			var end = sh.end;
 			
 			sh.triad_start_loop = sh.start_loop - sh.start;
-			sh.triad_end_loop = sh.end_loop - sh.start;
+			sh.triad_end_loop = sh.end_loop - sh.start - 1;
 			
 			var vec = new Vector<Float>();
 			this.sample_data.sample_data.position = sh.start * 2;
@@ -168,8 +168,6 @@ class SF2
 		for (cur_smp in sample_array)
 		{
 			cur_smp.header.triad_soundsample = usable_samples[sample_idx];
-			if (sample_idx < 20) trace([sample_idx, 
-				usable_samples[sample_idx].loops[0].loop_start , cur_smp.header.start_loop - cur_smp.header.start ]);
 			sample_idx++;
 		}
 		
