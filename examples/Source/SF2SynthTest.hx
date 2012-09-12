@@ -194,7 +194,7 @@ class SF2SynthTest
 			sf2.init(seq, MIP_LEVELS);
 			loader_gui.keys.infos.text = "Loaded SF2";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width / 2;
-			//throw "";
+			//throw ""; // if we want to inspect tracelogs at load time
 		});
 
 		/*queueFunction(function(){

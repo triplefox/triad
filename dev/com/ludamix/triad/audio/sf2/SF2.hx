@@ -75,7 +75,7 @@ class SF2
 	
 	public function init(seq : Sequencer, mip_levels : Int)
 	{
-		var tuning = new EvenTemperament();
+		var tuning = seq.tuning;
 		
 		// SF2 spec adds a lot of complexity via the linked sample construct.
 		// When samples are linked, we toss out the data for one of the sample headers
@@ -100,7 +100,7 @@ class SF2
 			sh.triad_end_loop = sh.end_loop - sh.start;
 			
 			var vec = new Vector<Float>();
-			this.sample_data.sample_data.position = sh.start;
+			this.sample_data.sample_data.position = sh.start * 2;
 			for (n in start...end)
 			{
 				vec.push(this.sample_data.sample_data.readShort() / 32768.);
@@ -311,7 +311,6 @@ class SF2
 		{
 			cur_zone.set("loop_start", header.triad_start_loop + loop_coarse_start * 32768 + loop_fine_start);
 			cur_zone.set("loop_end", header.triad_end_loop + loop_coarse_end * 32768 + loop_fine_end);
-			// the loop start and end are somehow including "start" and "end"
 		}
 		
 		return cur_zone;

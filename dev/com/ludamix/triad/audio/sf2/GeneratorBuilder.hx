@@ -29,7 +29,7 @@ class GeneratorBuilder extends StructureBuilder<Generator>
         g.raw_amount = d.readShort();
         data.push(g);
         return g;
-    } 
+    }
     
     public function loadInstruments(instruments:Array<Instrument>)
     {
