@@ -145,7 +145,7 @@ class SF2
 				var sample = SoundSample.ofVector(left,right,sh.sample_rate,
 					tuning.midiNoteBentToFrequency(sh.original_pitch, sh.pitch_correction),
 					sh.sample_name, mip_levels, [
-						{loop_mode:SoundSample.LOOP_FORWARD,
+						{loop_mode:SoundSample.NO_LOOP,
 						 loop_start:sh.triad_start_loop,loop_end:sh.triad_end_loop}]);
 				result.push(sample);
 			}
@@ -289,6 +289,12 @@ class SF2
 				case FineTune: cur_zone.set("tune", generator.raw_amount);
 				case SampleID:
 				case SampleModes:
+					switch(generator.raw_amount)
+					{
+						case 0, 2: cur_zone.set("loop_mode","no_loop");
+						case 1: cur_zone.set("loop_mode", "loop_continuous");
+						case 3: cur_zone.set("loop_mode","loop_sustain");
+					}
 				case Reserved3:
 				case ScaleTuning:
 				case ExclusiveClass:
