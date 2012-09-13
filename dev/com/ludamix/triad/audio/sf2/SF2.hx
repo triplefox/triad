@@ -188,7 +188,7 @@ class SF2
 	}
 	
 	public static inline function secondsOfTimeCents(data : Float) { return Math.pow(2.0, data / 1200.0); }
-	public static inline function attentuationCBtoPct(data : Float) { return Math.pow(2.0, CBtoDB(data)); }
+	public static inline function attentuationCBtoPct(data : Float) { return Math.pow(2.0, CBtoDB(data) / 1000.0)*100; }
 	public static inline function DBtoCB(data : Float) { return data * 10.; }
 	public static inline function CBtoDB(data : Float) { return data / 10.; }
 	public static inline function getLSMS(lsms : Int) { return [ lsms & 0xFF, lsms >> 8 ]; }
@@ -266,7 +266,7 @@ class SF2
 				case DecayVolumeEnvelope: 
 					cur_zone.set("ampeg_decay", secondsOfTimeCents(generator.raw_amount));
 				case SustainVolumeEnvelope: 
-					cur_zone.set("ampeg_sustain", attentuationCBtoPct(-generator.raw_amount));
+					cur_zone.set("ampeg_sustain", attentuationCBtoPct( -generator.raw_amount));
 				case ReleaseVolumeEnvelope:
 					cur_zone.set("ampeg_release", secondsOfTimeCents(generator.raw_amount));
 				case KeyNumberToVolumeEnvelopeHold:
@@ -282,8 +282,9 @@ class SF2
 				case KeyNumber:
 				case Velocity:
 				case InitialAttenuation:
+					// this is still wrong...
 					cur_zone.set("volume", CBtoDB(-generator.raw_amount));
-					cur_zone.set("db_convention", 10.);
+					cur_zone.set("db_convention", 20.);
 				case Reserved2:
 				case CoarseTune: cur_zone.set("transpose", generator.raw_amount);
 				case FineTune: cur_zone.set("tune", generator.raw_amount);
