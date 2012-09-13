@@ -19,7 +19,7 @@ class SamplerBank
 		programs = new IntHash();
 	}
 
-	public function configure(opcode_group : SamplerOpcodeGroup, programs : Array<Int>, 
+	public function configureSFZ(opcode_group : SamplerOpcodeGroup, programs : Array<Int>, 
 		patchGenerator : String -> PatchGenerator, ?recache : Bool=true)
 	{
 		// build patches for each sample
@@ -47,7 +47,7 @@ class SamplerBank
 						region.set('sample_data', samples.get(region.get('sample')));
 				}
 			}
-			opcode_group.cacheRegions(seq);
+			opcode_group.cacheRegionsSFZ(seq);
 		}
 	}
 

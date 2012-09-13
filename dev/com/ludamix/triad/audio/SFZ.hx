@@ -90,7 +90,7 @@ class SFZ
             {
                 groupPrograms = [i];
             }
-            sfzBank.configure(groups[i], groupPrograms, function(n) : PatchGenerator {
+            sfzBank.configureSFZ(groups[i], groupPrograms, function(n) : PatchGenerator {
                 var header = waves.get(n);
                 return SamplerSynth.ofWAVE(seq.tuning, header, n);
             });

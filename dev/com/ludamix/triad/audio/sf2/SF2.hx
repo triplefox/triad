@@ -282,9 +282,8 @@ class SF2
 				case KeyNumber:
 				case Velocity:
 				case InitialAttenuation:
-					// this is still wrong...
 					cur_zone.set("volume", CBtoDB(-generator.raw_amount));
-					cur_zone.set("db_convention", 20.);
+					cur_zone.set("db_convention", 10.);
 				case Reserved2:
 				case CoarseTune: cur_zone.set("transpose", generator.raw_amount);
 				case FineTune: cur_zone.set("tune", generator.raw_amount);
@@ -324,7 +323,7 @@ class SF2
 	public function parsePreset(seq : Sequencer, p : Preset) : SamplerOpcodeGroup
 	{		
 		var opcode_group = new SamplerOpcodeGroup();		
-		opcode_group.group_opcodes = new Hash<Dynamic>();
+		opcode_group.preset_opcodes = new Hash<Dynamic>();
 		
 		// to review how this is laid out:
 		// Each zone contains any number of generators and modulators.
@@ -341,25 +340,38 @@ class SF2
 		// One of the tricky points is to account for the difference between presets and instruments:
 		// Any zone can reference an instrument, but it's presumed that only preset zones will do so.
 		
+		// As well, instruments contain a global zone. The functionality of SFZ groups is split in SF2 into presets
+		// (mostly key mappings) and instrument global zones(tuning and balancing).
+		
 		if (p.zones.length>1) log(Std.format("WARNING: more than one zone in preset ${p.name} - using last one"));
 		for (z in p.zones)
 		{
-			// group = the preset zone
-			opcode_group.group_opcodes = parseZone(seq, z);
+			// the preset zone
+			opcode_group.preset_opcodes = parseZone(seq, z);
 			
 			for (generator in z.generators)
 			{
 				if (generator.instrument != null)
 				{
+					// the global zone - a unique SF2 concept
+					var global_zone = generator.instrument.zones[0];
+					if (global_zone.generators[global_zone.generators.length - 1]!=null && 
+						global_zone.generators[global_zone.generators.length - 1].generator_type != Instrument)
+					{
+						opcode_group.group_opcodes = parseZone(seq, global_zone);
+					}
+					else global_zone = null; // wasn't actually global
+
 					// regions = the instrument zones
 					for (z2 in generator.instrument.zones)
 					{
-						opcode_group.regions.push(parseZone(seq, z2));	
+						if (z2!=global_zone)
+							opcode_group.regions.push(parseZone(seq, z2));
 					}
 				}
 			}
 		}
-		opcode_group.cacheRegions(seq);
+		opcode_group.cacheRegionsSF2(seq);
 		
 		return opcode_group;
 		
