@@ -233,8 +233,8 @@ class SF2
 				case ModulationLFOToPitch:
 				case VibratoLFOToPitch:
 				case ModulationEnvelopeToPitch:
-				case InitialFilterCutoffFrequency:
-				case InitialFilterQ:
+				case InitialFilterCutoffFrequency: cur_zone.set("cutoff", generator.raw_amount);
+				case InitialFilterQ: cur_zone.set("resonance", generator.raw_amount);
 				case ModulationLFOToFilterCutoffFrequency:
 				case ModulationEnvelopeToFilterCutoffFrequency:
 				case ModulationLFOToVolume:

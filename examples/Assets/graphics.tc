@@ -14,6 +14,7 @@
 [group=sprites; align=center;]
 [id = faces; file = faces.png; type = spritesheet; tilesize=[32; 32;] rect=[0;0;128;32]]
 [id = feet; file = feet.png; type = spritesheet; tilesize=[16; 16;] rect=[0;0;64;16]]
+[id = tree; file = tree.png; type = spritesheet; tilesize=[32; 64;]]
 
 [group=comment; comment=[
 [group=cards;]

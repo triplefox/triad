@@ -150,9 +150,8 @@ class FoxQuadScene
 	public inline function clear(r=0.,g=0.,b=0.,a=1.,depth=1.,stencil:UInt=0,mask:UInt=0xFFFFFFFF)
 	{
 		c.clear(r, g, b, a, depth, stencil, mask);		
-		c.setDepthTest( true, flash.display3D.Context3DCompareMode.LESS_EQUAL );
-		c.setCulling(flash.display3D.Context3DTriangleFace.BACK );
-		c.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
+		c.setDepthTest( true, flash.display3D.Context3DCompareMode.ALWAYS );
+		c.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
 	}
 	
 	public inline function present()

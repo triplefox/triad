@@ -1,6 +1,10 @@
 import com.ludamix.triad.audio.Codec;
+import com.ludamix.triad.audio.SamplerBank;
 import com.ludamix.triad.audio.SamplerSynth;
+import com.ludamix.triad.audio.sf2.SF2;
 import com.ludamix.triad.audio.SMFParser;
+import com.ludamix.triad.audio.SoundSample;
+import com.ludamix.triad.audio.VoiceCommon;
 import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.TableSynth;
@@ -42,8 +46,11 @@ class Keyjammer
 	var songs : Array<Array<String>>;
 	var infos : TextField;
 	var infos2 : TextField;
-	var melodic : SFZBank;
-	var percussion : SFZBank;
+	var melodic : SamplerBank;
+	var percussion : SamplerBank;
+	var sf2 : SF2;
+	
+	public static inline var MIP_LEVELS = 4;
 	
 	private function resetSamplerSynth()
 	{
@@ -56,7 +63,8 @@ class Keyjammer
 		#end
 		{
 			var synth = new SamplerSynth();
-			synth.common.master_volume = 0.45;
+			synth.common.filter_cutoff_multiplier = 4.0;
+			synth.common.master_volume = 0.5;
 			synth.resample_method = SamplerSynth.RESAMPLE_CUBIC;
 			seq.addSynth(synth);
 			voices.push(synth);
@@ -66,11 +74,20 @@ class Keyjammer
 		{
 			var vgroup = new VoiceGroup(voices, 32);
 			
+			/*
 			if (n == 9)
 				seq.addChannel([vgroup], percussion.getGenerator());
 			else
 				seq.addChannel([vgroup], melodic.getGenerator());
+			*/
 			
+			if (n == 9)
+			{
+				seq.addChannel([vgroup], sf2.getGenerator());
+				vgroup.channel.bank_id = 128;
+			}
+			else
+				seq.addChannel([vgroup], sf2.getGenerator());
 			
 			/*seq.addChannel(voices, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 			
@@ -137,7 +154,17 @@ class Keyjammer
 				])));
 		Lib.current.stage.addChild(loader_gui.sprite);
 		
-		melodic = new SFZBank(seq, "sfz/");
+		queueFunction(function() {
+			sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 8.0 MB GS FX Rev B.sf2"));
+			sf2.init(seq, MIP_LEVELS);
+			loader_gui.keys.infos.text = "Loaded SF2";
+			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width / 2;
+			//throw ""; // if we want to inspect tracelogs at load time
+		});
+		
+		/*
+		melodic = new SamplerBank(seq, "sfz/");
+		
 		for (n in 0...128)
 		{
 			queueFunction(function(){
@@ -150,7 +177,7 @@ class Keyjammer
 		}
 		
 		queueFunction(function(){
-			percussion = new SFZBank(seq, "sfz/");
+			percussion = new SamplerBank(seq, "sfz/");
 			var sfz_data = SFZ.load(seq, Assets.getBytes("sfz/kit-standard.sfz"));
 			var assign = new Array<Int>();
 			for (n in 0...128)
@@ -159,6 +186,7 @@ class Keyjammer
 			loader_gui.keys.infos.text = "Loaded percussion";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});
+		*/
 		
 		queueFunction(function(){
 			
@@ -214,12 +242,12 @@ class Keyjammer
 		spr.bitmapData.fillRect(new Rectangle(0, 0, Main.W, Main.H),0);
 		for (s in seq.synths)
 		{
-			var sc : Dynamic = s;
-			for (follower in cast(sc.followers,Array<Dynamic>))
+			var sc : VoiceCommon = s.common;
+			for (follower in sc.followers)
 			{
-				var mips : RawSample = follower.patch_event.patch.mips[0];
-				var sample = mips.sample_left;
-				var rate_multiplier : Float = mips.rate_multiplier;
+				var mips : SoundSample = follower.patch_event.patch.sample;
+				var sample = mips.mip_levels[0].sample_left;
+				var rate_multiplier : Float = mips.mip_levels[0].rate_multiplier;
 				var p = Std.int(follower.patch_event.patch.loop_start/(sample.length*rate_multiplier) * Main.W);
 				spr.bitmapData.fillRect(new Rectangle(p,0,1,Main.H), 0xFF880000);
 				p = Std.int(follower.patch_event.patch.loop_end/(sample.length*rate_multiplier) * Main.W);

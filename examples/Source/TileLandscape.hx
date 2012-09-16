@@ -1,6 +1,7 @@
 import com.ludamix.triad.render.foxquad.FoxQuadScene;
 import com.ludamix.triad.render.foxquad.FQGrid;
 import com.ludamix.triad.render.foxquad.Quads2D;
+import com.ludamix.triad.render.foxquad.Quads2PointFiveD;
 import com.ludamix.triad.render.foxquad.ShaderGeneral;
 import com.ludamix.triad.render.GraphicsResource;
 import com.ludamix.triad.grid.AutotileBoard;
@@ -34,10 +35,15 @@ typedef CameraView = { tx:Float, ty:Float, tw:Float, th:Float,
 class TileLandscape
 {
 
+	// To render the trees, we should create a "sprite-static" vertex buffer.
+	// i.e. another Quads2D.
+	// this can exist in TileLandscape alone....that makes it simple.
+
 	public var graphics_resource : GraphicsResourceData;
-	public var grid : FQGrid;
+	public var grid : FQGrid; // tilemap quads
 	public var board : AutotileBoard;
-	public var sprite_quads : Quads2D;	
+	public var sprite_quads : Quads2PointFiveD; // moving objects which have frequent vertex recalculations
+	public var static_quads : Quads2PointFiveD; // static objects drawn on top of the tilemap
 	public var gfx : Graphics;
 	public var spr : Sprite;
 	public var scene : FoxQuadScene;
@@ -59,7 +65,8 @@ class TileLandscape
 	public function initialize(_ : Dynamic)
 	{
 		graphics_resource = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, true, "assets/", 2);
-		sprite_quads = new Quads2D(scene.c);
+		sprite_quads = new Quads2PointFiveD(scene.c);
+		static_quads = new Quads2PointFiveD(scene.c);
 		shader = new ShaderGeneral2D(scene.c);
 		shaderZ = new ShaderGeneral2PointFiveD(scene.c);
 		scene.addTilesheet(graphics_resource.tilesheet);
@@ -168,12 +175,27 @@ class TileLandscape
 		board.result.world = new Vector<Int>();
 		board.recacheAll();
 		
+		addStaticObjects();
+		
 		initializeScene();
 	}
 	
 	public inline function getWorldTile(x, y)
 	{
 		return worldmap.c2t(x + cam.x, y + cam.y);
+	}
+	
+	public function addStaticObjects()
+	{
+		static_quads.reset();
+		
+		var px = new Point(worldmap.worldW / 2 * worldmap.twidth, 
+						   worldmap.worldH / 2 * worldmap.theight);
+		
+		var z = grid.zOfY(px.y + 64, 0.);
+		static_quads.writeXTile(px, z, z, z, z, 
+			graphics_resource.getSprite("tree").getTile(0));
+		
 	}
 	
 	public function viewOfCamera(camera_view : Rectangle, screen_view : Rectangle) : CameraView
@@ -184,7 +206,7 @@ class TileLandscape
 		// pad one tile at the right and bottom to allow for scrolling
 		var tile_x = Math.floor(tile_tl.x);
 		var tile_y = Math.floor(tile_tl.y);
-		var tile_w = Math.floor(tile_br.x - tile_tl.x)+1;
+		var tile_w = Math.floor(tile_br.x - tile_tl.x) + 1;
 		var tile_h = Math.floor(tile_br.y - tile_tl.y) + 1;
 		
 		var scale_x = screen_view.width / camera_view.width;
@@ -254,6 +276,8 @@ class TileLandscape
 		return translate;
 	}
 	
+	public static inline var DEFAULTZ = 0.5;
+	
 	public function update(_)
 	{
 		//spawnParticles();
@@ -264,7 +288,7 @@ class TileLandscape
 		cam.x = player.px;
 		cam.y = player.py;
 		player.update();		
-		player.draw(sprite_quads, cam.x-player.px, cam.y-player.py);
+		player.draw(sprite_quads, cam.x-player.px, cam.y-player.py, grid);
 		var colors = computeDayColors();
 		
 		var zoom_w = Main.W * zoom_level;
@@ -274,22 +298,36 @@ class TileLandscape
 		
 		var minZ = -1.;
 		var maxZ = 1.;
-		var defaultZ = 0.5;
 		
 		scene.clear(1.0);
+		
 		grid.runShader(shaderZ,
 			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, minZ, maxZ), 
-			 mtrans : getCameraTranslation(0.,0.,defaultZ,view),
+			 mtrans : getCameraTranslation(0.,0.,DEFAULTZ,view),
 			 rgba : new Vector3D(colors.r, colors.g, colors.b, 1.) },			 
 			{tex : graphics_resource.tilesheet.texture }
 		);
 		
-		sprite_quads.runShader(shader,
+		// I can't do it like this.
+		// These quads are overdrawing with each drawcall.
+		// So the trees will have to become a dynamic object...dammit.
+		// I can mitigate this by chunking the static sprites too and performing a boundary test, so that only
+		// a small group of them go dynamic at any one time.
+		
+		static_quads.runShader(shaderZ,
 			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, minZ, maxZ), 
-			 mtrans : getCameraTranslation(0.,0.,defaultZ+grid.zOfY(player.py + 64, 0.),view),
+			 mtrans : getCameraTranslation(0.,0.,DEFAULTZ,view),
+			 rgba : new Vector3D(colors.r * 1.5, colors.g * 1.5, colors.b * 1.5, 1.) },
+			{tex : graphics_resource.tilesheet.texture }
+		);
+		
+		sprite_quads.runShader(shaderZ,
+			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, minZ, maxZ), 
+			 mtrans : getCameraTranslation(0.,0.,DEFAULTZ,view),
 			 rgba : new Vector3D(colors.r * 2, colors.g * 2, colors.b * 2, 1.) },			 
 			{tex : graphics_resource.tilesheet.texture }
 		);
+		
 		scene.present();
 	}
 	
@@ -326,6 +364,10 @@ class SmileyCharacter
 	public var px : Int;
 	public var py : Int;
 	public var facing : Int;
+	
+	private var z : Float;
+	private var off_x : Float;
+	private var off_y : Float;
 	
 	public var graphics_resource : GraphicsResourceData;
 
@@ -371,13 +413,20 @@ class SmileyCharacter
 		py += wy;	
 	}
 	
-	public inline function addName(quads : Quads2D, name : String, frame : Int, x, y)
+	public inline function addName(quads : Quads2PointFiveD, name : String, frame : Int, x : Float, y : Float)
 	{
-		quads.writeXTile(new flash.geom.Point(x, y), graphics_resource.getSprite(name).getTile(frame));
+		var tile = graphics_resource.getSprite(name).getTile(frame);
+		quads.writeXTile(new flash.geom.Point(off_x + x, off_y + y), 
+			z,z,z,z, tile);
 	}
 	
-	public function draw(quads : Quads2D, offx : Float, offy : Float)
-	{		
+	public function draw(quads : Quads2PointFiveD, offx : Float, offy : Float, grid : FQGrid)
+	{
+		this.z = grid.zOfY(py + 64., 0.);
+		
+		this.off_x = px + offx;
+		this.off_y = py + offy;
+		
 		var CYCLET = 0.17;
 		
 		if (wx != 0) { if (wx > 0) wcycle -= CYCLET; else wcycle += CYCLET; }
@@ -396,11 +445,11 @@ class SmileyCharacter
 			var f_facing = (wx > 0) ? 1 : 0;
 			facing = wx>0 ? 2 : 1;
 			
-			addName(quads, "faces", facing, px + offx, py + offy + Math.sin(wcycle * 2) * BOB);
-			addName(quads, "feet", f_facing, px + offx + Math.cos(wcycle_inv) * FEET_D,
-				py + offy+FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C));
-			addName(quads, "feet", f_facing, px + offx+Math.cos(wcycle) * FEET_D,
-				py + offy+FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C));
+			addName(quads, "faces", facing, 0, Math.sin(wcycle * 2) * BOB);
+			addName(quads, "feet", f_facing, Math.cos(wcycle_inv) * FEET_D,
+				FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C));
+			addName(quads, "feet", f_facing, Math.cos(wcycle) * FEET_D,
+				FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C));
 		}
 		else // y cycle
 		{
@@ -408,11 +457,11 @@ class SmileyCharacter
 			
 			if (wy == 0.) { wcycle *= RECOVERY; wcycle_inv = wcycle + Math.PI; } // reset on still
 			else facing = wy < 0 ? 3 : 0;
-			addName(quads, "faces", facing, px + offx, py +offy + Math.sin(wcycle * 2) * BOB);
-			addName(quads, "feet", l_facing, px + offx + FEET_D, 
-				py +offy + FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C));
-			addName(quads, "feet", r_facing, px + offx - FEET_D, 
-				py +offy + FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C));
+			addName(quads, "faces", facing, 0, Math.sin(wcycle * 2) * BOB);
+			addName(quads, "feet", l_facing, FEET_D, 
+				FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C));
+			addName(quads, "feet", r_facing, - FEET_D, 
+				FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C));
 		}
 		
 		wcycle = wcycle % (Math.PI * 2);
