@@ -1,0 +1,3250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0055)http://www.cakewalk.com/DevXchange/article.aspx?aid=108 -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script src="./Cakewalk DevXchange - Specifications - sfz File Format_files/cb=gapi.loaded_0" async=""></script><script type="text/javascript" async="true" src="./Cakewalk DevXchange - Specifications - sfz File Format_files/plusone.js" gapi_processed="true"></script><title>
+	Cakewalk DevXchange - Specifications - sfz File Format
+</title><link href="./Cakewalk DevXchange - Specifications - sfz File Format_files/style-cakewalk.min.css" rel="stylesheet" type="text/css"><link href="./Cakewalk DevXchange - Specifications - sfz File Format_files/style-print.min.css" rel="Stylesheet" type="text/css" media="print">
+    <!--[if lt IE 7]>
+        <link rel="stylesheet" type="text/css" href="/Global/css/style-ie6.min.css" />
+    <![endif]-->
+    <!--[if IE 7]>
+	    <link rel="stylesheet" type="text/css" href="/Global/css/style-ie7.min.css" />
+    <![endif]-->
+    
+    
+
+<link id="Link1" rel="shortcut icon" href="http://www.cakewalk.com/Global/Images/favicon.ico" type="image/x-icon"><link id="Link2" rel="icon" href="http://www.cakewalk.com/Global/Images/favicon.ico" type="image/ico">
+    <script src="./Cakewalk DevXchange - Specifications - sfz File Format_files/jquery.min.js"></script>
+    <script src="./Cakewalk DevXchange - Specifications - sfz File Format_files/jquery.watermark.min.js" type="text/javascript"></script>
+    <link rel="alternate" type="application/atom+xml" title="Atom 0.3" href="http://feeds2.feedburner.com/TheCakewalkBlog">
+    <!--********** Start of Google Analytics + Owner IQ Code ********** -->
+    <script type="text/javascript" src="./Cakewalk DevXchange - Specifications - sfz File Format_files/cake.js"></script>
+    <script type="text/javascript">        oiq_doTag();</script>
+    <script type="text/javascript">        var _gaq = _gaq || []; _gaq.push(['_setAccount', 'UA-3050409-2']); _gaq.push(['_setDomainName', '.cakewalk.com']); _gaq.push(['_trackPageview']); (function () { var ga = document.createElement('script'); ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js'; ga.setAttribute('async', 'true'); document.documentElement.firstChild.appendChild(ga); })();</script><script src="./Cakewalk DevXchange - Specifications - sfz File Format_files/ga.js" async="true"></script>
+    <!--********** End of Google Analytics + Owner IQ Code ************-->
+<script type="text/javascript" src="./Cakewalk DevXchange - Specifications - sfz File Format_files/saved_resource"></script><div style="visibility: hidden; height: 1px; width: 1px; position: absolute; z-index: 100000; " id="_atssh"><iframe id="_atssh724" title="AddThis utility frame" style="height: 1px; width: 1px; position: absolute; z-index: 100000; border: 0px; left: 0px; top: 0px; " src="./Cakewalk DevXchange - Specifications - sfz File Format_files/sh101.htm"></iframe></div><script type="text/javascript" src="./Cakewalk DevXchange - Specifications - sfz File Format_files/core041.js"></script></head>
+<body>
+    <a name="Top" id="Top"></a>
+    <div id="nav-wrap">
+        <div id="nav-inner">
+            <div id="nav-logo">
+                <a href="http://www.cakewalk.com/Default.aspx">
+                    <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/cakewalk_logo_inv.png" alt="Cakewalk Logo"></a></div>
+            <div id="nav-links">
+                <a href="http://www.store.cakewalk.com/default.asp?ma=1">My Store Account</a> |
+                <a href="http://www.cakewalk.com/Register/default.aspx">Product Registration</a><br>
+                <br>
+            </div>
+            <div id="nav-menu">
+                	<div class="menu">
+		<ul>
+			<li><a href="http://www.cakewalk.com/Products/By-Category.aspx/Music-Recording-Software">Music Software</a>
+				<ul>
+					<li><a href="http://www.cakewalk.com/products/SONAR/X2-Producer/">SONAR X2 Producer</a></li>
+					<li><a href="http://www.cakewalk.com/products/SONAR/X2-Studio/">SONAR X2 Studio</a></li>
+					<li><a href="http://www.cakewalk.com/products/SONAR/X2-Essential/">SONAR X2 Essential</a></li>
+                    <li><a href="http://www.cakewalk.com/Products/By-Category.aspx/ProChannel-Modules">ProChannel Modules</a></li>
+                    <li><a href="http://www.cakewalk.com/Products/MusicCreator">Music Creator 6</a></li>
+                    <li><a href="http://www.cakewalk.com/Products/AudioCreator">Audio Creator 1.5</a></li>
+                    <li><a href="http://www.cakewalk.com/Products/Rapture">Rapture</a></li>
+                    <li><a href="http://www.cakewalk.com/Products/DimensionPro">Dimension Pro</a></li>
+                    <li><a href="http://www.cakewalk.com/Products/Z3TA">Z3TA+ 2</a></li>
+                    <li><a href="http://www.cakewalk.com/Products/StudioInstruments">Studio Instruments</a></li>
+                    <li style="padding-bottom: 10px;"><a href="http://www.cakewalk.com/Products/By-Category.aspx/Cakewalk-LE-Software">LE Products</a></li>
+			   </ul>
+		  </li>
+		    <li><a href="http://www.cakewalk.com/Products/default.aspx">Products By Category</a>
+                <ul>
+                <li><a href="http://www.cakewalk.com/Products/SONAR">SONAR X2 Family</a></li>
+                <li><a href="http://www.cakewalk.com/Products/By-Category.aspx/Professional-Music-Production">Professional Music Production</a></li>
+                <li><a href="http://www.cakewalk.com/Products/By-Category.aspx/Home-Music-Production">Home Music Production</a></li>
+                <li><a href="http://www.cakewalk.com/Products/By-Category.aspx/Beginner-Recording">Beginner Recording</a></li>
+                  <li><a href="http://www.cakewalk.com/Products/By-Category.aspx/Music-Recording-Software">Music Recording Software</a></li>
+                <li><a href="http://www.cakewalk.com/Products/By-Category.aspx/Virtual-Instruments">Virtual Instruments</a></li>
+                <li><a href="http://www.cakewalk.com/Products/By-Category.aspx/Products-for-Guitarists">Products for Guitarists</a></li>
+                <li><a href="http://www.cakewalk.com/Products/By-Category.aspx/Cakewalk-Hardware">Cakewalk Hardware</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=59">Expansion Packs</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=40">Audio Effects</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=44">Learning Resources</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=41">Loops and Grooves</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=67">Top Downloads</a></li>
+                <li style="padding-bottom: 10px;"><a href="http://www.cakewalk.com/Products/default.aspx">View All</a></li>
+                </ul>
+            </li>
+           <li><a href="http://www.store.cakewalk.com/">Cakewalk Store</a>
+                <ul>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=9">Buy SONAR X2 Upgrades</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?sku=10-CWMC6.00-30E">Buy Music Creator 6</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?sku=16-CSHS7.00-30C">Buy Home Studio 7</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?sku=16-CWGP4.00-30C">Buy Guitar Tracks Pro 4</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=39">Buy Virtual Instruments</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=59">Buy Instrument Expansions</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=44">Buy Books &amp; Tutorials</a></li>
+                <li><a href="http://www.store.cakewalk.com/default.asp?cat=47">Monthly Specials</a></li>
+                <li style="padding-bottom: 10px;"><a href="http://www.store.cakewalk.com/default.asp?ma=1">My Account</a></li>
+                </ul>
+            </li>
+            <li><a href="http://www.cakewalk.com/Dealers/finder.aspx">Find a Dealer</a>
+                <ul>
+                <li><a href="http://www.cakewalk.com/Dealers/finder.aspx">United States</a></li>
+                <li><a href="http://www.cakewalk.com/Dealers/global.aspx">Worldwide</a></li>
+                <li><a href="http://www.cakewalk.com/Dealers/online.aspx">Online</a></li>
+                <li><a href="http://www.cakewalk.com/Retail-Specials/default.aspx">Retail Specials</a></li>
+                <li style="padding-bottom: 10px;"><a href="http://www.cakewalk.com/Education/default.aspx">Education</a></li>
+                </ul>
+            </li>
+            <li><a href="http://forum.cakewalk.com/">Community</a>
+                <ul>
+                <li><a href="http://forum.cakewalk.com/">Cakewalk User Forum</a></li>
+                <li><a href="http://www.cakewalk.com/CakeTV">CakeTV</a></li>
+                <li><a href="http://www.cakewalk.com/CakeTV/SONARU.aspx">SONAR University</a></li>
+                <li><a href="http://www.cakewalk.com/Artist">Artists Using Cakewalk Products</a></li>
+                <li><a href="http://blog.cakewalk.com/">Cakewalk Blog</a></li>
+                <li><a href="http://www.cakewalk.com/Events">Events</a></li>
+                <li><a href="https://plus.google.com/u/0/113632566468361424334/">Google+</a></li>
+                <li><a href="http://www.twitter.com/cakewalkinc">Twitter</a></li>
+                <li style="padding-bottom: 10px;"><a href="http://www.facebook.com/CakewalkInc">Facebook</a></li>
+                </ul>
+            </li>
+		    <li><a href="http://www.cakewalk.com/Support/default.aspx">Support</a>
+                <ul>
+                <li><a href="http://www.cakewalk.com/Register/default.aspx">Register Your Product</a></li>
+                <li><a href="http://www.cakewalk.com/Page.aspx/Windows-7-Resource-Page">Windows 7</a></li>
+                <li><a href="http://www.cakewalk.com/Support/prod.aspx">Support By Product</a></li>
+                <li><a href="http://www.cakewalk.com/Support/kb/default.aspx">Knowledge Base</a></li>
+                <li><a href="http://www.cakewalk.com/Support/faq.aspx">FAQ</a></li>
+                <li><a href="http://www.cakewalk.com/Support/contact/default.aspx">Contact Support</a></li>
+                <li><a href="http://www.cakewalk.com/PCResource/default.aspx">Computers</a></li>
+                <li style="padding-bottom: 10px;"><a href="http://www.cakewalk.com/DevXchange/default.aspx">DevXchange</a></li>
+                </ul>
+            </li>
+            
+         
+          </ul>
+	</div>
+
+</div>
+            <div id="nav-search">
+                <input type="text" id="q" name="q" size="24" onkeydown="HideSearchBg()" onkeypress="return SubmitOnEnter(this,event)" style="margin-top: 7px;" class="watermark">
+                <input type="image" id="sa" name="sa" value="Search" onclick="SearchSite();" src="./Cakewalk DevXchange - Specifications - sfz File Format_files/search-btn.png" alt="Search Cakewalk" align="top">
+            </div>
+        </div>
+    </div>
+    <div id="frame-wrap">
+        <form method="post" action="./Cakewalk DevXchange - Specifications - sfz File Format_files/Cakewalk DevXchange - Specifications - sfz File Format.htm" id="form1">
+<div class="aspNetHidden">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUJNzU3OTkxOTAyZBgBBSVjdGwwMCRjdGwwMCRjcGhDb250ZW50JGNwaERldlhDb250JGZ2DxQrAAdkZGRkZBYAAgFkS7OQoYnOI8/ZP4OWgf9ZANoRkzJlHGCyGvGmmz/y6bo=">
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="./Cakewalk DevXchange - Specifications - sfz File Format_files/WebResource.axd" type="text/javascript"></script>
+
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__SCROLLPOSITIONX" id="__SCROLLPOSITIONX" value="0">
+	<input type="hidden" name="__SCROLLPOSITIONY" id="__SCROLLPOSITIONY" value="0">
+	<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="">
+	<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="">
+</div>
+        <div id="banner-wrap">
+            <div id="banner">
+                
+    <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/Cakewalk-DevXchange-banner.jpg" alt="Cakewalk DevXchange - resources for 3rd party developers">
+
+            </div>
+        </div>
+        <div id="content-wrap">
+            <div id="bread">
+                
+
+    <a id="HyperLink3" title="Cakewalk home" href="http://www.cakewalk.com/default.aspx">Cakewalk</a> // 
+<a id="HyperLink4" title="Resources for third party developers and information on Cakewalk SDK&#39;s" href="http://www.cakewalk.com/DevXchange/default.aspx">DevXchange</a> //
+<span id="labBread">sfz File Format</span>
+
+
+
+
+            </div>
+            <div id="content-right">
+                
+<ul class="list-rnav">
+<li><h2>Windows 7</h2></li>
+<li><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=116">How Windows 7 will affect your music production</a></li>
+<li><h2>Whitepapers</h2></li>
+<li><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=102">Side-chaining in SONAR</a></li>
+<li><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=109">Multiprocessing in SONAR 3.1</a></li>
+<li><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=114">Windows Pro Audio Roundtable</a></li>
+<li><h2>SDK's</h2></li>
+<li><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=111">Cakewalk Control Surface</a></li>
+<li><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=112">DirectX</a></li>
+<li><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=115">About MFX</a></li>
+<li><h2>Specifications</h2></li>
+<li><a href="./Cakewalk DevXchange - Specifications - sfz File Format_files/Cakewalk DevXchange - Specifications - sfz File Format.htm">sfz File Format</a></li>
+<li><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=110">Cakewalk Application Language (CAL)</a></li>
+<li><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=113">StudioWare</a></li>
+</ul>
+
+            </div>
+            <div id="content">
+                
+    
+    <table cellspacing="0" cellpadding="0" id="fv" style="border-collapse:collapse;width: 100%;">
+	<tbody><tr>
+		<td colspan="2">
+<h1><span id="labTitle">sfz File Format</span></h1>
+
+By: <a id="HyperLink2" title="Browse all articles by Cakewalk" href="http://www.cakewalk.com/DevXchange/Search.aspx?Auth=Cakewalk">Cakewalk</a>, 
+<span id="AuthorTitleLabel" style="font-style:italic;">Development</span><br>
+Filed Under: <a id="HyperLink1" title="Browse all Specifications articles" href="http://www.cakewalk.com/DevXchange/Search.aspx?Cat=Specifications">Specifications</a><br><br>
+       <div id="supp-cont" style="width: 100%;">
+<p><span id="BodyLabel"></span></p><p align="left" class="productLarge"><b><span style="font-size: 14pt;">The sfz Format: Basics</span></b></p>
+<p align="left" class="product"><strong>What is the sfz format? </strong></p>
+<p align="left" class="product">The sfz format is a file format to define how a collection of samples are arragned for performance. </p>
+<p>The goal behind the sfz format is to provide a free, simple, minimalistic and expandable format to arrange, distribute and use audio samples with the highest possible quality and the highest possible performance flexibility.</p>
+<p>A sfz format file can be played in our freeware sfz player.</p>
+<p>Soundware, software and hardware developers can create, use and distribute the sfz format files for free, for either free or commercial applications.</p>
+<p>Some of the features of the sfz format are:</p>
+<ul>
+<li>Samples of any bit depth (8/16/24/32-bit) support, mono or stereo</li>
+<li>Samples taken at any samplerate (i.e. 44.1k, 48k, 88.2k, 96k, 176.4k, 192k, 384k)</li>
+<li>Compressed samples. Compressed and uncompressed can be combined</li>
+<li>Looped samples</li>
+<li>Unlimited keyboard splits and layers</li>
+<li>Unlimited velocity splits and layers</li>
+<li>Unlimited regions of sample playback based on MIDI controllers (continuous controllers, pitch bend, channel and polyphonic aftertouch, keyboard switches) and internal generators (random, sequence counters)</li>
+<li>Sample playback on MIDI control events</li>
+<li>Unlimited unidirectional and bidirectional exclusive regions (mute groups)</li>
+<li>Unlimited release trigger regions with release trigger attenuation control</li>
+<li>Unlimited crossfade controls</li>
+<li>Trigger on first-note and legato notes</li>
+<li>Sample playback synchronized to host tempo</li>
+<li>Dedicated Envelope Generators for pitch, filter and amplifier</li>
+<li>Dedicated LFO for pitch, filter and amplifier</li></ul>
+<p><strong>How is the sfz format structured? </strong></p>
+<p>The sfz format is a collection of sample files plus one or multiple .sfz definition files. This structure, containing multiple files instead of a single file is defined as non-monolithic.</p>
+<p>Two kinds of sample files were selected to be included in the sfz format: a basic PCM uncompressed format (standard Windows wave files) and a basic, adjustable-quality, royalty free compressed format (ogg-vorbis encoded files). </p>
+<p>The inclusion of a compressed format allows sample developers and soundware creators to easily create preview or demonstration files in a small package so they can be transferred with minimum bandwidth, while retaining complete performance functionality. </p>
+<p>Both formats are 100% royalty-free, so players can be created to reproduce them without fixed or per-copy fees. They can also be freely distributed on the web (provided that the contents of the files are copyright cleared).</p>
+<p>Each .sfz definition file represents one or a collection of instruments. An instrument is defined as a collection of regions. Regions include the definition for the input controls, the samples (the wav/ogg files) and the performance parameters to play those samples.</p>
+<p><strong>How is the .sfz definition file created? </strong></p>
+<p>A .sfz definition file is just a text file. Consequently, it can be created by using any text editor (i.e. Notepad). </p>
+<p><strong>Why non-monolithic?</strong></p>
+<p>While both monolithic and non-monolithic formats have advantages and disadvantages, there are several reasons which moved us to adopt a non-monolithic sample format. Technological and conceptual reasons can hardly be separated, so here's a basic explanation.</p>
+<p>The most important reason is the file size limitation of a non-monolitic file on FAT32 partitions. Samples are getting really big nowadays, with thousands of individual samples collected in single instruments, and triggered according to many input control combinations.</p>
+<p>Samples with high bit resolution (i.e. 24-bit samples) and high samplerate settings (96kHz, 192kHz) make the collection size even bigger. In the case of a non-monolithic format, the limitation still applies, but it applies to each sample instead of to the sum of all samples, making the limit virtually unreachable.</p>
+<p>While this limitation doesn't apply to NTFS, NTFS partitions are less efficient than FAT32 disks in terms of raw disk performance for streaming applications.</p>
+<p>Additionally, editing a single sample in a monolithic file implies loading the whole file, and after edit, saving the whole file again to disk. When collection size is big, the loading and saving operation is very time-consuming.</p>
+<p>However, we have not discharged the possibility of incorporating a monolithic format for the sfz format, as soon as the format structure is completely implemented. Small sound sets (or NTFS users) could chose between the two options appropriately.</p>
+<p><strong>Why not XML? </strong></p>
+<p>XML was actually the first choice for the .sfz definition file, mainly due the simplicity from the development point of view as the XML parser and transaction code is already available.</p>
+<p>However, XML was designed to exchange data over the web. Musicians, players, composers, soundware developers and audio technicians generally do not know about XML at all.</p>
+<p>In addition, as a universal information exchange format designed for general-purpose applications, XML is inefficient (in terms of information over total data terms), and editing a XML file requires the use of a XML editor instead of a text editor.</p>
+<p>A .sfz file is extremely self-explanatory. Most of the functionality of an instrument can be easily discovered by reading the file.</p>
+<p><strong>Is there a .sfz dedicated editor? </strong></p>
+<p>From rgc:audio, not yet... and not anytime soon. <br>
+  However, we're working with several developers in the industry, creators of sample-conversion software to implement the .sfz format in their converters and editors. </p>
+<p>The nature of the format allows creating instruments using other general-purpose software, like spreadsheets, wordprocessors, simple-scripting languages and other custom tailored software applications. </p>
+<p class="productLarge"><b><span style="font-size: 14pt;">Implementation</span></b></p>
+<p><strong>How is an instrument defined?</strong></p>
+<p>The basic component of an instrument is a region. An instrument then, is defined by one or more regions. Multiple regions can be arranged in a group. Groups allow entering common parameters for multiple regions.</p>
+<p>A region can include three main components: the definition for a sample, a set of input controls and a set of performance parameters. </p>
+<p><strong>Sample</strong></p>
+<p>The sample opcode defines which sample file will be played when the region is defined to play. <br>
+  If a sample opcode is not present in the region, the region will play the sample defined in the last &lt;group&gt;. If there's no previous group defined, or if the previous group doesn't specify a sample opcode, the region will be ignored. </p>
+<p><strong>Input Controls </strong></p>
+<p>Input controls define <strong>when</strong> the sample defined in a region will play, based in real-world controller values and/or internally calculated values. </p>
+<p>Real-world controllers are the elements that players, musicians or composers actually use to play music. Internal values are calculated by the player, like sequence counters and random generators.</p>
+<p>The sfz format relies in the standard Musical Instruments Digital Interface (MIDI) specification for all input controls. Most available performance controllers implement MIDI, and it's still the dominating specification for software audio sequencers in all platforms.</p>
+<p>Keyboard controllers are the most significant example of an Input Controls generator. Other generators could be MIDI guitars and string instruments, wind controllers, drum and percussion controllers. With individual differences, they all generate a common set of messages defined in the MIDI specification.</p>
+<p>A set of input controls then, are the combination of a played MIDI note with its velocity, continuous controllers, pitch bend, channel and polyphonic aftertouch, etc.</p>
+<p>When a particular set of input controls matches the definition for a region, the sample specified in that region plays, using a particular set of performance parameters also specified in the region.</p>
+<p>Inside the definition file, a region starts with the <strong>&lt;region&gt;</strong> header. A region is defined between two <strong>&lt;region&gt;</strong> headers, or between a <strong>&lt;region&gt;</strong> header and a <strong>&lt;group&gt;</strong> header, or between a <strong>&lt;region&gt;</strong> header and the end of the file.</p>
+<p>Following the <strong>&lt;region&gt;</strong> header one or more opcodes can be defined. The opcodes are special keywords which instruct the player on what, when and how to play a sample.</p>
+<p>Opcodes within a region can appear in any order, and they have to be separated by one or more spaces or tabulation controls. Opcodes can appear in separated lines within a region. </p>
+<p>Opcodes and assigned opcode values are separated by the equal to sign (=), without spaces between the opcode and the sign. For instance:</p>
+<p>sample=trombone_a4_ff.wav<br>
+  sample=cello_a5_pp first take.wav</p>
+<p>are valid examples, while:</p>
+<p>sample = cello_a4_pp.wav </p>
+<p>Is not (note the spaces at the sides of the = sign).<br>
+  Input Controls and Performance Parameters opcodes are optional, so they might not be present in the definition file. An 'expectable' default value for each parameter is pre-defined, and will be used if there's no definition.</p>
+<p>Example region definitions:</p>
+<p>&lt;region&gt; sample=440.wav</p>
+<p>This region definition instructs the player to play the sample file '440.wav' for the whole keyboard range. </p>
+<p>&lt;region&gt; lokey=64 hikey=67 sample=440.wav</p>
+<p>This region features a very basic set of input parameters (lokey and hikey, which represent the low and high MIDI notes in the keyboard), and the sample definition. <br>
+  This instructs the player to play the sample '440.wav', if a key in the 64-67 range is played.</p>
+<p>It is very important to note that all Input Controls defined in a region act using the AND boolean operator. Consequently, all conditions must be matched for the region to play. For instance:</p>
+<p>&lt;region&gt; lokey=64 hikey=67 lovel=0 hivel=34 locc1=0 hicc1=40 sample=440.wav</p>
+<p>This region definition instructs the player to play the sample '440.wav' if there is an incoming note event in the 64-67 range AND the note has a velocity in the 0~34 range AND last modulation wheel (cc1) message was in the 0~40 range.</p>
+<p>Performance parameters</p>
+<p>The Performance Parameters define <strong>how</strong> the sample specified will play, once the region is defined to play.<br>
+  A simple example of a Performance Parameter is <strong>volume</strong>. It defines how loud the sample will be played when the region plays. </p>
+<p><strong>Groups </strong></p>
+<p>As previously stated, groups allow entering common parameters for multiple regions. A group is defined with the <strong>&lt;group&gt;</strong> opcode, and the parameters enumerated on it last till the next group opcode, or till the end of the file.</p>
+<p>&lt;group&gt;<br>
+  ampeg_attack=0.04 ampeg_release=0.45</p>
+<p>&lt;region&gt; sample=trumpet_pp_c4.wav key=c4<br>
+  &lt;region&gt; sample=trumpet_pp_c#4.wav key=c#4<br>
+  &lt;region&gt; sample=trumpet_pp_d4.wav key=d4<br>
+  &lt;region&gt; sample=trumpet_pp_d#4.wav key=d#4</p>
+<p>&lt;group&gt;<br>
+  &lt;region&gt; sample=trumpet_pp_e4.wav key=e4 // previous group parameters reset</p>
+<p><strong>Comments</strong></p>
+<p>Comment lines can be inserted anywhere inside the file. A comment line starts with the slash character ('/'), and it extends till the end of the line. </p>
+<p>&lt;region&gt; <br>
+  sample=trumpet_pp_c4.wav<br>
+  // middle C in the keyboard<br>
+  lokey=60<br>
+  // pianissimo layer<br>
+  lovel=0 hivel=20 // another comment</p>
+<p><strong>Where do the sample files have to be stored?</strong></p>
+<p>Sample files can be stored either in the same folder where the .sfz definition file resides, or in any alternative route, specified relatively to the location of the definition file. Consequently:</p>
+<p>sample=trumpet_pp_c3.wav<br>
+  sample=samples\trumpet_pp_c3.wav<br>
+  sample=..\trumpet_pp_c3.wav</p>
+<p>Are all valid sample names.</p>
+<p>Alternatively, the player might specify one or several 'user folders', where it will search for samples if it doesn't find them in the same folder as the definition file.</p>
+<p><strong>What can the sfz format do?</strong></p>
+<p>The sfz format is aimed to allow the arrange of a sample collection in a flexible and expandable way. It's up to the player to decide which functionality it wants to implement.</p>
+<p><strong>Units</strong></p>
+<p>All units in the sfz format are in real-world values. Frequencies are expressed in Hertz, pitches in cents, amplitudes in percentage and volumes in decibels. <br>
+  Notes are expressed in MIDI Note Numbers, or in note names according to the International Pitch Notation (IPN) convention. According to this rules, middle C in the keyboard is C4 and the MIDI note number 60.</p>
+<p class="productLarge"><span style="font-weight: bold; font-size: 14pt;">Opcode List </span></p>
+<p>The following is a description of all valid opcodes for the sfz format version 1.0:</p>
+<table cellpadding="5" border="1" width="100%">
+<tbody>
+<tr>
+<td bgcolor="#cccccc" width="11%">
+<div align="center"><strong>Opcode</strong></div></td>
+<td bgcolor="#cccccc" width="51%">
+<div align="center"><strong>Description</strong></div></td>
+<td bgcolor="#cccccc" width="10%">
+<div align="center"><strong>Type</strong></div></td>
+<td bgcolor="#cccccc" width="16%">
+<div align="center"><strong>Default</strong></div></td>
+<td bgcolor="#cccccc" width="12%">
+<div align="center"><strong>Range</strong></div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Sample Definition </td></tr>
+<tr>
+<td>
+<div align="center"><strong>sample</strong></div></td>
+<td>
+<p>This opcode defines which sample file the region will play.<br>
+  The value of this opcode is the filename of the sample file, including the extension. The filename must be stored in the same folder where the definition file is, or specified relatively to it. </p>
+<p>If the sample file is not found, the player will ignore the whole region contents.</p>
+<p>Long names and names with blank spaces and other special characters (excepting the = character) are allowed in the sample definition. </p>
+<p>The sample will play unchanged when a note equal to the <strong>pitch_keycenter</strong> opcode value is played. If <strong>pitch_keycenter</strong> is not defined for the region, sample will play unchanged on note 60 (middle C).</p>
+<p>Examples:<br>
+  sample=guitar_c4_ff.wav<br>
+  sample=dog kick.ogg<br>
+  sample=out of tune trombone (redundant).wav<br>
+  sample=staccatto_snare.ogg</p></td>
+<td>
+<div align="center">string<br>
+  (filename)</div></td>
+<td>n/a</td>
+<td>n/a</td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Input Controls </td></tr>
+<tr>
+<td>
+<div align="center"><strong>lochan<br>
+  hichan</strong></div></td>
+<td>
+<p>If incoming notes have a MIDI channel between <strong>lochan</strong> and <strong>hichan</strong>, the region will play.</p>
+<p>Examples:<br>
+  lochan=1 hichan=5</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">lochan=1<br>
+  hichan=16</div></td>
+<td>
+<div align="center">1 to 16 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>lokey<br>
+  hikey<br>
+  key</strong></div></td>
+<td>
+<p>If a note equal to or higher than <strong>lokey</strong> AND equal to or lower than <strong>hikey</strong> is played, the region will play.</p>
+<p><strong>lokey</strong> and <strong>hikey</strong> can be entered in either MIDI note numbers (0 to 127) or in MIDI note names (C-1 to G9)</p>
+<p>The <strong>key</strong> opcode sets <strong>lokey</strong>, <strong>hikey</strong> and <strong>pitch_keycenter</strong> to the same note.</p>
+<p>Examples:<br>
+  lokey=60 // middle C<br>
+  hikey=63 // middle D#<br>
+  lokey=c4 // middle C<br>
+  hikey=d#4 // middle D# <br>
+  hikey=eb4 // middle Eb (D#)<br>
+</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">lokey=0, hikey=127</div></td>
+<td>
+<div align="center">0 to 127<br>
+  C-1 to G9</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>lovel<br>
+  hivel</strong></div></td>
+<td>If a note with velocity value equal to or higher than <strong>lovel</strong> AND equal to or lower than <strong>hivel</strong> is played, the region will play.</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<p align="center">locc=0, hicc=127</p>
+<p align="center">for all controllers </p></td>
+<td>
+<div align="center">0 to 127 </div></td></tr>
+<tr>
+<td>
+<p align="center"><strong>lobend<br>
+  hibend</strong></p></td>
+<td>
+<p>Defines the range of the last Pitch Bend message required for the region to play.</p>
+<p>Examples:<br>
+  lobend=0 hibend=4000</p>
+<p>The region will play only if last Pitch Bend message received was in the 0~4000 range.</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">
+<div align="center">lobend=-8192,<br>
+  hibend=8192</div></div></td>
+<td>
+<div align="center">-8192 to 8192</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>lochanaft<br>
+  hichanaft</strong></div></td>
+<td>
+<p>Defines the range of last Channel Aftertouch message required for the region to play.</p>
+<p>Examples:<br>
+  lochanaft=30 hichanaft=100</p>
+<p>The region will play only if last Channel Aftertouch message received was in the 30~100 range.</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">lochanaft=0, hichanaft=127</div></td>
+<td>
+<div align="center">0 to 127 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>lopolyaft<br>
+  hipolyaft</strong></div></td>
+<td>
+<p>Defines the range of last Polyphonic Aftertouch message required for the region to play. </p>
+<p>The incoming note information in the Polyphonic Aftertouch message is not relevant.</p>
+<p>Examples:<br>
+  lopolyaft=30 hipolyaft=100</p>
+<p>The region will play only if last Polyphonic Aftertouch message received was in the 30~100 range.</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">lopolyaft=0, hipolyaft=127</div></td>
+<td>
+<div align="center">0 to 127 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>lorand<br>
+  hirand</strong></div></td>
+<td>
+<p>Random values. The player will generate a new random number on every note-on event, in the range 0~1. </p>
+<p>The region will play if the random number is equal to or higher than lorand, and lower than hirand.</p>
+<p>Examples:<br>
+  lorand=0.2 hirand=0.4<br>
+  lorand=0.4 hirand=1</p></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">lorand = 0<br>
+  hirand = 1</div></td>
+<td>
+<div align="center">0 to 1 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>lobpm<br>
+  hibpm</strong></div></td>
+<td>
+<p>Host tempo value. The region will play if the host tempo is equal to or higher than lobpm, and lower than hibpm.</p>
+<p>Examples:<br>
+  lobpm=0 hibpm=100<br>
+  lobpm=100 hibpm=200.5</p></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">lobpm = 0<br>
+  hibpm = 500</div></td>
+<td>
+<div align="center">0 to 500 bpm</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>seq_length</strong></div></td>
+<td>
+<p>Sequence length. The player will keep an internal counter creating a consecutive note-on sequence for each region, starting at 1 and resetting at <strong>seq_length</strong>.</p>
+<p>Examples:<br>
+  seq_length=3</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">1</div></td>
+<td>
+<div align="center">1 to 100 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>seq_position</strong></div></td>
+<td>
+<p>Sequence position. The region will play if the internal sequence counter is equal to <strong>seq_position</strong>.</p>
+<p>Examples:<br>
+  seq_length=4 seq_position=2</p>
+<p>In above example, the region will play on the second note every four notes.</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">1</div></td>
+<td>
+<div align="center">1 to 100 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>sw_lokey<br>
+  sw_hikey</strong></div></td>
+<td>
+<p>Defines the range of the keyboard to be used as trigger selectors for the <strong>sw_last </strong>opcode.</p>
+<p><strong>sw_lokey</strong> and <strong>sw_hikey</strong> can be entered in either MIDI note numbers (0 to 127) or in MIDI note names (C-1 to G9)</p>
+<p>Examples:<br>
+  sw_lokey=48 sw_hikey=53</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">sw_lokey=0, sw_hikey=127</div></td>
+<td>
+<div align="center">0 to 127<br>
+  C-1 to G9</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>sw_last</strong></div></td>
+<td>
+<p>Enables the region to play if the last key pressed in the range specified by <strong>sw_lokey</strong> and <strong>sw_hikey</strong> is equal to the <strong>sw_last</strong> value.</p>
+<p><strong>sw_last</strong> can be entered in either MIDI note numbers (0 to 127) or in MIDI note names (C-1 to G9)</p>
+<p>Examples:<br>
+  sw_last=49</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 127<br>
+  C-1 to G9 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>sw_down</strong></div></td>
+<td>
+<p>Enables the region to play if the key equal to <strong>sw_down</strong> value is depressed. </p>
+<p>Key has to be in the range specified by <strong>sw_lokey</strong> and <strong>sw_hikey</strong>.</p>
+<p><strong>sw_down</strong> can be entered in either MIDI note numbers (0 to 127) or in MIDI note names (C-1 to G9) </p>
+<p>Examples:<br>
+  sw_down=Cb3</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 127<br>
+  C-1 to G9 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>sw_up</strong></div></td>
+<td>
+<p>Enables the region to play if the key equal to <strong>sw_up</strong> value is not depressed. </p>
+<p>Key has to be in the range specified by<strong> sw_lokey</strong> and <strong>sw_hikey</strong>.</p>
+<p>sw_up can be entered in either MIDI note numbers (0 to 127) or in MIDI note names (C-1 to G9)</p>
+<p>Examples:<br>
+  sw_up=49</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 127<br>
+  C-1 to G9</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>sw_previous</strong></div></td>
+<td>
+<p>Previous note value. The region will play if last note-on message was equal to <strong>sw_previous</strong> value.</p>
+<p><strong>sw_previous</strong> can be entered in either MIDI note numbers (0 to 127) or in MIDI note names (C-1 to G9) </p>
+<p>Examples:<br>
+  sw_previous=60</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">none</div></td>
+<td>
+<div align="center">0 to 127<br>
+  C-1 to G9</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>sw_vel</strong></div></td>
+<td>
+<p>This opcode allows overriding the velocity for the region with the velocity of the previous note. Values can be:</p>
+<p><strong>current</strong>: Region uses the velocity of current note.</p>
+<p><strong>previous</strong>: Region uses the velocity of the previous note.</p>
+<p>Examples:<br>
+  sw_vel=previous</p></td>
+<td>
+<div align="center">text</div></td>
+<td>
+<div align="center">current</div></td>
+<td>
+<div align="center">current, previous </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>trigger</strong></div></td>
+<td>
+<p>Sets the trigger which will be used for the sample to play. Values can be:</p>
+<p><strong>attack</strong> (default): Region will play on note-on.<br>
+<strong>release</strong>: Region will play on note-off. The velocity used to play the note-off sample is the velocity value of the corresponding (previous) note-on message.<br>
+<strong>first</strong>: Region will play on note-on, but if there's no other note going on (staccato, or first note in a legato phrase).<br>
+<strong>legato</strong>: Region will play on note-on, but only if there's a note going on (notes after first note in a legato phrase).</p>
+<p>Examples:<br>
+  trigger=release</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">attack</div></td>
+<td>
+<div align="center">attack,<br>
+  release, first, legato</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>group</strong></div></td>
+<td>
+<p>Exclusive group number for this region. <br>
+</p>
+<p>Examples:<br>
+  group=3<br>
+  group=334</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 4Gb (4294967296)</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>off_by</strong></div></td>
+<td>
+<p>Region off group. When a new region with a group number equal to <strong>off_by</strong> plays, this region will be turned off.<br>
+</p>
+<p>Examples:<br>
+  off_by=3<br>
+  off_by=334</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 4Gb (4294967296)</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>off_mode</strong></div></td>
+<td>
+<p>Region off mode. This opcode will determinate how a region is turned off by an <strong>off_by</strong> opcode. Values can be:</p>
+<p><strong>fast</strong> (default): The voice will be turned off immediately. Release settings will not have any effect.</p>
+<p><strong>normal</strong>: The region will be set into release stage. All envelope generators will enter in release stage, and region will expire when the amplifier envelope generator expired. </p>
+<p>Examples:<br>
+  off_mode=fast<br>
+  off_mode=normal</p></td>
+<td>
+<div align="center">text</div></td>
+<td>
+<div align="center">fast</div></td>
+<td>
+<div align="center">fast, normal </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>on_loccN<br>
+  on_hiccN</strong></div></td>
+<td>
+<p>Sample trigger on MIDI continuous control N. If a MIDI control message with a value between <strong>on_loccN</strong> and <strong>on_hiccN</strong> is received, the region will play.<br>
+</p>
+<p>Examples:<br>
+  on_locc1=0 on_hicc1=0</p>
+<p>Region will play when a MIDI CC1 (modulation wheel) message with zero value is received.</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">-1 (unassigned)</div></td>
+<td>
+<div align="center">0 to 127 </div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5"><strong>Performance Parameters </strong></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Sample Player </td></tr>
+<tr>
+<td>
+<div align="center"><strong>delay</strong></div></td>
+<td>
+<p>Region delay time, in seconds.<br>
+  If a <strong>delay</strong> value is specified, the region playback will be postponed for the specified time.<br>
+  If the region receives a note-off message before delay time, the region won't play.</p>
+<p>All envelope generators delay stage will start counting after region delay time.</p>
+<p>Examples:<br>
+  delay=1<br>
+  delay=0.2</p></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 100 seconds </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>delay_random</strong></div></td>
+<td>
+<p>Region random delay time, in seconds.<br>
+  If the region receives a note-off message before delay time, the region won't play.</p>
+<p>Examples:<br>
+  delay_random=1<br>
+  delay_random=0.2</p></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>delay_ccN</strong></div></td>
+<td>
+<p>Region delay time after MIDI continuous controller N messages are received, in seconds.<br>
+  If the region receives a note-off message before delay time, the region won't play.</p>
+<p>Examples:<br>
+  delay_cc1=1<br>
+  delay_cc2=.5</p></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 100 seconds </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>offset</strong></div></td>
+<td>
+<p>The offset used to play the sample, in sample units.<br>
+  The player will reproduce samples starting with the very first sample in the file, unless <strong>offset</strong> is specified. It will start playing the file at the <strong>offset</strong> sample in this case.<br>
+</p>
+<p>Examples:<br>
+  offset=3000<br>
+  offset=32425</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 4 Gb (4294967296)</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>offset_random</strong></div></td>
+<td>
+<p>Random offset added to the region offset, in sample units.<br>
+</p>
+<p>Examples:<br>
+  offset_random=300<br>
+  offset_random=100</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 4 Gb (4294967296)</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>offset_ccN</strong></div></td>
+<td>
+<p>The offset used to play the sample according to last position of MIDI continuous controller N, in sample units.</p>
+<p>This opcode is useful to specify an alternate sample start point based on MIDI controllers.<br>
+</p>
+<p>Examples:<br>
+  offset_cc1=3000<br>
+  offset_cc64=1388</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 4 Gb (4294967296)</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>end</strong></div></td>
+<td>
+<p>The endpoint of the sample, in sample units.<br>
+  The player will reproduce the whole sample if end is not specified.</p>
+<p>If end value is -1, the sample will not play. Marking a region end with -1 can be used to use a silent region to turn off other regions by using the group and off_by opcodes.</p>
+<p>Examples:<br>
+  end=133000<br>
+  end=4432425</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-1 to 4 Gb (4294967296)</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>count</strong></div></td>
+<td>
+<p>The number of times the sample will be played. If this opcode is specified, the sample will restart as many times as defined. Envelope generators will not be retriggered on sample restart.<br>
+  When this opcode is defined, loopmode is automatically set to one_shot.</p>
+<p>Examples:<br>
+  count=3<br>
+  count=2</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 4 Gb (4294967296)</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>loop_mode</strong></div></td>
+<td>
+<p>If <strong>loop</strong>_<strong>mode</strong> is not specified, each sample will play according to its predefined loop mode. That is, the player will play the sample looped using the first defined loop, if available. If no loops are defined, the wave will play unlooped.<br>
+<br>
+  The <strong>loop_mode</strong> opcode allows playing samples with loops defined in the unlooped mode. The possible values are:</p>
+<p><strong><em>no_loop</em>:</strong> no looping will be performed. Sample will play straight from start to end, or until note off, whatever reaches first.<br>
+<strong><em>one_shot</em>:</strong> sample will play from start to end, ignoring note off. <br>
+  This mode is engaged automatically if the <strong>count</strong> opcode is defined.<br>
+<strong><em>loop_continuous</em>:</strong> once the player reaches sample loop point, the loop will play until note expiration.<br>
+<strong><em>loop_sustain</em>:</strong> the player will play the loop while the note is held, by keeping it depressed or by using the sustain pedal (CC64). The rest of the sample will play after note release.<br>
+<br>
+  Examples:<br>
+  loop_mode=no_loop<br>
+  loop_mode=loop_continuous</p></td>
+<td>
+<div align="center">text</div></td>
+<td>
+<div align="center"><strong>no_loop</strong> for samples without a loop defined,<br>
+<strong>loop_continuous</strong> for samples with defined loop(s).</div></td>
+<td>
+<div align="center">n/a</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>loop_start</strong></div></td>
+<td>
+<p>The loop start point, in samples. <br>
+<br>
+  If <strong>loop</strong>_<strong>start</strong> is not specified and the sample has a loop defined, the sample start point will be used. <br>
+<br>
+  If <strong>loop</strong>_<strong>start</strong> is specified, it will overwrite the loop start point defined in the sample.</p>
+<p>This opcode will not have any effect if loopmode is set to <strong>no_loop</strong>.</p>
+<p>Examples:<br>
+  loop_start=4503<br>
+  loop_start=12445</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 4 Gb (4294967296)</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>loop_end</strong></div></td>
+<td>
+<p>The loop end point, in samples. This opcode will not have any effect if loopmode is set to <strong>no_loop</strong>.</p>
+<p>If <strong>loop</strong>_<strong>end</strong> is not specified and the sample have a loop defined, the sample loop end point will be used. <br>
+<br>
+  If <strong>loop</strong>_<strong>end</strong> is specified, it will overwrite the loop end point defined in the sample.</p>
+<p>Examples:<br>
+  loop_end=34503<br>
+  loop_end=212445</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 4 Gb (4294967296)</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>sync_beats</strong></div></td>
+<td>Region playing synchronization to host position.<br>
+<br>
+  When <strong>sync_beats </strong>is specified and after input controls instruct the region to play, the playback will be postponed until the next multiple of the specified value is crossed.<br>
+<br>
+  Examples:<br>
+  sync_beats=4<br>
+<br>
+  In this example, if note is pressed in beat 2 of current track, note won't be played until beat 4 reaches.<br>
+<br>
+  This opcode will only work in hosts featuring song position information (vstTimeInfo ppqPos).</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 32 beats</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>sync_offset</strong></div></td>
+<td>Region playing synchronization to host position offset.<br>
+<br>
+  When <strong>sync_beats </strong>is specified and after input controls instruct the region to play, the playback will be postponed until the next multiple of the specified value plus the <strong>sync_offset</strong> value is crossed.<br>
+<br>
+  Examples:<br>
+  sync_beats=4 sync_offset=1<br>
+<br>
+  In this example, if note is pressed in beat 2 of current track, note won't be played until beat 5 reaches.<br>
+<br>
+  This opcode will only work in hosts featuring song position information (vstTimeInfo ppqPos).</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 32 beats</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Pitch</td></tr>
+<tr>
+<td>
+<div align="center"><strong>transpose</strong></div></td>
+<td>The transposition value for this region which will be applied to the sample.<br>
+<br>
+  Examples:<br>
+  transpose=3<br>
+  transpose=-4</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-127 to 127</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>tune</strong></div></td>
+<td>The fine tuning for the sample, in cents. Range is Â±1 semitone, from -100 to 100. Only negative values must be prefixed with sign.<br>
+<br>
+  Examples:<br>
+  tune=33<br>
+  tune=-30<br>
+  tune=94<br>
+</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-100 to 100</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitch_keycenter</strong></div></td>
+<td>Root key for the sample.<br>
+<br>
+  Examples:<br>
+  pitch_keycenter=56<br>
+  pitch_keycenter=c#2</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">60 (C4)</div></td>
+<td>
+<div align="center">-127 to 127<br>
+  C-1 to G9 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitch_keytrack</strong></div></td>
+<td>Within the region, this value defines how much the pitch changes with every note. Default value is 100, which means pitch will change one hundred cents (one semitone) per played note.<br>
+  Setting this value to zero means that all notes in the region will play the same pitch, particularly useful when mapping drum sounds.<br>
+<br>
+  Examples:<br>
+  pitch_keytrack=20<br>
+  pitch_keytrack=0</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">100</div></td>
+<td>
+<div align="center">-1200 to 1200</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitch_veltrack</strong></div></td>
+<td>Pitch velocity tracking, represents how much the pitch changes with incoming note velocity, in cents.<br>
+<br>
+  Examples:<br>
+  pitch_veltrack=0<br>
+  pitch_veltrack=1200</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-9600 to 9600 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitch_random</strong></div></td>
+<td>Random tuning for the region, in cents. Random pitch will be centered, with positive and negative values.<br>
+<br>
+  Examples:<br>
+  pitch_random=100<br>
+  pitch_random=400</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 9600 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>bend_up</strong></div></td>
+<td>Pitch bend range when Bend Wheel or Joystick is moved up, in cents.<br>
+<br>
+  Examples:<br>
+  bend_up=1200<br>
+  bend_up=100</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">200</div></td>
+<td>
+<div align="center">-9600 to 9600</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>bend_down</strong></div></td>
+<td>Pitch bend range when Bend Wheel or Joystick is moved down, in cents.<br>
+<br>
+  Examples:<br>
+  bend_down=1200<br>
+  bend_down=100</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">-200</div></td>
+<td><br>
+</td></tr>
+<tr>
+<td>
+<div align="center"><strong>bend_step</strong></div></td>
+<td>Pitch bend step, in cents.<br>
+<br>
+  Examples:<br>
+  bend_step=100 // glissando in semitones<br>
+  bend_step=200 // glissando in whole tones </td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">1</div></td>
+<td>
+<div align="center">1 to 1200</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Pitch EG </td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_delay</strong></div></td>
+<td>Pitch EG delay time, in seconds. This is the time elapsed from note on to the start of the Attack stage.<br>
+<br>
+  Examples:<br>
+  pitcheg_delay=1.5<br>
+  pitcheg_delay=0<br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_start</strong></div></td>
+<td>Pitch EG start level, in percentage.<br>
+<br>
+  Examples:<br>
+  pitcheg_start=20<br>
+  pitcheg_start=100</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 % </div></td>
+<td>
+<div align="center">0 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_attack</strong></div></td>
+<td>Pitch EG attack time, in seconds.<br>
+<br>
+  Examples:<br>
+  pitcheg_attack=1.2<br>
+  pitcheg_attack=0.1<br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_hold</strong></div></td>
+<td>Pitch EG hold time, in seconds. During the hold stage, EG output will remain at its maximum value.<br>
+<br>
+  Examples:<br>
+  pitcheg_hold=1.5<br>
+  pitcheg_hold=0.1</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_decay</strong></div></td>
+<td>
+<p>Pitch EG decay time, in seconds.</p>
+<p><br>
+  Examples:<br>
+  pitcheg_decay=1.5<br>
+  pitcheg_decay=3 <br>
+</p></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_sustain</strong></div></td>
+<td>Pitch EG release time (after note release), in seconds.<br>
+<br>
+  Examples:<br>
+  pitcheg_release=1.34<br>
+  pitcheg_release=2<br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">100 %</div></td>
+<td>
+<div align="center">0 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_release</strong></div></td>
+<td>Pitch EG release time (after note release), in seconds.<br>
+<br>
+  Examples:<br>
+  pitcheg_release=1.34<br>
+  pitcheg_release=2</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_depth</strong></div></td>
+<td>Depth for the pitch EG, in cents.<br>
+<br>
+  Examples:<br>
+  pitcheg_depth=1200<br>
+  pitcheg_depth=-100<br>
+</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-12000 to 12000</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_vel2delay</strong></div></td>
+<td>Velocity effect on pitch EG delay time, in seconds.<br>
+<br>
+  Examples:<br>
+  pitcheg_vel2delay=1.2<br>
+  pitcheg_vel2delay=0.1<br>
+<br>
+  Delay time will be calculated as <strong><br>
+<br>
+  delay time = pitcheg_delay</strong> <strong>+ pitcheg_vel2delay * velocity / 127<br>
+</strong></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_vel2attack</strong></div></td>
+<td>Velocity effect on pitch EG attack time, in seconds.<br>
+<br>
+  Examples:<br>
+  pitcheg_vel2attack=1.2<br>
+  pitcheg_vel2attack=0.1<br>
+<br>
+  Attack time will be calculated as <strong><br>
+<br>
+  attack time = pitcheg_attack</strong> <strong>+ pitcheg_vel2attack * velocity / 127<br>
+</strong></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_vel2hold</strong></div></td>
+<td>Velocity effect on pitch EG hold time, in seconds.<br>
+<br>
+  Examples:<br>
+  pitcheg_vel2hold=1.2<br>
+  pitcheg_vel2hold=0.1<br>
+<br>
+  Hold time will be calculated as <strong><br>
+<br>
+  hold time = pitcheg_hold</strong> <strong>+ pitcheg_vel2hold * velocity / 127</strong></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_vel2decay</strong></div></td>
+<td>Velocity effect on pitch EG decay time, in seconds.<br>
+<br>
+  Examples:<br>
+  pitcheg_vel2decay=1.2<br>
+  pitcheg_vel2decay=0.1<br>
+<br>
+  Decay time will be calculated as <strong><br>
+<br>
+  decay time = pitcheg_decay</strong> <strong>+ pitcheg_vel2decay * velocity / 127<br>
+</strong></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_vel2sustain</strong></div></td>
+<td>Velocity effect on pitch EG sustain level, in percentage.<br>
+<br>
+  Examples:<br>
+  pitcheg_vel2sustain=30<br>
+  pitcheg_vel2sustain=20<br>
+<br>
+  Sustain level will be calculated as <strong><br>
+<br>
+  sustain level = pitcheg_sustain</strong> <strong>+ pitcheg_vel2sustain</strong></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 % </div></td>
+<td>
+<div align="center">-100 % to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_vel2release</strong></div></td>
+<td>Velocity effect on pitch EG release time, in seconds.<br>
+<br>
+  Examples:<br>
+  pitcheg_vel2release=1.2<br>
+  pitcheg_vel2release=0.1<br>
+<br>
+  Release time will be calculated as <strong><br>
+<br>
+  release time = pitcheg_release</strong> <strong>+ pitcheg_vel2release * velocity / 127<br>
+</strong></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitcheg_vel2depth</strong></div></td>
+<td>
+<p>Velocity effect on pitch EG depth, in cents.<br>
+<br>
+  Examples:<br>
+  pitcheg_vel2depth=100<br>
+  pitcheg_vel2depth=-1200 </p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0 cents</div></td>
+<td>
+<div align="center">-12000 to 12000 cents</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Pitch LFO </td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitchlfo_delay</strong></div></td>
+<td>The time before the Pitch LFO starts oscillating, in seconds.<br>
+<br>
+  Examples:<br>
+  pitchlfo_delay=1<br>
+  pitchlfo_delay=0.4<br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitchlfo_fade</strong></div></td>
+<td>Pitch LFO fade-in effect time.<br>
+<br>
+  Examples:<br>
+  pitchlfo_fade=1<br>
+  pitchlfo_fade=0.4<br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitchlfo_freq</strong></div></td>
+<td>Pitch LFO frequency, in hertz.<br>
+<br>
+  Examples:<br>
+  pitchlfo_freq=0.4<br>
+  pitchlfo_freq=1.3</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 Hertz</div></td>
+<td>
+<div align="center">0 to 20 hertz</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitchlfo_depth</strong></div></td>
+<td>Pitch LFO depth, in cents.<br>
+<br>
+  Examples:<br>
+  pitchlfo_depth=1<br>
+  pitchlfo_depth=4</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0 cent </div></td>
+<td>
+<div align="center">-1200 to 1200 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitchlfo_depthccN</strong></div></td>
+<td>Pitch LFO depth when MIDI continuous controller N is received, in cents.<br>
+<br>
+  Examples:<br>
+  pitchlfo_depthcc1=100<br>
+  pitchlfo_depthcc32=400</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0 cent</div></td>
+<td>
+<div align="center">-1200 to 1200 cents</div></td></tr>
+<tr>
+<td><strong>pitchlfo_depthchanaft</strong></td>
+<td>Pitch LFO depth when channel aftertouch MIDI messages are received, in cents.<br>
+<br>
+  Examples:<br>
+  pitchlfo_depthchanaft=100<br>
+  pitchlfo_depthchanaft=400</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0 cent</div></td>
+<td>
+<div align="center">-1200 to 1200 cents</div></td></tr>
+<tr>
+<td><strong>pitchlfo_depthpolyaft</strong></td>
+<td>Pitch LFO depth when polyphonic aftertouch MIDI messages are received, in cents.<br>
+<br>
+  Examples:<br>
+  pitchlfo_depthpolyaft=100<br>
+  pitchlfo_depthpolyaft=400</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0 cent</div></td>
+<td>
+<div align="center">-1200 to 1200 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitchlfo_freqccN</strong></div></td>
+<td>Pitch LFO frequency change when MIDI continuous controller N is received, in hertz.<br>
+<br>
+  Examples:<br>
+  pitchlfo_freqcc1=5<br>
+  pitchlfo_freqcc1=-12</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">
+<div align="center">0 hertz</div></div></td>
+<td>
+<div align="center">
+<div align="center">
+<div align="center">-200 to 200 hertz</div></div></div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pitchlfo_freqchanaft</strong></div></td>
+<td>Pitch LFO frequency change when channel aftertouch MIDI messages are received, in hertz.<br>
+<br>
+  Examples:<br>
+  pitchlfo_freqchanaft=10<br>
+  pitchlfo_freqchanaft=-40</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">
+<div align="center">0 hertz</div></div></td>
+<td>
+<div align="center">
+<div align="center">
+<div align="center">-200 to 200 hertz</div></div></div></td></tr>
+<tr>
+<td><strong>pitchlfo_freqpolyaft</strong></td>
+<td>Pitch LFO frequency change when polyphonic aftertouch MIDI messages are received, in hertz.<br>
+<br>
+  Examples:<br>
+  pitchlfo_freqpolyaft=10<br>
+  pitchlfo_freqpolyaft=-4</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 hertz</div></td>
+<td>
+<div align="center">-200 to 200 hertz</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Filter</td></tr>
+<tr>
+<td>
+<div align="center"><strong>fil_type</strong></div></td>
+<td>
+<p>Filter type. Avaliable types are:</p>
+<p><strong>lpf_1p</strong>: one-pole low pass filter (6dB/octave).<br>
+<strong>hpf_1p</strong>: one-pole high pass filter (6dB/octave).<br>
+<strong>lpf_2p</strong>: two-pole low pass filter (12dB/octave).<br>
+<strong>hpf_2p</strong>: two-pole high pass filter (12dB/octave).<br>
+<strong>bpf_2p</strong>: two-pole band pass filter (12dB/octave).<br>
+<strong>brf_2p</strong>: two-pole band rejection filter (12dB/octave).<br>
+<br>
+  Examples:<br>
+  fil_type=lpf_2p<br>
+  fil_type=hpf_1p<br>
+</p></td>
+<td>
+<div align="center">text</div></td>
+<td>
+<div align="center">lpf_2p</div></td>
+<td>
+<div align="center">lpf_1p, hpf_1p, lpf_2p, hpf_2p, bpf_2p, brf_2p</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>cutoff</strong></div></td>
+<td>
+<p>The filter cutoff frequency, in Hertz.<br>
+<br>
+  If the cutoff is not specified, the filter will be disabled, with the consequent CPU drop in the player.</p>
+<p>Examples:<br>
+  cutoff=343<br>
+  cutoff=4333<br>
+</p></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">filter disabled</div></td>
+<td>
+<div align="center">0 to <br>
+  SampleRate / 2</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>cutoff_ccN</strong></div></td>
+<td>The variation in the cutoff frequency when MIDI continuous controller N is received, in cents.<br>
+<br>
+  Examples:<br>
+  cutoff_cc1=1200<br>
+  cutoff_cc2=-100<br>
+</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-9600 to 9600 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>cutoff_chanaft</strong></div></td>
+<td>The variation in the cutoff frequency when MIDI channel aftertouch messages are received, in cents.<br>
+<br>
+  Examples:<br>
+  cutoff_chanaft=1200<br>
+  cutoff_chanaft=-100<br>
+</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-9600 to 9600 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>cutoff_polyaft</strong></div></td>
+<td>The variation in the cutoff frequency when MIDI polyphonic aftertouch messages are received, in cents.<br>
+<br>
+  Examples:<br>
+  cutoff_polyaft=1200<br>
+  cutoff_polyaft=-100<br>
+</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-9600 to 9600 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>resonance</strong></div></td>
+<td>The filter cutoff resonance value, in decibels.<br>
+<br>
+  Examples:<br>
+  resonance=30</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 dB</div></td>
+<td>
+<div align="center">0 to 40 dB</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fil_keytrack</strong></div></td>
+<td>Filter keyboard tracking (change on cutoff for each key) in cents.<br>
+<br>
+  Examples:<br>
+  fil_keytrack=100<br>
+  fil_keytrack=0<br>
+</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0 cents</div></td>
+<td>
+<div align="center">0 to 1200 cents </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fil_keycenter</strong></div></td>
+<td>Center key for filter keyboard tracking. In this key, the filter keyboard tracking will have no effect.<br>
+<br>
+  Examples:<br>
+  fil_keycenter=60<br>
+  fil_keycenter=48<br>
+</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">60</div></td>
+<td>
+<div align="center">0 to 127</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fil_veltrack</strong></div></td>
+<td>Filter velocity tracking, represents how much the cutoff changes with incoming note velocity.<br>
+<br>
+  Examples:<br>
+  fil_veltrack=0<br>
+  fil_veltrack=1200<br>
+</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-9600 to 9600 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fil_random</strong></div></td>
+<td>Random cutoff added to the region, in cents. <br>
+<br>
+  Examples:<br>
+  fil_random=100<br>
+  fil_random=400</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 9600 cents</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Filter EG </td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_delay</strong></div></td>
+<td>Filter EG delay time, in seconds. This is the time elapsed from note on to the start of the Attack stage.<br>
+<br>
+  Examples:<br>
+  fileg_delay=1.5<br>
+  fileg_delay=0</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 seconds </div></td>
+<td>
+<div align="center">
+<div align="center">0 to 100 seconds</div></div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_start</strong></div></td>
+<td>Filter EG start level, in percentage.<br>
+<br>
+  Examples:<br>
+  fileg_start=20<br>
+  fileg_start=100<br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0 % </div></td>
+<td>
+<div align="center">0 to 100 % </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_attack</strong></div></td>
+<td>Filter EG attack time, in seconds.<br>
+<br>
+  Examples:<br>
+  fileg_attack=1.2<br>
+  fileg_attack=0.1 <br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">
+<div align="center">0 seconds</div></div></td>
+<td>
+<div align="center">
+<div align="center">0 to 100 seconds</div></div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_hold</strong></div></td>
+<td>Filter EG hold time, in seconds. During the hold stage, EG output will remain at its maximum value.<br>
+<br>
+  Examples:<br>
+  fileg_hold=1.5<br>
+  fileg_hold=0.1<br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">
+<div align="center">0 seconds</div></div></td>
+<td>
+<div align="center">
+<div align="center">0 to 100 seconds</div></div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_decay</strong></div></td>
+<td>
+<p>Filter EG decay time, in seconds.</p>
+<p>Examples:<br>
+  fileg_decay=1.5<br>
+  fileg_decay=3 </p></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">
+<div align="center">0 seconds</div></div></td>
+<td>
+<div align="center">
+<div align="center">0 to 100 seconds</div></div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_sustain</strong></div></td>
+<td>Filter EG sustain level, in percentage.<br>
+<br>
+  Examples:<br>
+  fileg_sustain=40.34<br>
+  fileg_sustain=10 <br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">100 % </div></td>
+<td>
+<div align="center">
+<div align="center">0 to 100 %</div></div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_release</strong></div></td>
+<td>Filter EG release time (after note release), in seconds.<br>
+<br>
+  Examples:<br>
+  fileg_release=1.34<br>
+  fileg_release=2 <br>
+</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">
+<div align="center">0 seconds</div></div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_depth</strong></div></td>
+<td>Depth for the filter EG, in cents.<br>
+<br>
+  Examples:<br>
+  fileg_depth=1200<br>
+  fileg_depth=-100 </td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">
+<div align="center">-12000 to 12000</div></div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_vel2delay</strong></div></td>
+<td>Velocity effect on filter EG delay time, in seconds.<br>
+<br>
+  Examples:<br>
+  fileg_vel2delay=1.2<br>
+  fileg_vel2delay=0.1<br>
+<br>
+  Delay time will be calculated as <strong><br>
+<br>
+  delay time = fileg_delay</strong> <strong>+ fileg_vel2delay * velocity / 127<br>
+</strong></td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">
+<div align="center">0 seconds</div></div></td>
+<td>
+<div align="center">
+<div align="center">-100 to 100 seconds</div></div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_vel2attack</strong></div></td>
+<td>Velocity effect on filter EG attack time, in seconds.<br>
+<br>
+  Examples:<br>
+  fil_vel2attack=1.2<br>
+  fil_vel2attack=0.1<br>
+<br>
+  Attack time will be calculated as <strong><br>
+<br>
+  attack time = fileg_attack</strong> <strong>+ fileg_vel2attack * velocity / 127</strong></td>
+<td>floating point </td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_vel2hold</strong></div></td>
+<td>Velocity effect on filter EG hold time, in seconds.<br>
+<br>
+  Examples:<br>
+  fileg_vel2hold=1.2<br>
+  fileg_vel2hold=0.1<br>
+<br>
+  Hold time will be calculated as <strong><br>
+<br>
+  hold time = fileg_hold</strong> <strong>+ fileg_vel2hold * velocity / 127</strong></td>
+<td>floating point </td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_vel2decay</strong></div></td>
+<td>Velocity effect on filter EG decay time, in seconds.<br>
+<br>
+  Examples:<br>
+  fileg_vel2decay=1.2<br>
+  fileg_vel2decay=0.1<br>
+<br>
+  Decay time will be calculated as <strong><br>
+<br>
+  decay time = fileg_decay</strong> <strong>+ fileg_vel2decay * velocity / 127<br>
+</strong></td>
+<td>floating point </td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_vel2sustain</strong></div></td>
+<td>Velocity effect on filter EG sustain level, in percentage.<br>
+<br>
+  Examples:<br>
+  fileg_vel2sustain=30<br>
+  fileg_vel2sustain=-30<br>
+<br>
+  Sustain level will be calculated as <strong><br>
+<br>
+  sustain level = fileg_sustain</strong> <strong>+ fileg_vel2sustain<br>
+<br>
+</strong>Result will be clipped to 0~100%.<strong><br>
+</strong></td>
+<td>floating point </td>
+<td>
+<div align="center">0 %</div></td>
+<td>
+<div align="center">-100 % to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_vel2release</strong></div></td>
+<td>Velocity effect on filter EG release time, in seconds.<br>
+<br>
+  Examples:<br>
+  fileg_vel2release=1.2<br>
+  fileg_vel2release=0.1<br>
+<br>
+  Release time will be calculated as <strong><br>
+<br>
+  release time = fileg_release</strong> <strong>+ fileg_vel2release * velocity / 127</strong></td>
+<td>floating point </td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fileg_vel2depth</strong></div></td>
+<td>
+<div align="center">-12000 to 12000 cents</div></td>
+<td>integer</td>
+<td>
+<div align="center">0 cents </div></td>
+<td>
+<div align="center">-12000 to 12000 cents</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Filter LFO </td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_delay</strong></div></td>
+<td>The time before the filter LFO starts oscillating, in seconds.<br>
+<br>
+  Examples:<br>
+  fillfo_delay=1<br>
+  fillfo_delay=0.4<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_fade</strong></div></td>
+<td>Filter LFO fade-in effect time.<br>
+<br>
+  Examples:<br>
+  fillfo_fade=1<br>
+  fillfo_fade=0.4<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_freq</strong></div></td>
+<td>Filter LFO frequency, in hertz.<br>
+<br>
+  Examples:<br>
+  fillfo_freq=0.4<br>
+  fillfo_freq=1.3</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 Hertz</div></td>
+<td>
+<div align="center">0 to 20 hertz</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_depth</strong></div></td>
+<td>Filter LFO depth, in cents.<br>
+<br>
+  Examples:<br>
+  fillfo_depth=1<br>
+  fillfo_depth=4</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 dB</div></td>
+<td>
+<div align="center">-1200 to 1200 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_depthccN</strong></div></td>
+<td>Filter LFO depth when MIDI continuous controller N is received, in cents.<br>
+<br>
+  Examples:<br>
+  fillfo_depthcc1=100<br>
+  fillfo_depthcc32=400</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0 cent</div></td>
+<td>
+<div align="center">-1200 to 1200 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_depthchanaft</strong></div></td>
+<td>Filter LFO depth when channel aftertouch MIDI messages are received, in cents.<br>
+<br>
+  Examples:<br>
+  fillfo_depthchanaft=100<br>
+  fillfo_depthchanaft=400<br>
+</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0 cent</div></td>
+<td>
+<div align="center">-1200 to 1200 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_depthpolyaft</strong></div></td>
+<td>Filter LFO depth when polyphonic aftertouch MIDI messages are received, in cents.<br>
+<br>
+  Examples:<br>
+  fillfo_depthpolyaft=100<br>
+  fillfo_depthpolyaft=400</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0 cent</div></td>
+<td>
+<div align="center">-1200 to 1200 cents</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_freqccN</strong></div></td>
+<td>Filter LFO frequency change when MIDI continuous controller N is received, in hertz.<br>
+<br>
+  Examples:<br>
+  fillfo_freqcc1=5<br>
+  fillfo_freqcc1=-12<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 hertz</div></td>
+<td>
+<div align="center">-200 to 200 hertz</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_freqchanaft</strong></div></td>
+<td>Filter LFO frequency change when channel aftertouch MIDI messages are received, in hertz.<br>
+<br>
+  Examples:<br>
+  fillfo_freqchanaft=10<br>
+  fillfo_freqchanaft=-40<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 hertz</div></td>
+<td>
+<div align="center">-200 to 200 hertz</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>fillfo_freqpolyaft</strong></div></td>
+<td>Filter LFO frequency change when polyphonic aftertouch MIDI messages are received, in hertz.<br>
+<br>
+  Examples:<br>
+  fillfo_freqpolyaft=10<br>
+  fillfo_freqpolyaft=-4</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 hertz</div></td>
+<td>
+<div align="center">-200 to 200 hertz</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">Amplifier</td></tr>
+<tr>
+<td>
+<div align="center"><strong>volume</strong></div></td>
+<td>The volume for the region, in decibels.<br>
+<br>
+  Examples:<br>
+  volume=-24<br>
+  volume=0<br>
+  volume=3.5</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0.0</div></td>
+<td>
+<div align="center">-144 to 6 dB</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>pan</strong></div></td>
+<td>The panoramic position for the region.<br>
+<br>
+  If a mono sample is used, <strong>pan</strong> value defines the position in the stereo image where the sample will be placed. <br>
+  When a stereo sample is used, the pan value the relative amplitude of one channel respect the other.<br>
+<br>
+  A value of zero means centered, negative values move the panoramic to the left, positive to the right.<br>
+<br>
+  Examples:<br>
+  pan=-30.5<br>
+  pan=0<br>
+  pan=43</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0.0</div></td>
+<td>
+<div align="center">-100 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>width</strong></div></td>
+<td>
+<p>Only operational for stereo samples, <strong>width</strong> defines the amount of channel mixing applied to play the sample.<br>
+</p>
+<p>A <strong>width</strong> value of 0 makes a stereo sample play as if it were mono (adding both channels and compensating for the resulting volume change). A value of 100 will make the stereo sample play as original. <br>
+<br>
+  Any value in between will mix left and right channels with a part of the other, resulting in a narrower stereo field image.<br>
+<br>
+  Negative <strong>width </strong>values will reverse left and right channels.</p>
+<p>Examples:<br>
+  width=100 // stereo<br>
+  width=0 // play this stereo sample as mono<br>
+  width=50 // mix 50% of one channel with the other<br>
+</p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0.0</div></td>
+<td>
+<div align="center">-100 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>position</strong></div></td>
+<td>
+<p>Only operational for stereo samples, <strong>position</strong> defines the position in the stereo field of a stereo signal, after channel mixing as defined in the <strong>width</strong> opcode.</p>
+<p><br>
+  A value of zero means centered, negative values move the panoramic to the left, positive to the right.</p>
+<p><br>
+  Examples:<br>
+  // mix both channels and play the result at left<br>
+  width=0 position=-100 <br>
+<br>
+  // make the stereo image narrower and play it<br>
+  // slightly right<br>
+  width=50 position=30 </p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0.0</div></td>
+<td>
+<div align="center">-100 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>amp_keytrack</strong></div></td>
+<td>Amplifier keyboard tracking (change in amplitude per key) in dB.<br>
+<br>
+  Examples:<br>
+  amp_keytrack=-1.4<br>
+  amp_keytrack=3</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 dB</div></td>
+<td>
+<div align="center">-96 to 12 dB</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>amp_keycenter</strong></div></td>
+<td>Center key for amplifier keyboard tracking. In this key, the amplifier keyboard tracking will have no effect.<br>
+<br>
+  Examples:<br>
+  amp_keycenter=60<br>
+  amp_keycenter=48</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">60</div></td>
+<td>
+<div align="center">0 to 127</div></td></tr>
+<tr>
+<td>
+<p align="center"><strong>amp_veltrack</strong></p></td>
+<td>
+<p>Amplifier velocity tracking, represents how much the amplitude changes with incoming note velocity.<br>
+<br>
+  Volume changes with incoming velocity in a concave shape according to the following expression:</p>
+<p>Amplitude(dB) = 20 log (127^2 / Velocity^2)<br>
+<br>
+  The <strong>amp_velcurve_N</strong> opcodes allow overriding the default velocity curve.<br>
+<br>
+  Examples:<br>
+  amp_veltrack=0<br>
+  amp_veltrack=100</p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">100 %</div></td>
+<td>
+<div align="center">-100 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>amp_velcurve_1<br>
+  amp_velcurve_127</strong></div></td>
+<td>
+<p>User-defined amplifier velocity curve. This opcode range allows defining a specific curve for the amplifier velocity. The value of the opcode indicates the normalized amplitude (0 to 1) for the specified velocity.</p>
+<p>The player will interpolate lineraly between specified opcodes for unspecified ones:<br>
+<br>
+  amp_velcurve_1=0.2 amp_velcurve_3=0.3<br>
+  // amp_velcurve_2 is calculated to 0.25<br>
+<br>
+  If <strong>amp_velcurve_127</strong> is not specified, the player will assign it the value of 1.<br>
+<br>
+  Examples:<br>
+  // linear, compressed dynamic range<br>
+  // amplitude changes from 0.5 to 1<br>
+  amp_velcurve_1=0.5</p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">standard curve (see <strong>amp_veltrack</strong>)</div></td>
+<td>
+<div align="center">0 to 1 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>amp_random</strong></div></td>
+<td>Random volume for the region, in decibels. <br>
+<br>
+  Examples:<br>
+  amp_random=10<br>
+  amp_random=3</td>
+<td>
+<div align="center">floating point </div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 24 dB</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>rt_decay</strong></div></td>
+<td>The volume decay amount when the region is set to play in <strong>release</strong> trigger mode, in decibels per second since note-on message.<br>
+<br>
+  Examples:<br>
+  rt_decay=6.5</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 dB </div></td>
+<td>
+<div align="center">0 to 200 dB</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>output</strong></div></td>
+<td>The stereo output number for this region. <br>
+  If the player doesn't feature multiple outputs, this opcode is ignored.<br>
+<br>
+  Examples:<br>
+  output=0<br>
+  output=4</td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 1024</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>gain_ccN</strong></div></td>
+<td>
+<p>Gain applied on MIDI control N, in decibels.</p>
+<p>Examples:<br>
+  gain_cc1=12 <br>
+</p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-144 to 48 dB</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>xfin_lokey<br>
+  xfin_hikey</strong></div></td>
+<td>
+<p>Fade in control.<br>
+<br>
+<strong>xfin_lokey</strong> and <strong>xfin_hikey</strong> define the fade-in keyboard zone for the region.<br>
+<br>
+  The volume of the region will be zero for keys lower than or equal to <strong>xfin_lokey</strong>, and maximum (as defined by the <strong>volume</strong> opcode) for keys greater than or equal to <strong>xfin_hikey.</strong><br>
+</p>
+<p>Examples:<br>
+  xfin_lokey=c3 xfin_hikey=c4 <br>
+</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">xfin_lokey=0<br>
+  xfin_hikey=0</div></td>
+<td>
+<div align="center">0 to 127<br>
+  C-1 to G9 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>xfout_lokey<br>
+  xfout_hikey</strong></div></td>
+<td>
+<p>Fade out control.<br>
+<br>
+<strong>xfout_lokey</strong> and <strong>xfout_hikey</strong> define the fade-out keyboard zone for the region.<br>
+<br>
+  The volume of the region will be maximum (as defined by the <strong>volume</strong> opcode) for keys lower than or equal to <strong>xfout_lokey</strong>, and zero for keys greater than or equal to <strong>xfout_hikey.</strong><br>
+</p>
+<p>Examples:<br>
+  xfout_lokey=c5 xfout_hikey=c6</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>xfout_lokey=127<br>
+  xfout_hikey=127</td>
+<td>
+<div align="center">0 to 127<br>
+  C-1 to G9 </div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>xf_keycurve</strong></div></td>
+<td>
+<p>Keyboard crossfade curve for the region. Values can be: </p>
+<p><strong>gain: </strong>Linear gain crossfade. This setting is best when crossfading phase-aligned material. Linear gain crossfades keep constant amplitude during the crossfade, preventing clipping.</p>
+<p><strong>power:</strong> Equal-power RMS crossfade. This setting works better to mix very different material, as a constant power level is kept during the crossfade.</p></td>
+<td>
+<div align="center">text</div></td>
+<td>
+<div align="center">power</div></td>
+<td>
+<div align="center">gain, power</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>xfin_lovel<br>
+  xfin_hivel</strong></div></td>
+<td>
+<p>Fade in control.<br>
+<br>
+<strong>xfin_lovel</strong> and <strong>xfin_hivel</strong> define the fade-in velocity range for the region.<br>
+<br>
+  The volume of the region will be zero for velocities lower than or equal to <strong>xfin_lovel</strong>, and maximum (as defined by the <strong>volume</strong> opcode) for velocities greater than or equal to <strong>xfin_hivel.</strong><br>
+</p>
+<p>Examples:<br>
+  xfin_lovel=0 xfin_hivel=127</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">xfin_lovel=0<br>
+  xfin_hivel=0</div></td>
+<td>
+<div align="center">0 to 127</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>xfout_lovel<br>
+  xfout_hivel</strong></div></td>
+<td>
+<p>Fade out control.<br>
+<br>
+<strong>xfout_lokey</strong> and <strong>xfout_hikey</strong> define the fade-out velocity range for the region.<br>
+<br>
+  The volume of the region will be maximum (as defined by the <strong>volume</strong> opcode) for velocities lower than or equal to <strong>xfout_lovel</strong>, and zero for velocities greater than or equal to <strong>xfout_hivel.</strong><br>
+</p>
+<p>Examples:<br>
+  xfout_lovel=0 xfout_hivel=127</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">xfout_lokey=127<br>
+  xfout_hikey=127</div></td>
+<td>
+<div align="center">0 to 127</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>xf_velcurve</strong></div></td>
+<td>
+<p>Velocity crossfade curve for the region. Values can be: </p>
+<p><strong>gain: </strong>Linear gain crossfade. This setting is best when crossfading phase-aligned material. Linear gain crossfades keep constant amplitude during the crossfade, preventing clipping.</p>
+<p><strong>power:</strong> Equal-power RMS crossfade. This setting works better to mix very different material, as a constant power level is kept during the crossfade.<br>
+</p></td>
+<td>
+<div align="center">text</div></td>
+<td>
+<div align="center">power</div></td>
+<td>
+<div align="center">gain, power</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>xfin_loccN<br>
+  xfin_hiccN</strong></div></td>
+<td>
+<p>Fade in control.<br>
+<br>
+<strong>xfin_loccN</strong> and <strong>xfin_hiccN</strong> set the range of values in the MIDI continuous controller N which will perform a fade-in in the region.<br>
+<br>
+  The volume of the region will be zero for values of the MIDI continuous controller N lower than or equal to <strong>xfin_loccN</strong>, and maximum (as defined by the <strong>volume</strong> opcode) for values greater than or equal to <strong>xfin_hiccN.</strong><br>
+</p>
+<p>Examples:<br>
+  xfin_locc1=64 xfin_hicc1=127</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 127</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>xfout_loccN<br>
+  xfout_hiccN </strong></div></td>
+<td>
+<p>Fade out control.<br>
+<br>
+<strong>xfout_loccN</strong> and <strong>xfout_hiccN</strong> set the range of values in the MIDI continuous controller N which will perform a fade-out in the region.<br>
+<br>
+  The volume of the region will be maximum (as defined by the <strong>volume</strong> opcode) for values of the MIDI continuous controller N lower than or equal to <strong>xfout_loccN</strong>, and zero for values greater than or equal to <strong>xfout_hiccN.</strong><br>
+</p>
+<p>Examples:<br>
+  xfout_locc1=64 xfout_hicc1=127</p></td>
+<td>
+<div align="center">integer</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 127</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>xf_cccurve</strong></div></td>
+<td>
+<p>MIDI controllers crossfade curve for the region. Values can be: </p>
+<p><strong>gain: </strong>Linear gain crossfade. This setting is best when crossfading phase-aligned material. Linear gain crossfades keep constant amplitude during the crossfade, preventing clipping.</p>
+<p><strong>power:</strong> Equal-power RMS crossfade. This setting works better to mix very different material, as a constant power level is kept during the crossfade.</p></td>
+<td>
+<div align="center">text</div></td>
+<td>
+<div align="center">power</div></td>
+<td>
+<div align="center">
+<div align="center">gain, power</div></div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">
+<div align="left">Amplifier EG<br>
+</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_delay</strong></div></div></td>
+<td>Amplifier EG delay time, in seconds. This is the time elapsed from note on to the start of the Attack stage.<br>
+<br>
+  Examples:<br>
+  ampeg_delay=1.5<br>
+  ampeg_delay=0</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_start</strong></div></div></td>
+<td>Amplifier EG start level, in percentage.<br>
+<br>
+  Examples:<br>
+  ampeg_start=20<br>
+  ampeg_start=100<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 %</div></td>
+<td>
+<div align="center">0 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_attack</strong></div></div></td>
+<td>Amplifier EG attack time, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_attack=1.2<br>
+  ampeg_attack=0.1<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_hold</strong></div></div></td>
+<td>Amplifier EG hold time, in seconds. During the hold stage, EG output will remain at its maximum value.<br>
+<br>
+  Examples:<br>
+  ampeg_hold=1.5<br>
+  ampeg_hold=0.1</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_decay</strong></div></div></td>
+<td>
+<p>Amplifier EG decay time, in seconds.</p>
+<p><br>
+  Examples:<br>
+  ampeg_decay=1.5<br>
+  ampeg_decay=3</p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_sustain</strong></div></div></td>
+<td>Amplifier EG sustain level, in percentage.<br>
+<br>
+  Examples:<br>
+  ampeg_sustain=40.34<br>
+  ampeg_sustain=10 <br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">100 % </div></td>
+<td>
+<div align="center">0 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_release</strong></div></div></td>
+<td>Amplifier EG release time (after note release), in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_release=1.34<br>
+  ampeg_release=2<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_vel2delay</strong></div></div></td>
+<td>Velocity effect on amplifier EG delay time, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_vel2delay=1.2<br>
+  ampeg_vel2delay=0.1<br>
+<br>
+  Delay time will be calculated as <strong><br>
+<br>
+  delay time = ampeg_delay</strong> <strong>+ ampeg_vel2delay * velocity / 127<br>
+</strong></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_vel2attack</strong></div></div></td>
+<td>Velocity effect on amplifier EG attack time, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_vel2attack=1.2<br>
+  ampeg_vel2attack=0.1<br>
+<br>
+  Attack time will be calculated as <strong><br>
+<br>
+  attack time = ampeg_attack</strong> <strong>+ ampeg_vel2attack * velocity / 127<br>
+</strong></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_vel2hold</strong></div></div></td>
+<td>Velocity effect on amplifier EG hold time, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_vel2hold=1.2<br>
+  ampeg_vel2hold=0.1<br>
+<br>
+  Hold time will be calculated as <strong><br>
+<br>
+  hold time = ampeg_hold</strong> <strong>+ ampeg_vel2hold * velocity / 127<br>
+</strong></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_vel2decay</strong></div></div></td>
+<td>Velocity effect on amplifier EG decay time, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_vel2decay=1.2<br>
+  ampeg_vel2decay=0.1<br>
+<br>
+  Decay time will be calculated as <strong><br>
+<br>
+  decay time = ampeg_decay</strong> <strong>+ ampeg_vel2decay * velocity / 127<br>
+</strong></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_vel2sustain</strong></div></div></td>
+<td>Velocity effect on amplifier EG sustain level, in percentage.<br>
+<br>
+  Examples:<br>
+  ampeg_vel2sustain=30<br>
+  ampeg_vel2sustain=-30<br>
+<br>
+  Sustain level will be calculated as <strong><br>
+<br>
+  sustain level= ampeg_sustain</strong> <strong>+ ampeg_vel2sustain<br>
+<br>
+</strong>The result will be clipped to 0~100%<strong>.<br>
+</strong></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0%</div></td>
+<td>
+<div align="center">-100 % to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_vel2release</strong></div></div></td>
+<td>Velocity effect on amplifier EG release time, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_vel2release=1.2<br>
+  ampeg_vel2release=0.1<br>
+<br>
+  Release time will be calculated as <strong><br>
+<br>
+  release time = ampeg_release</strong> <strong>+ ampeg_vel2release * velocity / 127</strong></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_delayccN</strong></div></div></td>
+<td>Amplifier EG delay time added on MIDI control N, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_delaycc20=1.5<br>
+  ampeg_delaycc1=0</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_startccN</strong></div></div></td>
+<td>Amplifier EG start level added on MIDI control N, in percentage.<br>
+<br>
+  Examples:<br>
+  ampeg_startcc20=20<br>
+  ampeg_startcc1=100<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 %</div></td>
+<td>
+<div align="center">-100 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_attackccN</strong></div></div></td>
+<td>Amplifier EG attack time added on MIDI control N, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_attackcc20=1.2<br>
+  ampeg_attackcc1=0.1<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_holdccN</strong></div></div></td>
+<td>Amplifier EG hold time added on MIDI control N, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_holdcc20=1.5<br>
+  ampeg_holdcc1=0.1<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_decayccN</strong></div></div></td>
+<td>
+<p>Amplifier EG decay time added on MIDI control N, in seconds.</p>
+<p><br>
+  Examples:<br>
+  ampeg_decaycc20=1.5<br>
+  ampeg_decaycc1=3 <br>
+</p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_sustainccN</strong></div></div></td>
+<td>Amplifier EG sustain level added on MIDI control N, in percentage.<br>
+<br>
+  Examples:<br>
+  ampeg_sustaincc20=40.34<br>
+  ampeg_sustaincc1=10 <br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">100 % </div></td>
+<td>
+<div align="center">-100 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>ampeg_releaseccN</strong></div></div></td>
+<td>Amplifier EG release time added on MIDI control N, in seconds.<br>
+<br>
+  Examples:<br>
+  ampeg_releasecc20=1.34<br>
+  ampeg_releasecc1=2 <br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">-100 to 100 seconds</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">
+<div align="left">Amplifier LFO </div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>amplfo_delay</strong></div></div></td>
+<td>The time before the Amplifier LFO starts oscillating, in seconds.<br>
+<br>
+  Examples:<br>
+  amplfo_delay=1<br>
+  amplfo_delay=0.4<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>amplfo_fade</strong></div></div></td>
+<td>Amplifier LFO fade-in effect time.<br>
+<br>
+  Examples:<br>
+  amplfo_fade=1<br>
+  amplfo_fade=0.4<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 seconds</div></td>
+<td>
+<div align="center">0 to 100 seconds</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>amplfo_freq</strong></div></div></td>
+<td>Amplifier LFO frequency, in hertz.<br>
+<br>
+  Examples:<br>
+  amplfo_freq=0.4<br>
+  amplfo_freq=1.3</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 Hertz</div></td>
+<td>
+<div align="center">0 to 20 hertz</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>amplfo_depth</strong></div></div></td>
+<td>Amplifier LFO depth, in decibels.<br>
+<br>
+  Examples:<br>
+  amplfo_depth=1<br>
+  amplfo_depth=4<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 dB</div></td>
+<td>
+<div align="center">-10 to 10 dB</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>amplfo_depthccN</strong></div></div></td>
+<td>Amplifier LFO depth when MIDI continuous controller N is received, in decibels.<br>
+<br>
+  Examples:<br>
+  amplfo_depthcc1=100<br>
+  amplfo_depthcc32=400<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 dB</div></td>
+<td>
+<div align="center">-10 to 10 dB</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>amplfo_depthchanaft</strong></div></div></td>
+<td>Amplifier LFO depth when channel aftertouch MIDI messages are received, in cents.<br>
+<br>
+  Examples:<br>
+  amplfo_depthchanaft=100<br>
+  amplfo_depthchanaft=400<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 dB</div></td>
+<td>
+<div align="center">-10 to 10 dB</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>amplfo_depthpolyaft</strong></div></div></td>
+<td>Amplifier LFO depth when polyphonic aftertouch MIDI messages are received, in cents.<br>
+<br>
+  Examples:<br>
+  amplfo_depthpolyaft=100<br>
+  amplfo_depthpolyaft=400</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 dB </div></td>
+<td>
+<div align="center">-10 to 10 dB</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>amplfo_freqccN</strong></div></div></td>
+<td>Amplifier LFO frequency change when MIDI continuous controller N is received, in hertz.<br>
+<br>
+  Examples:<br>
+  amplfo_freqcc1=5<br>
+  amplfo_freqcc1=-12<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 hertz</div></td>
+<td>
+<div align="center">-200 to 200 hertz</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>amplfo_freqchanaft</strong></div></div></td>
+<td>Amplifier LFO frequency change when channel aftertouch MIDI messages are received, in hertz.<br>
+<br>
+  Examples:<br>
+  amplfo_freqchanaft=10<br>
+  amplfo_freqchanaft=-40</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 hertz</div></td>
+<td>
+<div align="center">-200 to 200 hertz</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>amplfo_freqpolyaft</strong></div></td>
+<td>Amplifier LFO frequency change when polyphonic aftertouch MIDI messages are received, in hertz.<br>
+<br>
+  Examples:<br>
+  amplfo_freqpolyaft=10<br>
+  amplfo_freqpolyaft=-4</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 hertz</div></td>
+<td>
+<div align="center">-200 to 200 hertz</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">
+<div align="left">Equalizer</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>eq1_freq<br>
+  eq2_freq<br>
+  eq3_freq</strong></div></div></td>
+<td>Frequency of the equalizer band, in Hertz.<br>
+<br>
+  Examples:<br>
+  eq1_freq=80 eq2_freq=1000 eq3_freq=4500</td>
+<td>
+<div align="center">floating point</div></td>
+<td>eq1_freq=50<br>
+  eq2_freq=500<br>
+  eq3_freq=5000</td>
+<td>
+<div align="center">0 to 30000 Hz</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>eq1_freqccN<br>
+  eq2_freqccN<br>
+  eq3_freqccN</strong></div></div></td>
+<td>
+<p>Frequency change of the equalizer band when MIDI continuous control N messages are received, in Hertz.<br>
+<br>
+  Examples:<br>
+  eq1_freqcc1=80 <br>
+</p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-30000 to 30000 Hz</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>eq1_vel2freq<br>
+  eq2_vel2freq<br>
+  eq3_vel2freq</strong></div></div></td>
+<td>
+<p>Frequency change of the equalizer band with MIDI velocity, in Hertz.<br>
+<br>
+  Examples:<br>
+  eq1_vel2freq=1000<br>
+</p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0</div></td>
+<td>-30000 to 30000 Hz</td></tr>
+<tr>
+<td>
+<div align="center"><strong>eq1_bw<br>
+  eq2_bw<br>
+  eq3_bw<br>
+</strong></div></td>
+<td>Bandwidth of the equalizer band, in octaves.<br>
+<br>
+  Examples:<br>
+  eq1_bw=1 eq2_bw=0.4 eq3_bw=1.4</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">1 octave </div></td>
+<td>
+<div align="center">0.001 to 4 octaves</div></td></tr>
+<tr>
+<td>
+<div align="center"><strong>eq1_bwccN<br>
+  eq2_bwccN<br>
+  eq3_bwccN</strong></div></td>
+<td>Bandwidth change of the equalizer band when MIDI continuous control N messages are received, in octaves.<br>
+<br>
+  Examples:<br>
+  eq1_bwcc29=1.3<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-4 to 4 octaves</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>eq1_gain<br>
+  eq2_gain<br>
+  eq3_gain<br>
+</strong></div></div></td>
+<td>Gain of the equalizer band, in decibels.<br>
+<br>
+  Examples:<br>
+  eq1_gain=-3 eq2_gain=6 eq3_gain=-6<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 dB</div></td>
+<td>
+<div align="center">-96 to 24 dB</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>eq1_gainccN<br>
+  eq2_gainccN<br>
+  eq3_gainccN<br>
+</strong></div></div></td>
+<td>Gain change of the equalizer band when MIDI continuous control N messages are received, in decibels.<br>
+<br>
+  Examples:<br>
+  eq1_gaincc23=-12<br>
+</td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0 dB</div></td>
+<td>
+<div align="center">-96 to 24 dB</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>eq1_vel2gain<br>
+  eq2_vel2gain<br>
+  eq3_vel2gain</strong></div></div></td>
+<td>
+<p>Gain change of the equalizer band with MIDI velocity, in decibels.<br>
+<br>
+  Examples:<br>
+  eq1_vel2gain=12<br>
+</p></td>
+<td>
+<div align="center">floating point</div></td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">-96 to 24 dB</div></td></tr>
+<tr>
+<td bgcolor="#cccccc" colspan="5">
+<div align="left">Effects</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>effect1</strong></div></div></td>
+<td>Level of effect1 send, in percentage (reverb in sfz).<br>
+<br>
+  Examples:<br>
+  effect1=100<br>
+</td>
+<td>floating point</td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 100 %</div></td></tr>
+<tr>
+<td>
+<div align="center">
+<div align="center"><strong>effect2</strong></div></div></td>
+<td>Level of effect2 send, in percentage (chorus in sfz).<br>
+<br>
+  Examples:<br>
+  effect2=100<br>
+</td>
+<td>floating point</td>
+<td>
+<div align="center">0</div></td>
+<td>
+<div align="center">0 to 100 %</div></td></tr></tbody></table>
+<p class="productLarge"><span style="font-weight: bold; font-size: 14pt;">Examples</span></p>
+<p>Example .sfz definition files showing every opcode functionality can be found <a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=118">here</a>. </p><p></p>
+<p>
+<i>Version: </i><span id="VersionLabel">1.02</span><i>, Last updated on:</i> 
+    <span id="LastModLabel">10/1/2010</span></p> 
+ </div>
+        </td>
+	</tr>
+</tbody></table>
+    
+
+
+                <a id="foot-top-link" href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#Top">Back to Top</a>
+            </div>
+            <div style="clear: both; height: 0px;">
+            </div>
+        </div>
+        
+
+<script type="text/javascript">
+//<![CDATA[
+
+theForm.oldSubmit = theForm.submit;
+theForm.submit = WebForm_SaveScrollPositionSubmit;
+
+theForm.oldOnSubmit = theForm.onsubmit;
+theForm.onsubmit = WebForm_SaveScrollPositionOnSubmit;
+//]]>
+</script>
+</form>
+        <div id="foot-wrap">
+            <div id="foot">
+                ﻿<table id="foot-links" cellpadding="0" cellspacing="0">
+<tbody><tr>
+    <td class="foot-head">Top Cakewalk Products</td>
+    <td class="foot-head">Learn</td>
+    <td class="foot-head">Get Support</td>
+    <td class="foot-head">Community &amp; News</td>
+    <td class="foot-head">Cakewalk Inc.</td>
+</tr>
+<tr>
+    <td><a href="http://www.cakewalk.com/products/SONAR/X2-Producer">SONAR X2 Producer</a></td>
+    <td><a href="http://www.cakewalk.com/CakeTV">CakeTV</a></td>
+    <td><a href="http://www.cakewalk.com/Register/default.aspx">Register your product</a></td>
+    <td><a href="http://forum.cakewalk.com/">Cakewalk Forums</a></td>
+    <td><a href="http://www.cakewalk.com/About/default.aspx">About Us</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.cakewalk.com/products/SONAR/X2-Studio/">SONAR X2 Studio</a></td>
+    <td><a href="http://www.cakewalk.com/CakeTV/SONARU.aspx">SONAR University</a></td>
+    <td><a href="http://www.cakewalk.com/Support/prod.aspx">Support by product</a></td>
+    <td><a href="http://blog.cakewalk.com/">Cakewalk Blog</a></td>
+    <td><a href="http://www.cakewalk.com/About/careers.aspx">Careers</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.cakewalk.com/products/SONAR/X2-Essential/">SONAR X2 Essential</a></td>
+    <td><a href="http://www.store.cakewalk.com/default.asp?cat=44">Books and Tutorials</a></td>
+    <td><a href="http://www.cakewalk.com/Support/kb/default.aspx">Knowledge Base</a></td>
+    <td><a href="http://www.cakewalk.com/manager.aspx">Cakewalk Newsletter</a></td>
+    <td><a href="http://www.cakewalk.com/About/contact.aspx">Contact Cakewalk</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.cakewalk.com/Products/By-Category.aspx/ProChannel-Modules">ProChannel Modules</a></td>
+    <td><a href="http://www.cakewalk.com/Page.aspx/Windows-7-Resource-Page">Recording on Windows 7</a></td>
+    <td><a href="http://www.cakewalk.com/Support/faq.aspx">FAQ</a></td>
+    <td><a href="https://plus.google.com/u/0/113632566468361424334/">Google+ Cakewalk</a> </td>
+    <td><a href="http://www.cakewalk.com/Dealers/finder.aspx">Cakewalk Dealers</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.cakewalk.com/Products/Musiccreator">Music Creator 6</a></td>
+    <td><a href="http://www.cakewalk.com/PCResource">Find the Best PC for Recording</a></td>
+    <td><a href="http://www.cakewalk.com/PCResource/default.aspx">Computers</a></td>
+    <td><a href="http://www.twitter.com/cakewalkinc">Twitter Cakewalk</a></td>
+    <td><a href="http://www.cakewalk.com/OEM/default.aspx">OEM</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.cakewalk.com/Products/StudioInstruments">Studio Instruments</a></td>
+    <td><a href="http://blog.cakewalk.com/category/sonar-x2/sonar-x2-feature-peek-sonar-x2/">SONAR X2 Feature Peeks</a><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/default.aspx">DevXchange</a></td>
+    <td><a href="http://www.facebook.com/CakewalkInc">Facebook Cakewalk</a></td>
+    <td><a href="http://www.cakewalk.com/media">Media</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.cakewalk.com/Products/DimensionPro">Dimension Pro</a></td>
+    <td><a href="http://www.cakewalk.com/products/SONAR/X1-Producer/feature.aspx/Learn-SONAR-Online-with-Berklee">
+        Learn SONAR online with Berklee</a><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.myspace.com/cakewalksoftware">Myspace Cakewalk</a></td>
+    <td><a href="http://www.cakewalk.com/Press/info.aspx">Press Resource</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.cakewalk.com/Products/Z3TA">Z3TA+ 2</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.youtube.com/profile?user=CakewalkSoftware">YouTube Cakewalk</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.cakewalk.com/Products/Rapture">Rapture</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/events/default.aspx">Cakewalk Events</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+</tr>
+<tr>
+    <td class="style1"><a href="http://www.cakewalk.com/Products/Audiocreator">pyro Audio Creator</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/Artist/">Cakewalk Artists</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.store.cakewalk.com/default.asp?cat=46">MP3 Encoder</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/Press/default.aspx">Press Releases</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+</tr>
+<tr>
+    <td><a href="http://www.store.cakewalk.com/default.asp?cat=67">Top Downloads</a></td>
+    <td class="style1"><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td class="style1"><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td class="style1"><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td class="style1"><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+    <td><a href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">&nbsp;</a></td>
+</tr>
+</tbody></table>
+
+
+
+
+                <div id="foot-sub">
+                    <div id="foot-rss">
+                        <a href="http://feeds2.feedburner.com/TheCakewalkBlog">
+                            <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/rss-feed-icon.gif" alt="Cakewalk RSS Feed" style="border: none;"></a></div>
+                    <div id="foot-copy">
+                        <span id="labCopyright">Copyright © 2012 Cakewalk, Inc.  All rights reserved</span></div>
+                    <div id="foot-copy-links">
+                        <a href="http://www.cakewalk.com/sitemap.aspx">Sitemap</a> | <a href="http://www.cakewalk.com/Privacy/default.aspx">Privacy Policy</a>
+                        | <a href="http://www.cakewalk.com/copyright.aspx">Legal</a> | <a href="http://www.cakewalk.com/About/contact.aspx">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="social" style="display: block; ">
+        <a href="http://www.cakewalk.com/Page.aspx/New-Website-Feedback">
+            <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/Feedback_btn.png" alt="Tell us what you think of our new website!" id="feedbackbtn"></a>
+        <div class="addthis_toolbox addthis_default_style">
+            <a class="addthis_button_facebook" title="Facebook" href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">
+                <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/facebook-opt.png" alt="share on Facebook"></a>
+            <a class="addthis_button_twitter" title="Tweet This" href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">
+                <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/twitter-2-opt.png" alt="share on Twitter"></a>
+            <a class="addthis_button_google_plusone at300b" g:plusone:size="small" g:plusone:annotation="none" title="Google_plusone" href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#"><div style="height: 15px; width: 24px; display: inline-block; text-indent: 0px; margin: 0px; padding: 0px; background-color: transparent; border-style: none; float: none; line-height: normal; font-size: 1px; vertical-align: baseline; background-position: initial initial; background-repeat: initial initial; " id="___plusone_0"><iframe allowtransparency="true" frameborder="0" hspace="0" marginheight="0" marginwidth="0" scrolling="no" style="position: static; top: 0px; width: 24px; margin: 0px; border-style: none; left: 0px; visibility: visible; height: 15px; " tabindex="0" vspace="0" width="100%" id="I0_1349455469765" name="I0_1349455469765" src="./Cakewalk DevXchange - Specifications - sfz File Format_files/fastbutton.htm" title="+1"></iframe></div></a><a class="addthis_button_print" title="Print" href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">
+                <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/print_icon.gif" alt="print"></a>
+            <a class="addthis_button_favorites" title="Save to Favorites" href="http://www.cakewalk.com/DevXchange/article.aspx?aid=108#">
+                <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/bookmark_icon.png" alt="bookmark"></a>
+            <a title="CakeTV" href="http://www.cakewalk.com/CakeTV">
+                <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/CakeTV-icon.gif" alt="CakeTV"></a>
+            <a title="Cakewalk Blog" href="http://blog.cakewalk.com/">
+                <img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/Cakewalk-Blog-icon.jpg" alt="Cakewalk blog"></a>
+        <div class="atclear"></div></div>
+    </div>
+    <script src="./Cakewalk DevXchange - Specifications - sfz File Format_files/cakewalk.min.js" type="text/javascript"></script>
+    <script type="text/javascript" src="./Cakewalk DevXchange - Specifications - sfz File Format_files/addthis_widget.js"></script>
+    <script type="text/javascript">        addthis.init(); checkScreenDim();
+        $(document).ready(function () {
+            $.watermark.options.useNative = false;
+            $("#q").watermark("Search Cakewalk.com");
+        });
+    </script>
+    <script type="text/javascript">
+        /* <![CDATA[ */
+        var google_conversion_id = 1038018319;
+        var google_conversion_label = "sDrsCPvhxwQQj8777gM";
+        var google_custom_params = window.google_tag_params;
+        var google_remarketing_only = true;
+        /* ]]> */
+    </script>
+    <script type="text/javascript" src="./Cakewalk DevXchange - Specifications - sfz File Format_files/conversion.js">
+    </script><iframe name="google_conversion_frame" width="300" height="13" src="./Cakewalk DevXchange - Specifications - sfz File Format_files/saved_resource.htm" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no">&lt;img height="1" width="1" border="0" src="http://googleads.g.doubleclick.net/pagead/viewthroughconversion/1038018319/?frame=0&amp;random=1349455468928&amp;cv=7&amp;fst=1349455468928&amp;num=1&amp;fmt=1&amp;label=sDrsCPvhxwQQj8777gM&amp;guid=ON&amp;u_h=800&amp;u_w=1280&amp;u_ah=770&amp;u_aw=1280&amp;u_cd=32&amp;u_his=5&amp;u_tz=-420&amp;u_java=true&amp;u_nplug=12&amp;u_nmime=93&amp;ref=http%3A//www.google.com/url%3Fsa%3Dt%26rct%3Dj%26q%3D%26esrc%3Ds%26source%3Dweb%26cd%3D1%26ved%3D0CCIQFjAA%26url%3Dhttp%253A%252F%252Fwww.cakewalk.com%252FDevXchange%252Farticle.aspx%253Faid%253D108%26ei%3Dag5vUNmwGKni0QHe_IHgAg%26usg%3DAFQjCNGsH5RPbC_g6XVPE60mPLHHVog1PQ%26sig2%3DMuZqcNcMWglFZcolxorpaQ&amp;url=http%3A//www.cakewalk.com/DevXchange/article.aspx%3Faid%3D108&amp;frm=0" /&gt;</iframe>
+    <noscript>
+        &lt;div style="display: inline;"&gt;
+            &lt;img height="1" width="1" style="border-style: none;" alt="" src="//googleads.g.doubleclick.net/pagead/viewthroughconversion/1038018319/?value=0&amp;amp;label=sDrsCPvhxwQQj8777gM&amp;amp;guid=ON&amp;amp;script=0" /&gt;
+        &lt;/div&gt;
+    </noscript>
+
+
+<img src="./Cakewalk DevXchange - Specifications - sfz File Format_files/ep" width="1" height="1" style="display:none"></body></html>

@@ -193,7 +193,15 @@ class SF2
 	public static inline function CBtoDB(data : Float) { return data / 10.; }
 	public static inline function getLSMS(lsms : Int) { return [ lsms & 0xFF, lsms >> 8 ]; }
 	
-	inline function parseZone(seq : Sequencer, z : Zone) : Hash<Dynamic>
+	/*
+	 * Idea for next step:
+	 * 
+	 * parseZone always passes in the preset global, the preset local, and the instrument global.
+	 * we recompute that into a structure which combines all similar generators.
+	 * 
+	 * */
+	
+	inline function parseZone(seq : Sequencer, ilocal : Zone, iglobal : Zone, plocal : Zone, pglobal : Zone) : Hash<Dynamic>
 	{
 		var cur_zone = new Hash<Dynamic>();
 		
@@ -203,6 +211,8 @@ class SF2
 		var loop_fine_end = 0;
 		var sample : SoundSample = null;
 		var header : SampleHeader = null;
+		
+		var il = ilocal.generatorsAsIntHash();
 		
 		for (generator in z.generators)
 		{

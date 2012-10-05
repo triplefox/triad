@@ -20,4 +20,48 @@ class Zone
     public function new() 
     {
     }
+	
+	public function generatorsAsIntHash()
+	{
+		var ih = new IntHash<Generator>();
+		for (g in generators)
+		{
+			ih.set(Type.enumIndex(g.generator_type), g);
+		}
+	}
+	
+	public function getMerged(zones : Array<Zone>)
+	{
+		// is this actually going to work? I have the feeling that not all generators are additive in this way.
+		// which means I'm going to have to go through them, one by one, and pull out the mergable ones.
+		
+		// no modulators are included in the preset zones.
+	
+		var gens = generatorsAsIntHash();
+		for (z in zones)
+		{
+			var zg = z.generatorsAsIntHash();
+			for (k in zg.keys())
+			{
+				var ng : Generator = gens.get(k);
+				var og = zg.get(k);
+				if (ng = null)
+				{ 
+					ng = new Generator(); 
+					gens.set(k, ng); 
+					ng.generator_type = og.generator_type;
+					ng.raw_amount = og.raw_amount; 
+					ng.instrument = og.instrument;
+					ng.sample_header = og.sample_header;
+				}
+				else
+				{
+					ng.raw_amount += og.raw_amount;
+					if (og.instrument == null) ng.instrument = og.instrument;
+					if (og.sample_header == null) ng.sample_header = og.sample_header;
+				}
+			}
+		}
+	}
+	
 }
