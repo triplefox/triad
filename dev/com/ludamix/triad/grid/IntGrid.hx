@@ -1,4 +1,6 @@
 package com.ludamix.triad.grid;
+import haxe.Serializer;
+import haxe.Unserializer;
 import nme.Vector;
 
 class IntGrid
@@ -159,6 +161,36 @@ class IntGrid
 	public inline function s2(x : Int, y : Int, v : Int)
 	{
 		world[c21(x, y)] = v;
+	}
+	
+	public inline function pxAABBtileAABB(px : Float, py : Float, pw : Float, ph : Float)
+	{
+		var tp = cffp(px, py);
+		var tr = (px+pw) / twidth; var ttw = Math.ceil(tr)-tp.x+1;
+		var tb = (py+ph) / theight; var tth = Math.ceil(tb)-tp.y+1;
+		return {x:tp.x,y:tp.y,w:ttw,h:tth};
+	}
+	
+	function hxSerialize(s : Serializer)
+	{
+		var world_ar = new Array<Int>();
+		for (n in world) world_ar.push(n);
+		s.serialize(world_ar);
+		s.serialize(worldW);
+		s.serialize(worldH);
+		s.serialize(twidth);
+		s.serialize(theight);
+	}
+	
+	function hxUnserialize(s : Unserializer)
+	{
+		var world_ar : Array<Int> = s.unserialize();
+		worldW = s.unserialize();
+		worldH = s.unserialize();
+		twidth = s.unserialize();
+		theight = s.unserialize();
+		world = new Vector();
+		for (n in world_ar) world.push(n);
 	}
 	
 }

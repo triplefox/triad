@@ -32,18 +32,17 @@ typedef CameraView = { tx:Float, ty:Float, tw:Float, th:Float,
 			scale_x:Float, scale_y:Float, output_scale:Float,
 			off_x:Float, off_y:Float, center_x:Float, center_y:Float };
 
+typedef SortableSprite = { pt:Point, xtile:XTile, z:Float };
+
 class TileLandscape
 {
-
-	// To render the trees, we should create a "sprite-static" vertex buffer.
-	// i.e. another Quads2D.
-	// this can exist in TileLandscape alone....that makes it simple.
 
 	public var graphics_resource : GraphicsResourceData;
 	public var grid : FQGrid; // tilemap quads
 	public var board : AutotileBoard;
-	public var sprite_quads : Quads2PointFiveD; // moving objects which have frequent vertex recalculations
-	public var static_quads : Quads2PointFiveD; // static objects drawn on top of the tilemap
+	public var sprite_quads : Quads2D; // moving objects and objects that need dynamic z sorting
+	public var sprite_sortqueue : Array<SortableSprite>;
+	public var static_sprites : Array<SortableSprite>;
 	public var gfx : Graphics;
 	public var spr : Sprite;
 	public var scene : FoxQuadScene;
@@ -65,12 +64,13 @@ class TileLandscape
 	public function initialize(_ : Dynamic)
 	{
 		graphics_resource = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, true, "assets/", 2);
-		sprite_quads = new Quads2PointFiveD(scene.c);
-		static_quads = new Quads2PointFiveD(scene.c);
+		sprite_quads = new Quads2D(scene.c);
 		shader = new ShaderGeneral2D(scene.c);
 		shaderZ = new ShaderGeneral2PointFiveD(scene.c);
 		scene.addTilesheet(graphics_resource.tilesheet);
 		grid = new FQGrid(graphics_resource.tilesheet, WORLD_W * 25, WORLD_H * 25, 16, 16, [0]);
+		sprite_sortqueue = new Array();
+		static_sprites = new Array();
 		
 		zoom_level = 1.;
 		day_cycle = 0.;
@@ -175,27 +175,29 @@ class TileLandscape
 		board.result.world = new Vector<Int>();
 		board.recacheAll();
 		
-		addStaticObjects();
+		createStaticObjects();
 		
 		initializeScene();
 	}
 	
-	public inline function getWorldTile(x, y)
+	public function createStaticObjects()
 	{
-		return worldmap.c2t(x + cam.x, y + cam.y);
-	}
-	
-	public function addStaticObjects()
-	{
-		static_quads.reset();
+		static_sprites = new Array();
 		
-		var px = new Point(worldmap.worldW / 2 * worldmap.twidth, 
-						   worldmap.worldH / 2 * worldmap.theight);
+		// this is a very simple static object test. We just treat it like other dynamic objects - tile, xy, z.
+		// a very large number of them will bottleneck the vertex upload!
 		
-		var z = grid.zOfY(px.y + 64, 0.);
-		static_quads.writeXTile(px, z, z, z, z, 
-			graphics_resource.getSprite("tree").getTile(0));
-		
+		for (n in 0...100)
+		{
+			var px = new Point(Math.random() * worldmap.worldW * worldmap.twidth, 
+							   Math.random() * worldmap.worldH * worldmap.theight);
+			
+			if (worldmap.cfft(px.x, px.y)!=1)
+			{
+				var z = grid.zOfY(px.y + 72, 0.);
+				static_sprites.push({pt:px,xtile:graphics_resource.getSprite("tree").getTile(0),z:z});		
+			}
+		}		
 	}
 	
 	public function viewOfCamera(camera_view : Rectangle, screen_view : Rectangle) : CameraView
@@ -276,6 +278,13 @@ class TileLandscape
 		return translate;
 	}
 	
+	public inline function drawSortQueue():Void 
+	{
+		sprite_sortqueue.sort(function(a, b) { return (a.z > b.z)?-1: 1; } );
+		for (s in sprite_sortqueue)
+			sprite_quads.writeXTile(s.pt, s.xtile);
+	}
+	
 	public static inline var DEFAULTZ = 0.5;
 	
 	public function update(_)
@@ -284,11 +293,14 @@ class TileLandscape
 		//updateParticles(1/30.);
 		
 		sprite_quads.reset();
+		sprite_sortqueue = static_sprites.copy();
 		
 		cam.x = player.px;
 		cam.y = player.py;
 		player.update();		
-		player.draw(sprite_quads, cam.x-player.px, cam.y-player.py, grid);
+		player.draw(sprite_sortqueue, cam.x - player.px, cam.y - player.py, grid);
+		drawSortQueue();
+		
 		var colors = computeDayColors();
 		
 		var zoom_w = Main.W * zoom_level;
@@ -308,20 +320,7 @@ class TileLandscape
 			{tex : graphics_resource.tilesheet.texture }
 		);
 		
-		// I can't do it like this.
-		// These quads are overdrawing with each drawcall.
-		// So the trees will have to become a dynamic object...dammit.
-		// I can mitigate this by chunking the static sprites too and performing a boundary test, so that only
-		// a small group of them go dynamic at any one time.
-		
-		static_quads.runShader(shaderZ,
-			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, minZ, maxZ), 
-			 mtrans : getCameraTranslation(0.,0.,DEFAULTZ,view),
-			 rgba : new Vector3D(colors.r * 1.5, colors.g * 1.5, colors.b * 1.5, 1.) },
-			{tex : graphics_resource.tilesheet.texture }
-		);
-		
-		sprite_quads.runShader(shaderZ,
+		sprite_quads.runShader(shader,
 			{mproj : scene.createOrthographicProjectionMatrix(Main.W, Main.H, minZ, maxZ), 
 			 mtrans : getCameraTranslation(0.,0.,DEFAULTZ,view),
 			 rgba : new Vector3D(colors.r * 2, colors.g * 2, colors.b * 2, 1.) },			 
@@ -413,14 +412,14 @@ class SmileyCharacter
 		py += wy;	
 	}
 	
-	public inline function addName(quads : Quads2PointFiveD, name : String, frame : Int, x : Float, y : Float)
+	public inline function addName(sprite_sortqueue : Array<SortableSprite>, 
+		name : String, frame : Int, x : Float, y : Float)
 	{
 		var tile = graphics_resource.getSprite(name).getTile(frame);
-		quads.writeXTile(new flash.geom.Point(off_x + x, off_y + y), 
-			z,z,z,z, tile);
+		sprite_sortqueue.push({pt:new flash.geom.Point(off_x + x, off_y + y),xtile:tile,z:z});
 	}
 	
-	public function draw(quads : Quads2PointFiveD, offx : Float, offy : Float, grid : FQGrid)
+	public function draw(sprite_sortqueue : Array<SortableSprite>, offx : Float, offy : Float, grid : FQGrid)
 	{
 		this.z = grid.zOfY(py + 64., 0.);
 		
@@ -445,10 +444,10 @@ class SmileyCharacter
 			var f_facing = (wx > 0) ? 1 : 0;
 			facing = wx>0 ? 2 : 1;
 			
-			addName(quads, "faces", facing, 0, Math.sin(wcycle * 2) * BOB);
-			addName(quads, "feet", f_facing, Math.cos(wcycle_inv) * FEET_D,
+			addName(sprite_sortqueue, "faces", facing, 0, Math.sin(wcycle * 2) * BOB);
+			addName(sprite_sortqueue, "feet", f_facing, Math.cos(wcycle_inv) * FEET_D,
 				FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C));
-			addName(quads, "feet", f_facing, Math.cos(wcycle) * FEET_D,
+			addName(sprite_sortqueue, "feet", f_facing, Math.cos(wcycle) * FEET_D,
 				FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C));
 		}
 		else // y cycle
@@ -457,10 +456,10 @@ class SmileyCharacter
 			
 			if (wy == 0.) { wcycle *= RECOVERY; wcycle_inv = wcycle + Math.PI; } // reset on still
 			else facing = wy < 0 ? 3 : 0;
-			addName(quads, "faces", facing, 0, Math.sin(wcycle * 2) * BOB);
-			addName(quads, "feet", l_facing, FEET_D, 
+			addName(sprite_sortqueue, "faces", facing, 0, Math.sin(wcycle * 2) * BOB);
+			addName(sprite_sortqueue, "feet", l_facing, FEET_D, 
 				FEET_H + Math.min(0., Math.sin(wcycle_inv) * -FEET_C));
-			addName(quads, "feet", r_facing, - FEET_D, 
+			addName(sprite_sortqueue, "feet", r_facing, - FEET_D, 
 				FEET_H + Math.min(0., Math.sin(wcycle) * -FEET_C));
 		}
 		

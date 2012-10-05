@@ -92,6 +92,17 @@ class FQGrid
 			}
 		}
 	}
+	
+	public function resize(width, height, context : Context3D)
+	{
+		grid.worldW = width;
+		grid.worldH = height;
+		while (Std.int(grid.world.length) < width * height)
+			grid.world.push(0);
+		while (Std.int(grid.world.length) > width * height)
+			grid.world.pop();
+		recache(context);
+	}
 
 	public function recache(context : Context3D)
 	{

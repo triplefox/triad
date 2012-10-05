@@ -17,6 +17,7 @@ class Quads2D
 {
 
 	public var buffer : FoxQuadBuffer;
+
 	public var texture : Texture;
 	public var vert_count : Int;
 	public var idx_count : Int;
