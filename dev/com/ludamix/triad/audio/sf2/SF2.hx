@@ -214,6 +214,7 @@ class SF2
 		
 		var il = ilocal.generatorsAsIntHash();
 		
+		/*
 		for (generator in z.generators)
 		{
 			if (generator == null) continue; // yeah this actually happens
@@ -320,6 +321,7 @@ class SF2
 			if (modulator == null) continue;
 			// some more things in sampler_patch get set here!
 		}
+		*/
 		
 		if (header != null)
 		{
@@ -353,7 +355,8 @@ class SF2
 		// As well, instruments contain a global zone. The functionality of SFZ groups is split in SF2 into presets
 		// (mostly key mappings) and instrument global zones(tuning and balancing).
 		
-		if (p.zones.length>1) log(Std.format("WARNING: more than one zone in preset ${p.name} - using last one"));
+		if (p.zones.length > 1) log(Std.format("WARNING: more than one zone in preset ${p.name} - using last one"));
+		/*
 		for (z in p.zones)
 		{
 			// the preset zone
@@ -382,6 +385,7 @@ class SF2
 			}
 		}
 		opcode_group.cacheRegionsSF2(seq);
+		*/
 		
 		return opcode_group;
 		

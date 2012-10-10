@@ -32,11 +32,8 @@ class Zone
 	
 	public function getMerged(zones : Array<Zone>)
 	{
-		// is this actually going to work? I have the feeling that not all generators are additive in this way.
-		// which means I'm going to have to go through them, one by one, and pull out the mergable ones.
 		
-		// no modulators are included in the preset zones.
-	
+		/*
 		var gens = generatorsAsIntHash();
 		for (z in zones)
 		{
@@ -62,6 +59,7 @@ class Zone
 				}
 			}
 		}
+		*/
 	}
 	
 }
