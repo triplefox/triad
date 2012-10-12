@@ -39,16 +39,15 @@ class SamplerBank
 			// assign the sample_data parameter
 			for (program in this.programs)
 			{
-				if (program.group_opcodes.exists('sample'))
-					program.group_opcodes.set('sample_data', samples.get(program.group_opcodes.get('sample')));
 				for (region in program.regions)
 				{
 					if (region.exists('sample'))
 						region.set('sample_data', samples.get(region.get('sample')));
 				}
 			}
-			opcode_group.cacheRegionsSFZ(seq);
+			opcode_group.parseOpcodes(seq);
 		}
+		
 	}
 
 	public function getProgramOfEvent(ev : SequencerEvent, program_number : Int) : Array<PatchEvent>

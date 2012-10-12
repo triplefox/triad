@@ -80,6 +80,7 @@ class SamplerSynth implements SoftSynth
 	public static inline var SUSTAIN_PINGPONG = 5;
 	public static inline var ONE_SHOT = 6;
 	public static inline var NO_LOOP = 7;
+	public static inline var LOOP_UNSPECIFIED = 8;
 	
 	// heuristic to ramp down priority when releasing
 	public static inline var PRIORITY_RAMPDOWN = 0.95;
@@ -196,6 +197,9 @@ class SamplerSynth implements SoftSynth
 			var base_wl = sample_rate / base_frequency;
 			if (wl < 1) wl = 1;
 			var inc_samples : Float = base_wl / wl;
+			
+			if (patch.loops[0].loop_mode == LOOP_UNSPECIFIED)
+				patch.loops[0].loop_mode = patch.sample.loops[0].loop_mode;
 			
 			switch(patch.loops[0].loop_mode)
 			{
