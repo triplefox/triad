@@ -13,7 +13,7 @@ typedef TableSynthPatch = {
 	envelope_profiles : Array<EnvelopeProfile>,
 	lfos : Array<LFO>,
 	oscillator : Int,
-	modulation_lfo : Float, // applies to LFO1, depth multiplier if greater than 0
+	modulation_lfos : Array<LFO>,
 	arpeggiation_rate : Float, // 0 = off, hz value
 	base_pulsewidth : Float,
 };
@@ -68,12 +68,12 @@ class TableSynth implements SoftSynth
 	
 	public static function defaultPatch(seq : Sequencer) : TableSynthPatch
 	{
-		var lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] },
+		var m_lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] },
 			{ frequency:1.7, depth:1., delay:0., attack:0., assigns:[AS_PULSEWIDTH] }];
 		return { envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 0.4, 0.5, 0.01, [AS_VOLUME_ADD])],
 				oscillator:SAW_WT,
-				lfos : lfos,
-				modulation_lfo:1.0,
+				lfos : new Array<LFO>(),
+				modulation_lfos:m_lfos,
 				arpeggiation_rate:0.0,
 				base_pulsewidth:0.
 				}

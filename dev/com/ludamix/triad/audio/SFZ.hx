@@ -1,5 +1,6 @@
 package com.ludamix.triad.audio;
 
+import com.ludamix.triad.audio.dsp.ADSR;
 import com.ludamix.triad.format.WAV;
 import haxe.Json;
 import haxe.Serializer;
@@ -18,99 +19,23 @@ typedef TString = com.ludamix.triad.tools.StringTools;
 typedef HString = StringTools;
 
 typedef SFZOpcodeRegion = Hash<SFZOpcodeInstance>;
-typedef SFZOpcodeGroup = {group:SFZOpcodeRegion,regions:Array<SFZOpcodeRegion>};
+typedef SFZOpcodeGroup = { group:SFZOpcodeRegion, regions:Array<SFZOpcodeRegion> };
+
+typedef AftertouchDefinition = {channel:Float, poly:Float};
+
+typedef SFZEnvelopeDefinition = { delay:Float, start:Float, attack:Float, hold:Float, decay:Float, sustain:Float,
+	release:Float, depth:Float, cc:IntHash<Float>, vel2delay:Float, vel2attack:Float, vel2hold:Float, vel2decay:Float,
+	vel2sustain:Float, vel2release:Float, vel2depth:Float };
+typedef SFZLfoDefinition = { frequency:Float, depth:Float, delay:Float, attack:Float, freqcc:IntHash<Float>,
+	depthcc:IntHash<Float>, depthaft:AftertouchDefinition, freqaft:AftertouchDefinition };
 
 class SFZ
 {
-
-	public static function interpret_type(seq : Sequencer, key : String, value : String) : Dynamic
-	{
-
-		// note name mapping?
-		var tuning = seq.tuning;
-		var ct = 0;
-		var upper = value.toUpperCase();
-		for (n in tuning.notename)
-		{
-			if (upper == n) { return ct; }
-			ct++;
-		}
-
-		return TString.parseIntFloatString(value);
-	}
-    
-    private static function readString(file:ByteArray, len:Int) : String
-    {
-        var s = new StringBuf();
-        
-        for (i in 0 ... len)
-        {
-            s.addChar(file.readByte());
-        }
-        
-        return s.toString();
-    }
-    
-    public static function loadCompressed(seq:Sequencer, file : ByteArray, programs:Array<Int> = null) : SamplerBank
-    {
-        var sfzBank = new SamplerBank(seq);
-        
-        file.position = 0;
-        
-        var groups:Array<SamplerOpcodeGroup> = new Array<SamplerOpcodeGroup>();
-        var waves:Hash<WAVE> = new Hash<WAVE>();
-        
-        // read all SFZDefinitionBlocks
-        var blockCount = file.readInt();
-        for (i in 0 ... blockCount)
-        {
-            var sfzSize = file.readInt();
-            var sfz = readString(file, sfzSize);
-            groups.push(loadFromData(seq, sfz)[0]);
-        }
-        
-        // read all WaveFileBlocks
-        blockCount = file.readInt();
-        for (i in 0 ... blockCount)
-        {
-            var nameLength = file.readInt();
-            var name = readString(file, nameLength);
-            
-            var byteCount = file.readInt();
-            var bytes = new ByteArray();
-            file.readBytes(bytes, 0, byteCount);
-            
-            waves.set(name, WAV.read(bytes));
-        }
-        
-        // assign groups to bank
-        for (i in 0 ... groups.length)
-        {
-            var groupPrograms:Array<Int>;
-            if (programs != null)
-            {
-                groupPrograms = programs;
-            }
-            else
-            {
-                groupPrograms = [i];
-            }
-            sfzBank.configureSFZ(groups[i], groupPrograms, function(n) : PatchGenerator {
-                var header = waves.get(n);
-                return SamplerSynth.ofWAVE(seq.tuning, header, n);
-            });
-        }
-        
-        return sfzBank;
-    }
-
-	public static function load(seq : Sequencer, file : ByteArray) : Array<SamplerOpcodeGroup>
-    {
-		file.position = 0;
-		return loadFromData(seq, file.readUTFBytes(file.length));
-    }
-    
-	public static function loadFromData(seq : Sequencer, str:String) : Array<SamplerOpcodeGroup>
+	
+	public var regions : Array<SFZOpcodeRegion>;
+	public var cache : SamplerOpcodeGroup;
+	
+	public function new(seq : Sequencer, str : String)
 	{
 		var lines = str.split("\n");
 
@@ -159,9 +84,9 @@ class SFZ
 			}
 		}
 		
-		// now cache each region's final behavior.
+		// now cache each region's final behavior
 		
-		var result_groups = new Array<Hash<Dynamic>>();
+		this.regions = new Array();
 		for (g in groups)
 		{
 			var rcache = new Array<SFZOpcodeRegion>();
@@ -174,238 +99,517 @@ class SFZ
 				for (k in r)
 					result.set(k.name, k);
 				rcache.push(result);
-			}			
-			// now apply rules to translate the SFZ opcodes into SamplerOpcodeGroups, using default values where missing.
-			// TODO: we could probably optimize the loading...the defaults are cached using haxe.Serializer
-			// but this may not be optimal.
+			}
 			
 			for (r in rcache)
 			{
-				var region = getOpcodeDefault();
-				for (k in r)
-				{
-					var data = emitInternalOpcodes(k);
-					region.set(data[0], data[1]);
-				}
-				result_groups.push(region);
+				regions.push(r);
 			}
-		}		
-		
-		var result = new SamplerOpcodeGroup();
-		result.regions = result_groups;
-		
-		return [result];
+		}
+	}
 
+	public function getSampleManifest()
+	{
+		var man = new Array<String>();
+		for (n in regions)
+		{
+			var s : SFZOpcodeInstance = n.get('sample'); 
+			var u = translateSFZUnit(s.value);
+			if (s != null) { man.remove(u); man.push(u); }
+		}
+		return man;
+	}
+
+	public static function interpret_type(seq : Sequencer, key : String, value : String) : Dynamic
+	{
+
+		// note name mapping?
+		var tuning = seq.tuning;
+		var ct = 0;
+		var upper = value.toUpperCase();
+		for (n in tuning.notename)
+		{
+			if (upper == n) { return ct; }
+			ct++;
+		}
+
+		return TString.parseIntFloatString(value);
+	}
+    
+    private static function readString(file:ByteArray, len:Int) : String
+    {
+        var s = new StringBuf();
+        
+        for (i in 0 ... len)
+        {
+            s.addChar(file.readByte());
+        }
+        
+        return s.toString();
+    }
+    
+    public static function loadCompressed(seq:Sequencer, file : ByteArray, programs:Array<Int> = null) : SFZBank
+    {
+        var sfzBank = new SFZBank(seq);
+        
+        file.position = 0;
+        
+        var sfz_set:Array<SFZ> = new Array<SFZ>();
+		
+		var mip_levels = 4;
+        
+        // read all SFZDefinitionBlocks
+        var blockCount = file.readInt();
+        for (i in 0 ... blockCount)
+        {
+            var sfzSize = file.readInt();
+            var sfz = readString(file, sfzSize);
+            sfz_set.push(new SFZ(seq, sfz));
+        }
+        
+        // read all WaveFileBlocks
+        blockCount = file.readInt();
+        for (i in 0 ... blockCount)
+        {
+            var nameLength = file.readInt();
+            var name = readString(file, nameLength);
+            
+            var byteCount = file.readInt();
+            var bytes = new ByteArray();
+            file.readBytes(bytes, 0, byteCount);
+            
+            sfzBank.samples.set(name, 
+				SamplerSynth.patchOfSoundSample(SoundSample.ofWAVE(WAV.read(bytes), name, SamplerSynth.MIP_LEVELS)));
+
+        }
+        
+        // assign groups to bank
+        for (i in 0 ... sfz_set.length)
+        {
+            var groupPrograms:Array<Int>;
+            if (programs != null)
+            {
+                groupPrograms = programs;
+            }
+            else
+            {
+                groupPrograms = [i];
+            }
+            sfzBank.configureSFZ([sfz_set[i]], groupPrograms);
+        }
+        
+        return sfzBank;
+    }
+
+	public static function load(seq : Sequencer, file : ByteArray) : SFZ
+    {
+		file.position = 0;
+		return new SFZ(seq, file.readUTFBytes(file.length));
+    }
+	
+	public static inline function db2pct(db : Float)
+	{
+		// in the sfz spec: "+6db = power*2, -6db = power/2"
+		// but I am using "real" dbs (+/- 10db = power *  / 2) here because it seems a little better.
+		return 1.0 * Math.pow(2, 10. / db);
 	}
 	
-	public static function emitInternalOpcodes(o : SFZOpcodeInstance) : Array<Dynamic>
+	public function emitOpcodeGroup(samples : Hash<SamplerPatch>, ?use_cache=true) : SamplerOpcodeGroup
 	{
-		// returns values immediately usable by the sampler
-		var tu = translateSFZUnit(o.value);
-		switch(o.op)
+		
+		if (cache != null && use_cache) return cache;
+		this.cache = new SamplerOpcodeGroup();
+		for (r in regions)
 		{
-			case Sample: return ["sample", tu];
+		
+			var ampeg_p : SFZEnvelopeDefinition = 
+				{ delay:0., start:0., attack:0., hold:0., decay:0., sustain:1., release:0., depth:0.,
+				  cc:new IntHash(), 
+				  vel2delay:0., vel2attack:0., vel2hold:0., vel2decay:0., 
+				  vel2sustain:0., vel2release:0., vel2depth:0. };
+			var ampeg_cc = { delay:new IntHash(), start:new IntHash(), attack:new IntHash(), hold:new IntHash(),
+				decay:new IntHash(), sustain:new IntHash(), release:new IntHash()};
+			var pitcheg_p : SFZEnvelopeDefinition = 
+				{ delay:0., start:0., attack:0., hold:0., decay:0., sustain:1., release:0., depth:0.,
+				  cc:new IntHash(), 
+				  vel2delay:0., vel2attack:0., vel2hold:0., vel2decay:0., 
+				  vel2sustain:0., vel2release:0., vel2depth:0.};
+			var use_pitcheg = false;
+			var fileg_p : SFZEnvelopeDefinition =
+				{ delay:0., start:1., attack:0., hold:0., decay:0., sustain:1., release:0., depth:0.,
+				  cc:new IntHash(), 
+				  vel2delay:0., vel2attack:0., vel2hold:0., vel2decay:0., 
+				  vel2sustain:0., vel2release:0., vel2depth:0.};
+			var use_fileg = false;	
+			var amplfo_p : SFZLfoDefinition = { frequency:0., depth:0., delay:0., attack:0., 
+				freqcc:new IntHash(), depthcc:new IntHash(), depthaft: { channel:0., poly:0. },
+				freqaft:{channel:0.,poly:0.} };
+			var use_amplfo = false;	
+			var pitchlfo_p : SFZLfoDefinition = { frequency:0., depth:0., delay:0., attack:0.,
+				freqcc:new IntHash(), depthcc:new IntHash(), depthaft: { channel:0., poly:0. },
+				freqaft:{channel:0.,poly:0.} };
+			var use_pitchlfo = false;	
+			var fillfo_p : SFZLfoDefinition = { frequency:0., depth:0., delay:0., attack:0.,
+				freqcc:new IntHash(), depthcc:new IntHash(), depthaft: { channel:0., poly:0. },
+				freqaft:{channel:0.,poly:0.} };
+			var use_fillfo = false;
 			
-			case LoChan: return ["lochan", tu];
-			case HiChan: return ["hichan", tu];
-			case LoKey: return ["lokey", tu];
-			case HiKey: return ["hikey", tu];
-			case Key: return ["key", tu];
-			case LoVel: return ["lovel", tu];
-			case HiVel: return ["hivel", tu];
-			case LoBend: return ["lobend", tu];
-			case HiBend: return ["hibend", tu];
-			case LoChanAft: return ["lochanaft", tu];
-			case HiChanAft: return ["hichanaft", tu];
-			case LoPolyAft: return ["lopolyaft", tu];
-			case HiPolyAft: return ["hipolyaft", tu];
-			case LoRand: return ["lorand", tu];
-			case HiRand: return ["hirand", tu];
-			case LoBpm: return ["lobpm", tu];
-			case HiBpm: return ["hibpm", tu];
-			case SeqLength: return ["seq_length", tu];
-			case SeqPosition: return ["seq_position", tu];
-			case SwLoKey: return ["sw_lokey", tu];
-			case SwHiKey: return ["sw_hikey", tu];
-			case SwLast: return ["sw_last", tu];
-			case SwDown: return ["sw_down", tu];
-			case SwUp: return ["sw_up", tu];
-			case SwPrevious: return ["sw_previous", tu];
-			case SwVel: return ["sw_vel", tu];
-			case Trigger: return ["trigger", tu];
-			case Group: return ["group", tu];
-			case OffBy: return ["off_by", tu];
-			case OffMode: return ["off_mode", tu];
-			case OnLocc(controller): return ["on_locc"+Std.string(controller), tu];
-			case OnHicc(controller): return ["on_hicc"+Std.string(controller), tu];
+			var patch : SamplerPatch = patchDefault();
 			
-			case Delay: return ["delay", tu];
-			case DelayRandom: return ["delay_random", tu];
-			case Delaycc(controller): return ["delay_cc"+Std.string(controller), tu];
-			case Offset: return ["offset", tu];
-			case OffsetRandom: return ["offset_random", tu];
-			case Offsetcc(controller): return ["offset_cc"+Std.string(controller), tu];
-			case End: return ["end", tu];
-			case Count: return ["count", tu];
-			case LoopMode: return ["loop_mode", tu];
-			case LoopStart: return ["loop_start", tu];
-			case LoopEnd: return ["loop_end", tu];
-			case SyncBeats: return ["sync_beats", tu];
-			case SyncOffset: return ["sync_offset", tu];
+			var pitch_keycenter = 60.;
+			var transpose = 0.;
+			var tune = 0.;
 			
-			case Transpose: return ["transpose", tu];
-			case Tune: return ["tune", tu];
-			case PitchKeyCenter: return ["pitch_keycenter", tu];
-			case PitchKeyTrack: return ["pitch_keytrack", tu];
-			case PitchVelTrack: return ["pitch_veltrack", tu];
-			case PitchRandom: return ["pitch_random", tu];
-			case BendUp: return ["bend_up", tu];
-			case BendDown: return ["bend_down", tu];
-			case BendStep: return ["bend_step", tu];
+			var filter_mode = VoiceCommon.FILTER_UNDEFINED;
+			var filter_cutoff = -1.;
+			var filter_cutoff_cc = new IntHash<Float>();
+			var filter_aft : AftertouchDefinition = {channel:0., poly:0.};
+			var filter_resonance = 0.;
 			
-			case PitchEgDelay: return ["pitcheg_delay", tu];
-			case PitchEgStart: return ["pitcheg_start", tu];
-			case PitchEgAttack: return ["pitcheg_attack", tu];
-			case PitchEgHold: return ["pitcheg_hold", tu];
-			case PitchEgDecay: return ["pitcheg_decay", tu];
-			case PitchEgSustain: return ["pitcheg_sustain", tu];
-			case PitchEgRelease: return ["pitcheg_release", tu];
-			case PitchEgDepth: return ["pitcheg_depth", tu];
-			case PitchEgVel2Delay: return ["pitcheg_vel2delay", tu];
-			case PitchEgVel2Attack: return ["pitcheg_vel2attack", tu];
-			case PitchEgVel2Hold: return ["pitcheg_vel2hold", tu];
-			case PitchEgVel2Decay: return ["pitcheg_vel2decay", tu];
-			case PitchEgVel2Sustain: return ["pitcheg_vel2sustain", tu];
-			case PitchEgVel2Release: return ["pitcheg_vel2release", tu];
-			case PitchEgVel2Depth: return ["pitcheg_vel2depth", tu];
+			var loop_mode : Int = SamplerSynth.LOOP_UNSPECIFIED;
+			var loop_start : Float = -1;
+			var loop_end : Float = -1;
 			
-			case PitchLfoDelay: return ["pitchlfo_delay", tu];
-			case PitchLfoFade: return ["pitchlfo_fade", tu];
-			case PitchLfoFreq: return ["pitchlfo_freq", tu];
-			case PitchLfoDepth: return ["pitchlfo_depth", tu];
-			case PitchLfoDepthcc(controller): return ["pitchlfo_depthcc"+Std.string(controller), tu];
-			case PitchLfoDepthChanAft: return ["pitchlfo_depthchanaft", tu];
-			case PitchLfoDepthPolyAft: return ["pitchlfo_depthpolyaft", tu];
-			case PitchLfoFreqcc(controller): return ["pitchlfo_freqcc"+Std.string(controller), tu];
-			case PitchLfoFreqChanAft: return ["pitchlfo_freqchanaft", tu];
-			case PitchLfoFreqPolyAft: return ["pitchlfo_freqpolyaft", tu];
+			for (o in r)
+			{
 			
-			case FilType: return ["fil_type", tu];
-			case Cutoff: return ["cutoff", tu];
-			case Cutoffcc(controller): return ["cutoff_cc"+Std.string(controller), tu];
-			case CutoffChanAft: return ["cutoff_chanaft", tu];
-			case CutoffPolyAft: return ["cutoff_polyaft", tu];
-			case Resonance: return ["resonance", tu];
-			case FilKeyTrack: return ["fil_keytrack", tu];
-			case FilKeyCenter: return ["fil_keycenter", tu];
-			case FilVelTrack: return ["fil_veltrack", tu];
-			case FilRandom: return ["fil_random", tu];
+				var u : Dynamic = translateSFZUnit(o.value);
+				
+				switch(o.op)
+				{
+					case Sample: 
+						if (patch.sample == null) patch.sample = samples.get(u).sample;
+						if (patch.loops == null) 
+						{
+							loop_mode = patch.sample.loops[0].loop_mode;
+							loop_start = patch.sample.loops[0].loop_start;
+							loop_end = patch.sample.loops[0].loop_end;
+						}
+						if (patch.tuning == null) 
+						{
+							patch.tuning = { base_frequency:patch.sample.tuning.base_frequency,
+								sample_rate:patch.sample.tuning.sample_rate };
+						}
+						if (patch.name == null) patch.name = patch.sample.name;
+					case LoChan:
+					case HiChan:
+					case LoKey: patch.keyrange.low = u;
+					case HiKey: patch.keyrange.high = u;
+					case Key: patch.keyrange.low = u; patch.keyrange.high = u;
+					case LoVel: patch.velrange.low = u;
+					case HiVel: patch.keyrange.high = u;
+					case LoBend:
+					case HiBend:
+					case LoChanAft:
+					case HiChanAft:
+					case LoPolyAft:
+					case HiPolyAft:
+					case LoRand:
+					case HiRand:
+					case LoBpm:
+					case HiBpm:
+					case SeqLength:
+					case SeqPosition:
+					case SwLoKey:
+					case SwHiKey:
+					case SwLast:
+					case SwDown:
+					case SwUp:
+					case SwPrevious:
+					case SwVel:
+					case Trigger:
+					case Group:
+					case OffBy:
+					case OffMode:
+					case OnLocc(controller):
+					case OnHicc(controller):
+					case Delay:
+					case DelayRandom:
+					case Delaycc(controller):
+					case Offset:
+					case OffsetRandom:
+					case Offsetcc(controller):
+					case End:
+					case Count:
+					case LoopMode: loop_mode = u;
+					case LoopStart: loop_start = u;
+					case LoopEnd: loop_end = u;
+					case SyncBeats:
+					case SyncOffset:
+					case Transpose: transpose = u;
+					case Tune: tune = u;
+					case PitchKeyCenter: pitch_keycenter = u;
+					case PitchKeyTrack:
+					case PitchVelTrack:
+					case PitchRandom:
+					case BendUp:
+					case BendDown:
+					case BendStep:
+					case PitchEgDelay: pitcheg_p.delay = u;
+					case PitchEgStart: pitcheg_p.start = u;
+					case PitchEgAttack: pitcheg_p.attack = u;
+					case PitchEgHold: pitcheg_p.hold = u;
+					case PitchEgDecay: pitcheg_p.decay = u;
+					case PitchEgSustain: pitcheg_p.sustain = u;
+					case PitchEgRelease: pitcheg_p.release = u;
+					case PitchEgDepth: pitcheg_p.depth = u;
+					case PitchEgVel2Delay: pitcheg_p.vel2delay = u;
+					case PitchEgVel2Attack: pitcheg_p.vel2attack = u;
+					case PitchEgVel2Hold: pitcheg_p.vel2hold = u;
+					case PitchEgVel2Decay: pitcheg_p.vel2decay = u;
+					case PitchEgVel2Sustain: pitcheg_p.vel2sustain = u;
+					case PitchEgVel2Release: pitcheg_p.vel2release = u;
+					case PitchEgVel2Depth: pitcheg_p.vel2depth = u;
+					case PitchLfoDelay: pitchlfo_p.delay = u;
+					case PitchLfoFade: pitchlfo_p.attack = u;
+					case PitchLfoFreq: pitchlfo_p.frequency = u;
+					case PitchLfoDepth: pitchlfo_p.depth = u;
+					case PitchLfoDepthcc(controller): pitchlfo_p.depthcc.set(controller, u);
+					case PitchLfoDepthChanAft: pitchlfo_p.depthaft.channel = u;
+					case PitchLfoDepthPolyAft: pitchlfo_p.depthaft.poly = u;
+					case PitchLfoFreqcc(controller): pitchlfo_p.freqcc.set(controller, u);
+					case PitchLfoFreqChanAft: pitchlfo_p.freqaft.channel = u;
+					case PitchLfoFreqPolyAft: pitchlfo_p.freqaft.poly = u;
+					case FilType: filter_mode = u;
+					case Cutoff: filter_cutoff = u;
+					case Cutoffcc(controller): filter_cutoff_cc.set(controller, u);
+					case CutoffChanAft: filter_aft.channel = u;
+					case CutoffPolyAft: filter_aft.poly = u;
+					case Resonance: filter_resonance = u;
+					case FilKeyTrack:
+					case FilKeyCenter:
+					case FilVelTrack:
+					case FilRandom:
+					case FilEgDelay:
+					case FilEgStart:
+					case FilEgAttack:
+					case FilEgHold:
+					case FilEgDecay:
+					case FilEgSustain:
+					case FilEgRelease:
+					case FilEgDepth:
+					case FilEgVel2Delay:
+					case FilEgVel2Attack:
+					case FilEgVel2Hold:
+					case FilEgVel2Decay:
+					case FilEgVel2Sustain:
+					case FilEgVel2Release:
+					case FilEgVel2Depth:
+					case FilLfoDelay:
+					case FilLfoFade:
+					case FilLfoFreq:
+					case FilLfoDepth:
+					case FilLfoDepthcc(controller):
+					case FilLfoDepthChanAft:
+					case FilLfoDepthPolyAft:
+					case FilLfoFreqcc(controller):
+					case FilLfoFreqChanAft:
+					case FilLfoFreqPolyAft:
+					case Volume: patch.volume = db2pct(u);
+					case Pan: patch.pan = (u+1)/2.;
+					case Width:
+					case Position:
+					case AmpKeyTrack:
+					case AmpKeyCenter:
+					case AmpVelTrack:
+					case AmpVelCurve(velocity):
+					case AmpRandom:
+					case RtDecay:
+					case Output:
+					case Gaincc(controller):
+					case XFInLoKey:
+					case XFInHiKey:
+					case XFOutLoKey:
+					case XFOutHiKey:
+					case XFKeyCurve:
+					case XFInLoVel:
+					case XFInHiVel:
+					case XFOutLoVel:
+					case XFOutHiVel:
+					case XFVelCurve:
+					case XFInLocc(controller):
+					case XFInHicc(controller):
+					case XFOutLocc(controller):
+					case XFOutHicc(controller):
+					case XFCCCurve:
+					case AmpegDelay: ampeg_p.delay = u;
+					case AmpegStart: ampeg_p.start = u;
+					case AmpegAttack: ampeg_p.attack = u;
+					case AmpegHold: ampeg_p.hold = u;
+					case AmpegDecay: ampeg_p.decay = u;
+					case AmpegSustain: ampeg_p.sustain = u;
+					case AmpegRelease: ampeg_p.release = u;
+					case AmpegVel2Delay: ampeg_p.vel2delay = u;
+					case AmpegVel2Attack: ampeg_p.vel2attack = u;
+					case AmpegVel2Hold: ampeg_p.vel2hold = u;
+					case AmpegVel2Decay: ampeg_p.vel2decay = u;
+					case AmpegVel2Sustain: ampeg_p.vel2sustain = u;
+					case AmpegVel2Release: ampeg_p.vel2release = u;
+					case AmpegDelaycc(controller): ampeg_cc.delay.set(controller, u);
+					case AmpegStartcc(controller): ampeg_cc.start.set(controller, u);
+					case AmpegAttackcc(controller): ampeg_cc.attack.set(controller, u);
+					case AmpegHoldcc(controller): ampeg_cc.hold.set(controller, u);
+					case AmpegDecaycc(controller): ampeg_cc.decay.set(controller, u);
+					case AmpegSustaincc(controller): ampeg_cc.sustain.set(controller, u);
+					case AmpegReleasecc(controller): ampeg_cc.release.set(controller, u);
+					case AmpLfoDelay: amplfo_p.delay = u;
+					case AmpLfoFade: amplfo_p.attack = u;
+					case AmpLfoFreq: amplfo_p.frequency = u;
+					case AmpLfoDepth: amplfo_p.depth = u;
+					case AmpLfoDepthcc(controller): amplfo_p.depthcc.set(controller, u);
+					case AmpLfoDepthChanAft: amplfo_p.depthaft.channel = u;
+					case AmpLfoDepthPolyAft: amplfo_p.depthaft.poly = u;
+					case AmpLfoFreqcc(controller): amplfo_p.freqcc.set(controller, u);
+					case AmpLfoFreqChanAft:	amplfo_p.depthaft.channel = u;
+					case AmpLfoFreqPolyAft:	amplfo_p.depthaft.poly = u;
+					case EqFreq(band):
+					case EqFreqcc(controller, band):
+					case EqVel2Freq(band):
+					case EqBw(band):
+					case EqBwcc(controller, band):
+					case EqGain(band):
+					case EqGaincc(controller, band):
+					case EqVel2Gain(band):
+					case Effect1:
+					case Effect2:
+				}
+				
+				/*
+				var sampler_patch : SamplerPatch = null;
+				if (directives.exists('sample_data'))
+					sampler_patch = Reflect.copy(directives.get('sample_data'));
+				if (sampler_patch == null) continue; // no sample found...
+				
+				// ampeg directives are all in % and seconds.
+				var amp_vals = [0., 0., 0., 0., 0., 1., 0.];			
+				var fil_vals = [0., 0., 0., 0., 0., 1., 0.];
+				var fil_depth = 0.;
+
+				var midinote : Float = 60.0;
+				
+				// in the sfz spec: "+6db = power*2, -6db = power/2"
+				// but I am using "real" dbs (+/- 10db = power *  / 2) here because it seems a little better.
+				// this can be modified with the db_convention directive.
+				var db = 10.;
+				var vol_db = 0.;
+					
+				if (directives.exists("pitch_keycenter"))
+					midinote = directives.get("pitch_keycenter");
+				
+				// rewrite the tuning data
+				if (directives.exists("tune")) { midinote -= (directives.get("tune")/100); }
+				if (directives.exists("transpose")) { midinote -= directives.get("transpose"); }
+				sampler_patch.tuning = {
+					sample_rate : sampler_patch.tuning.sample_rate,
+					base_frequency : EvenTemperament.midiNoteToFrequency(midinote)
+				};
+
+				if (directives.exists("ampeg_delay")) { amp_vals[0] = directives.get("ampeg_delay"); }
+				if (directives.exists("ampeg_start")) { amp_vals[1] = directives.get("ampeg_start") / 100; }
+				if (directives.exists("ampeg_attack")) { amp_vals[2] = directives.get("ampeg_attack"); }
+				if (directives.exists("ampeg_hold")) { amp_vals[3] = directives.get("ampeg_hold"); } 
+				if (directives.exists("ampeg_decay")) { amp_vals[4] = directives.get("ampeg_decay"); }
+				if (directives.exists("ampeg_sustain")) { amp_vals[5] = directives.get("ampeg_sustain") / 100; }
+				if (directives.exists("ampeg_release")) { amp_vals[6] = directives.get("ampeg_release"); }
+
+				if (directives.exists("fileg_delay")) { fil_vals[0] = directives.get("fileg_delay"); }
+				if (directives.exists("fileg_start")) { fil_vals[1] = directives.get("fileg_start") / 100; }
+				if (directives.exists("fileg_attack")) { fil_vals[2] = directives.get("fileg_attack"); }
+				if (directives.exists("fileg_hold")) { fil_vals[3] = directives.get("fileg_hold"); } 
+				if (directives.exists("fileg_decay")) { fil_vals[4] = directives.get("fileg_decay"); }
+				if (directives.exists("fileg_sustain")) { fil_vals[5] = directives.get("fileg_sustain") / 100; }
+				if (directives.exists("fileg_release")) { fil_vals[6] = directives.get("fileg_release"); }
+				if (directives.exists("fileg_depth")) { fil_depth = directives.get("fileg_depth"); }
+				
+				var sample = sampler_patch.sample;
+				
+				if (directives.exists("loop_mode")) {
+					switch(directives.get("loop_mode"))
+					{
+						case "no_loop": sampler_patch.loops[0].loop_mode = SamplerSynth.NO_LOOP;
+						case "one_shot": sampler_patch.loops[0].loop_mode = SamplerSynth.ONE_SHOT;
+						case "loop_continuous": sampler_patch.loops[0].loop_mode = SamplerSynth.LOOP_FORWARD;
+						case "loop_sustain": sampler_patch.loops[0].loop_mode = SamplerSynth.SUSTAIN_FORWARD;						
+					}
+				}
+				
+				if (directives.exists("loop_start")) { sampler_patch.loops[0].loop_start = directives.get("loop_start"); }
+				if (directives.exists("loop_end")) { sampler_patch.loops[0].loop_end = directives.get("loop_end"); }
+
+				if (directives.exists("pan")) { sampler_patch.pan = ((directives.get("pan")/100)+1)/2; }
+				if (directives.exists("db_convention")) { db = directives.get("db_convention"); }
+				if (directives.exists("volume")) { vol_db = directives.get("volume"); }
+
+				if (directives.exists("cutoff")) { sampler_patch.cutoff_frequency = directives.get("cutoff"); }
+				if (directives.exists("resonance")) { sampler_patch.resonance_level = directives.get("resonance"); }
+				if (directives.exists("fil_type"))
+				{
+					var fil_type = directives.get("fil_type");
+					if (fil_type == "lpf_1p") sampler_patch.filter_mode = VoiceCommon.FILTER_LP;
+					else if (fil_type == "lpf_2p") sampler_patch.filter_mode = VoiceCommon.FILTER_LP;
+					else if (fil_type == "hpf_1p") sampler_patch.filter_mode = VoiceCommon.FILTER_HP;
+					else if (fil_type == "hpf_2p") sampler_patch.filter_mode = VoiceCommon.FILTER_HP;
+					else if (fil_type == "bpf_1p") sampler_patch.filter_mode = VoiceCommon.FILTER_BP;
+					else if (fil_type == "bpf_2p") sampler_patch.filter_mode = VoiceCommon.FILTER_BP;
+					else if (fil_type == "brf_1p") sampler_patch.filter_mode = VoiceCommon.FILTER_BR;
+					else if (fil_type == "brf_2p") sampler_patch.filter_mode = VoiceCommon.FILTER_BR;
+				}
+				
+				sampler_patch.volume = 1.0 * Math.pow(2, vol_db / db);
+				
+				// create envelopes
+				var ampeg = Envelope.DSAHDSHR(seq.secondsToFrames, amp_vals[0], amp_vals[1], amp_vals[2], amp_vals[3],
+					amp_vals[4], amp_vals[5], 0., amp_vals[6], 1., 1., 1., [VoiceCommon.AS_VOLUME_ADD]);
+				sampler_patch.envelope_profiles = [ ampeg ];
+				if (fil_depth != 0)
+				{
+					var fileg = Envelope.DSAHDSHR(seq.secondsToFrames, fil_vals[0], fil_vals[1], fil_vals[2], fil_vals[3],
+						fil_vals[4], fil_vals[5], 0., fil_vals[6], 1., 1., 1., [VoiceCommon.AS_FREQUENCY_ADD_CENTS]);
+					sampler_patch.envelope_profiles.push(fileg);
+				}
+
+				// set default filter mode
+				if ((fil_depth != 0 || sampler_patch.cutoff_frequency != 0.) && 
+					sampler_patch.filter_mode == VoiceCommon.FILTER_OFF)
+					sampler_patch.filter_mode == VoiceCommon.FILTER_LP;
+				
+				region_cache.push( { region:directives, patch:sampler_patch } );		
+				*/
+				
+			}
 			
-			case FilEgDelay: return ["fileg_delay", tu];
-			case FilEgStart: return ["fileg_start", tu];
-			case FilEgAttack: return ["fileg_attack", tu];
-			case FilEgHold: return ["fileg_hold", tu];
-			case FilEgDecay: return ["fileg_decay", tu];
-			case FilEgSustain: return ["fileg_sustain", tu];
-			case FilEgRelease: return ["fileg_release", tu];
-			case FilEgDepth: return ["fileg_depth", tu];
-			case FilEgVel2Delay: return ["fileg_vel2delay", tu];
-			case FilEgVel2Attack: return ["fileg_vel2attack", tu];
-			case FilEgVel2Hold: return ["fileg_vel2hold", tu];
-			case FilEgVel2Decay: return ["fileg_vel2decay", tu];
-			case FilEgVel2Sustain: return ["fileg_vel2sustain", tu];
-			case FilEgVel2Release: return ["fileg_vel2release", tu];
-			case FilEgVel2Depth: return ["fileg_vel2depth", tu];
+			// finalize with all the buffered data.
 			
-			case FilLfoDelay: return ["fillfo_delay", tu];
-			case FilLfoFade: return ["fillfo_fade", tu];
-			case FilLfoFreq: return ["fillfo_freq", tu];
-			case FilLfoDepth: return ["fillfo_depth", tu];
-			case FilLfoDepthcc(controller): return ["fillfo_depthcc"+Std.string(controller), tu];
-			case FilLfoDepthChanAft: return ["fillfo_depthchanaft", tu];
-			case FilLfoDepthPolyAft: return ["fillfo_depthpolyaft", tu];
-			case FilLfoFreqcc(controller): return ["fillfo_freqcc"+Std.string(controller), tu];
-			case FilLfoFreqChanAft: return ["fillfo_freqchanaft", tu];
-			case FilLfoFreqPolyAft: return ["fillfo_freqpolyaft", tu];
+			patch.tuning = {
+				sample_rate : patch.tuning.sample_rate,
+				base_frequency : EvenTemperament.cache.midiNoteToFrequency(pitch_keycenter - transpose - tune)
+			};
 			
-			case Volume: return ["volume", tu];
-			case Pan: return ["pan", tu];
-			case Width: return ["width", tu];
-			case Position: return ["position", tu];
-			case AmpKeyTrack: return ["amp_keytrack", tu];
-			case AmpKeyCenter: return ["amp_keycenter", tu];
-			case AmpVelTrack: return ["amp_veltrack", tu];
-			case AmpVelCurve(velocity): return ["amp_velcurve"+Std.string(velocity), tu];
-			case AmpRandom: return ["amp_random", tu];
-			case RtDecay: return ["rt_decay", tu];
-			case Output: return ["output", tu];
-			case Gaincc(controller): return ["gain_cc"+Std.string(controller), tu];
-			case XFInLoKey: return ["xfin_lokey",tu];
-			case XFInHiKey: return ["xfin_hikey",tu];
-			case XFOutLoKey: return ["xfout_lokey",tu];
-			case XFOutHiKey: return ["xfout_hikey",tu];
-			case XFKeyCurve: return ["xf_keycurve",tu];
-			case XFInLoVel: return ["xfin_lovel",tu];
-			case XFInHiVel: return ["xfin_hivel",tu];
-			case XFOutLoVel: return ["xfout_lovel",tu];
-			case XFOutHiVel: return ["xfout_hivel",tu];
-			case XFVelCurve: return ["xf_velcurve",tu];
-			case XFInLocc(controller): return ["xfin_locc"+Std.string(controller),tu];
-			case XFInHicc(controller): return ["xfin_hicc"+Std.string(controller),tu];
-			case XFOutLocc(controller): return ["xfout_locc"+Std.string(controller),tu];
-			case XFOutHicc(controller): return ["xfout_hicc"+Std.string(controller),tu];
-			case XFCCCurve: return ["xf_cccurve", tu];
+			patch.envelope_profiles.push(ampeg(ampeg_p));
+			if (use_pitcheg) { patch.envelope_profiles.push(pitcheg(pitcheg_p)); }
+			if (use_fileg) { patch.envelope_profiles.push(fileg(fileg_p)); }
+			if (use_amplfo) { patch.lfos.push(amplfo(amplfo_p)); }
+			if (use_pitchlfo) { patch.lfos.push(pitchlfo(pitchlfo_p)); }
+			if (use_fillfo) { patch.lfos.push(fillfo(fillfo_p)); }
 			
-			case AmpegDelay: return ["ampeg_delay",tu];
-			case AmpegStart: return ["ampeg_start",tu];
-			case AmpegAttack: return ["ampeg_attack",tu];
-			case AmpegHold: return ["ampeg_hold",tu];
-			case AmpegDecay: return ["ampeg_decay",tu];
-			case AmpegSustain: return ["ampeg_sustain",tu];
-			case AmpegRelease: return ["ampeg_release",tu];
-			case AmpegVel2Delay: return ["ampeg_vel2delay",tu];
-			case AmpegVel2Attack: return ["ampeg_vel2attack",tu];
-			case AmpegVel2Hold: return ["ampeg_vel2hold",tu];
-			case AmpegVel2Decay: return ["ampeg_vel2decay",tu];
-			case AmpegVel2Sustain: return ["ampeg_vel2sustain",tu];
-			case AmpegVel2Release: return ["ampeg_vel2release",tu];
-			case AmpegDelaycc(controller): return ["ampeg_delaycc"+Std.string(controller),tu];
-			case AmpegStartcc(controller): return ["ampeg_startcc"+Std.string(controller),tu];
-			case AmpegAttackcc(controller): return ["ampeg_attackcc"+Std.string(controller),tu];
-			case AmpegHoldcc(controller): return ["ampeg_holdcc"+Std.string(controller),tu];
-			case AmpegDecaycc(controller): return ["ampeg_decaycc"+Std.string(controller),tu];
-			case AmpegSustaincc(controller): return ["ampeg_sustaincc"+Std.string(controller),tu];
-			case AmpegReleasecc(controller): return ["ampeg_releasecc"+Std.string(controller),tu];
+			if (loop_start == -1) loop_start = patch.sample.loops[0].loop_start;
+			if (loop_end == -1) loop_end = patch.sample.loops[0].loop_end;
+			if (loop_mode == SamplerSynth.LOOP_UNSPECIFIED) loop_mode = patch.sample.loops[0].loop_mode;
+			patch.loops = [ { loop_start:Std.int(loop_start), loop_end:Std.int(loop_end), loop_mode:loop_mode } ];
 			
-			case AmpLfoDelay: return ["amplfo_delay",tu];
-			case AmpLfoFade: return ["amplfo_fade",tu];
-			case AmpLfoFreq: return ["amplfo_freq",tu];
-			case AmpLfoDepth: return ["amplfo_depth",tu];
-			case AmpLfoDepthcc(controller): return ["amplfo_depthcc"+Std.string(controller),tu];
-			case AmpLfoDepthChanAft: return ["amplfo_depthchanaft",tu];
-			case AmpLfoDepthPolyAft: return ["amplfo_depthpolyaft",tu];
-			case AmpLfoFreqcc(controller): return ["amplfo_freqcc"+Std.string(controller),tu];
-			case AmpLfoFreqChanAft: return ["amplfo_freqchanaft",tu];
-			case AmpLfoFreqPolyAft: return ["amplfo_freqpolyaft",tu];
+			patch.filter_mode = filter_mode;
+			patch.cutoff_frequency = filter_cutoff;
+			patch.resonance_level = filter_resonance;
 			
-			case EqFreq(band): return ["eq"+Std.string(band)+"_freq",tu];
-			case EqFreqcc(controller, band): return ["eq"+Std.string(band)+"_freqcc"+Std.string(controller),tu];
-			case EqVel2Freq(band): return ["eq"+Std.string(band)+"_vel2freq",tu];
-			case EqBw(band): return ["eq"+Std.string(band)+"_bw",tu];
-			case EqBwcc(controller, band): return ["eq"+Std.string(band)+"_bwcc"+Std.string(controller),tu];
-			case EqGain(band): return ["eq"+Std.string(band)+"_gain",tu];
-			case EqGaincc(controller, band): return ["eq"+Std.string(band)+"_gaincc"+Std.string(controller),tu];
-			case EqVel2Gain(band): return ["eq"+Std.string(band)+"_vel2gain",tu];
-			
-			case Effect1: return ["effect1",tu];
-			case Effect2: return ["effect2",tu];
+			cache.regions.push(patch);
 		}
+		return cache;
 	}
 	
 	public static function translateSFZUnit(u : SFZUnit) : Dynamic
 	{
 		// these units are stubby translations.
-		// later I want to move all the translations of percentages and dB values etc. in here.
+		// ideally I want to categorize them such that every unit in SFZ is converted here, not in opcode gen.
 		switch(u)
 		{
 			case Filename(name): return name;
@@ -434,18 +638,18 @@ class SFZ
 				}
 			case CurveOption(which): return null;
 			case Semitones(amount): return amount;
-			case Cents(amount): return amount;
+			case Cents(amount): return amount/1200.; // to semitones
 			case Percentage(amount): return amount;
 			case Hertz(amount): return amount;
 			case Octaves(amount): return amount;
 			case FilterTypeOption(which): switch(which)
 				{
-					case Lpf1p: return "lpf_1p";
-					case Hpf1p: return "hpf_1p";
-					case Lpf2p: return "lpf_2p";
-					case Hpf2p: return "hpf_2p";
-					case Bpf2p: return "bpf_2p";
-					case Brf2p: return "brf_2p";
+					case Lpf1p: return VoiceCommon.FILTER_LP;
+					case Hpf1p: return VoiceCommon.FILTER_HP;
+					case Lpf2p: return VoiceCommon.FILTER_LP;
+					case Hpf2p: return VoiceCommon.FILTER_HP;
+					case Bpf2p: return VoiceCommon.FILTER_BP;
+					case Brf2p: return VoiceCommon.FILTER_BR;
 				}
 			case DB(amount): return amount;
 			case DBPerSecond(amount): return amount;
@@ -711,204 +915,74 @@ class SFZ
 		return r;
 	}
 	
-	private static inline function rSet(r : Hash<Dynamic>, name : String, op : SFZOpcode, value : Dynamic)
+	// below are the default settings according to sfz spec, including envelopes etc.
+	// these use the _internal_ units. make sure we convert before applying them.
+	
+	// as we implement more features from sfz, corrections to defaults may be needed.
+	// one wrinkle is that sfz doesn't define modulations in the same way that I do - as a single lfo that's xfaded.
+	// it can apply potentially every CC, instead.
+	// since this isn't how my sequencer is set up it's just not worth worrying about for now.
+	
+	public static function patchDefault() : SamplerPatch
 	{
-		var z = emitInternalOpcodes( { name:name, op:op, value:value } );
-		r.set(z[0], z[1]);
+		return {
+			sample:null,
+			tuning:null,
+			loops:null,
+			pan:0.5,
+			envelope_profiles:new Array<EnvelopeProfile>(),
+			volume:1.0,
+			lfos:new Array<LFO>(),
+			modulation_lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
+			arpeggiation_rate:0.0,
+			cutoff_frequency:0.,
+			resonance_level:0.,
+			keyrange:{low:0.,high:127.},
+			velrange:{low:0.,high:127.},
+			filter_mode:VoiceCommon.FILTER_UNDEFINED,
+			name:null
+		};
 	}
 	
-	public static var default_cache : String;
-	
-	public static function getOpcodeDefault() : Hash<Dynamic>
+	public static function ampeg(env : SFZEnvelopeDefinition) : EnvelopeProfile
 	{
-		return new Hash<Dynamic>();
-		// TODO improve these defaults so that:
-		// ... they load fast
-		// ... they don't cause the track to be silent
-		if (default_cache != null) return Unserializer.run(default_cache);
-		else
-		{
-			var r = new Hash<Dynamic>();
-			rSet(r, "lochan", LoChan, MIDIChannel(1));
-			rSet(r, "hichan", HiChan,MIDIChannel(16));
-			rSet(r, "lokey", LoKey,MIDINote(0));
-			rSet(r, "hikey", HiKey,MIDINote(127));
-			rSet(r, "key", HiKey,MIDINote(0));
-			rSet(r, "lovel", LoVel,MIDI127Range(0));
-			rSet(r, "hivel", HiVel,MIDI127Range(127));
-			rSet(r, "lobend", LoBend,MIDIPitchbend(-8192));
-			rSet(r, "hibend", HiBend,MIDIPitchbend(8192));
-			rSet(r, "lochanaft", LoChanAft,MIDI127Range(0));
-			rSet(r, "hichanaft", HiChanAft,MIDI127Range(127));
-			rSet(r, "lopolyaft", LoPolyAft,MIDI127Range(0));
-			rSet(r, "hipolyaft", HiPolyAft,MIDI127Range(127));
-			rSet(r, "lorand", LoRand,ArbitraryFloat(0.));
-			rSet(r, "hirand", HiRand,ArbitraryFloat(1.));
-			rSet(r, "lobpm", LoBpm,ArbitraryFloat(0.));
-			rSet(r, "hibpm", HiBpm,ArbitraryFloat(50.));
-			rSet(r, "seq_length", SeqLength,ArbitraryInt(1));
-			rSet(r, "seq_position", SeqPosition,ArbitraryInt(1));
-			rSet(r, "sw_lokey", SwLoKey,MIDINote(0));
-			rSet(r, "sw_hikey", SwHiKey,MIDINote(127));
-			rSet(r, "sw_last", SwLast,MIDINote(0));
-			rSet(r, "sw_down", SwDown,MIDINote(0));
-			rSet(r, "sw_up", SwUp,MIDINote(0));
-			rSet(r, "sw_vel", SwVel,SwVelOption(Current));
-			rSet(r, "trigger", Trigger,TriggerOption(Attack));
-			rSet(r, "group", Group,ArbitraryInt(0));
-			rSet(r, "off_by", OffBy,ArbitraryInt(0));
-			rSet(r, "off_mode", OffMode,OffModeOption(Fast));
-				
-			rSet(r, "delay", Delay,Seconds(0.));
-			rSet(r, "delay_random", DelayRandom,Seconds(0.));
-			rSet(r, "offset", Offset,Samples(0));
-			rSet(r, "offset_random", OffsetRandom,Samples(0));
-			rSet(r, "end", End,Samples(0));
-			rSet(r, "count", Count,ArbitraryInt(0));
-			rSet(r, "loop_mode", LoopMode,LoopModeOption(Default));
-			rSet(r, "loop_start", LoopStart,Samples(0));
-			rSet(r, "loop_end", LoopEnd,Samples(0));
-			rSet(r, "sync_beats", SyncBeats,Beats(0.));
-			rSet(r, "sync_offset", SyncOffset,Beats(0.));
-				
-			rSet(r, "transpose", Transpose,Semitones(0));
-			rSet(r, "tune", Tune,Cents(0));
-			rSet(r, "pitch_keycenter", PitchKeyCenter,MIDINote(60));
-			rSet(r, "pitch_keytrack", PitchKeyTrack,Cents(100));
-			rSet(r, "pitch_veltrack", PitchVelTrack,Cents(0));
-			rSet(r, "pitch_random", PitchRandom,Cents(0));
-			rSet(r, "bend_up", BendUp,Cents(200));
-			rSet(r, "bend_down", BendDown,Cents(-200));
-			rSet(r, "bend_step", BendDown,Cents(1));
-				
-			rSet(r, "pitcheg_delay", PitchEgDelay,Seconds(0.));
-			rSet(r, "pitcheg_start", PitchEgStart,Percentage(0.));
-			rSet(r, "pitcheg_attack", PitchEgAttack,Seconds(0.));
-			rSet(r, "pitcheg_hold", PitchEgHold,Seconds(0.));
-			rSet(r, "pitcheg_decay", PitchEgDecay,Seconds(0.));
-			rSet(r, "pitcheg_sustain", PitchEgSustain,Percentage(100.));
-			rSet(r, "pitcheg_release", PitchEgRelease,Seconds(100.));
-			rSet(r, "pitcheg_depth", PitchEgDepth, Cents(0) );
-			rSet(r, "pitcheg_vel2delay", PitchEgVel2Delay, ArbitraryFloat(0.) );
-			rSet(r, "pitcheg_vel2attack", PitchEgVel2Attack, Seconds(0.) );
-			rSet(r, "pitcheg_vel2hold", PitchEgVel2Hold, Seconds(0.) );
-			rSet(r, "pitcheg_vel2decay", PitchEgVel2Decay, Seconds(0.) );
-			rSet(r, "pitcheg_vel2sustain", PitchEgVel2Sustain, Percentage(0.) );
-			rSet(r, "pitcheg_vel2release", PitchEgVel2Release, Seconds(0.) );
-			rSet(r, "pitcheg_vel2depth", PitchEgVel2Depth, Cents(0) );
-				
-			rSet(r, "pitchlfo_delay", PitchLfoDelay, Seconds(0.) );
-			rSet(r, "pitchlfo_fade", PitchLfoFade, Seconds(0.) );
-			rSet(r, "pitchlfo_freq", PitchLfoFreq, Hertz(0.) );
-			rSet(r, "pitchlfo_depth", PitchLfoDepth, Cents(0) );
-			rSet(r, "pitchlfo_depthchanaft", PitchLfoDepthChanAft, Cents(0) );
-			rSet(r, "pitchlfo_depthpolyaft", PitchLfoDepthPolyAft, Cents(0) );
-			rSet(r, "pitchlfo_freqchanaft", PitchLfoFreqChanAft, Hertz(0.) );
-			rSet(r, "pitchlfo_freqpolyaft", PitchLfoFreqPolyAft, Hertz(0.) );
-				
-			rSet(r, "fil_type", FilType, FilterTypeOption(Lpf2p) );
-			rSet(r, "cutoff", Cutoff, Hertz(-1.) );
-			rSet(r, "cutoff_chanaft", CutoffChanAft, Cents(0) );
-			rSet(r, "cutoff_polyaft", CutoffPolyAft, Cents(0) );
-			rSet(r, "resonance", Resonance, DB(0) );
-			rSet(r, "fil_keytrack", FilKeyTrack, Cents(0) );
-			rSet(r, "fil_keycenter", FilKeyCenter, MIDINote(60) );
-			rSet(r, "fil_veltrack", FilVelTrack, Cents(0) );
-			rSet(r, "fil_random", FilRandom, Cents(0) );
-				
-			rSet(r, "fileg_delay", FilEgDelay, Seconds(0.) );
-			rSet(r, "fileg_start", FilEgStart, Percentage(0.) );
-			rSet(r, "fileg_attack", FilEgAttack, Seconds(0.) );
-			rSet(r, "fileg_hold", FilEgHold, Seconds(0.) );
-			rSet(r, "fileg_decay", FilEgDecay, Seconds(0.) );
-			rSet(r, "fileg_sustain", FilEgSustain, Percentage(100.) );
-			rSet(r, "fileg_release", FilEgRelease, Seconds(0.) );
-			rSet(r, "fileg_depth", FilEgDepth, Cents(0) );
-			rSet(r, "fileg_vel2delay", FilEgVel2Delay, Seconds(0.) );
-			rSet(r, "fileg_vel2attack", FilEgVel2Attack, Seconds(0.) );
-			rSet(r, "fileg_vel2hold", FilEgVel2Hold, Seconds(0.) );
-			rSet(r, "fileg_vel2decay", FilEgVel2Decay, Seconds(0.) );
-			rSet(r, "fileg_vel2sustain", FilEgVel2Sustain, Percentage(0.) );
-			rSet(r, "fileg_vel2release", FilEgVel2Release, Seconds(0.) );
-			rSet(r, "fileg_vel2depth", FilEgVel2Depth, Cents(0) );
-				
-			rSet(r, "fillfo_delay", FilLfoDelay, Seconds(0.) );
-			rSet(r, "fillfo_fade", FilLfoFade, Seconds(0.) );
-			rSet(r, "fillfo_freq", FilLfoFreq, Hertz(0.) );
-			rSet(r, "fillfo_depth", FilLfoDepth, Cents(0) );
-			rSet(r, "fillfo_depthchanaft", FilLfoDepthChanAft, Cents(0) );
-			rSet(r, "fillfo_depthpolyaft", FilLfoDepthPolyAft, Cents(0) );
-			rSet(r, "fillfo_freqchanaft", FilLfoFreqChanAft, Hertz(0.) );
-			rSet(r, "fillfo_freqpolyaft", FilLfoFreqPolyAft, Hertz(0.) );
-			
-			rSet(r, "volume", Volume, DB(0.) );
-			rSet(r, "pan", Pan, Percentage(0.) );
-			rSet(r, "width", Width, Percentage(0.) );
-			rSet(r, "position", Position, Percentage(0.) );
-			rSet(r, "amp_keytrack", AmpKeyTrack, DB(0.) );
-			rSet(r, "amp_keycenter", AmpKeyCenter, MIDINote(60) );
-			rSet(r, "amp_veltrack", AmpVelTrack, Percentage(100.) );
-			rSet(r, "amp_random", AmpRandom, Hertz(0.) );
-			rSet(r, "rt_decay", RtDecay, DBPerSecond(0.) );
-			rSet(r, "output", Output, DB(0.) );
-			rSet(r, "xfin_lokey", XFInLoKey, MIDINote(0) );
-			rSet(r, "xfin_hikey", XFInHiKey, MIDINote(127) );
-			rSet(r, "xfout_lokey", XFOutLoKey, MIDINote(127) );
-			rSet(r, "xfout_hikey", XFOutHiKey, MIDINote(127) );
-			rSet(r, "xf_keycurve", XFKeyCurve, CurveOption(Power) );
-			rSet(r, "xfin_lovel", XFInLoVel, MIDI127Range(0) );
-			rSet(r, "xfin_hivel", XFInHiVel, MIDI127Range(0) );
-			rSet(r, "xfout_lovel", XFOutLoVel, MIDI127Range(127) );
-			rSet(r, "xfout_hivel", XFOutHiVel, MIDI127Range(127) );
-			rSet(r, "xf_velcurve", XFVelCurve, CurveOption(Power) );
-			rSet(r, "xf_cccurve", XFCCCurve, CurveOption(Power) );
-				
-			rSet(r, "ampeg_delay", AmpegDelay, Seconds(0.) );
-			rSet(r, "ampeg_start", AmpegStart, Percentage(0.) );
-			rSet(r, "ampeg_attack", AmpegAttack, Seconds(0.) );
-			rSet(r, "ampeg_hold", AmpegHold, Seconds(0.) );
-			rSet(r, "ampeg_decay", AmpegDecay, Seconds(0.) );
-			rSet(r, "ampeg_sustain", AmpegSustain, Percentage(100.) );
-			rSet(r, "ampeg_release", AmpegRelease, Seconds(0.) );
-			rSet(r, "ampeg_vel2delay", AmpegVel2Delay, Seconds(0.) );
-			rSet(r, "ampeg_vel2attack", AmpegVel2Attack, Seconds(0.) );
-			rSet(r, "ampeg_vel2hold", AmpegVel2Hold, Seconds(0.) );
-			rSet(r, "ampeg_vel2decay", AmpegVel2Decay, Seconds(0.) );
-			rSet(r, "ampeg_vel2sustain", AmpegVel2Sustain, Percentage(0.) );
-			rSet(r, "ampeg_vel2release", AmpegVel2Release, Seconds(0.) );
-				
-			rSet(r, "amplfo_delay", AmpLfoDelay, Seconds(0.) );
-			rSet(r, "amplfo_fade", AmpLfoFade, Seconds(0.) );
-			rSet(r, "amplfo_freq", AmpLfoFreq, Hertz(0.) );
-			rSet(r, "amplfo_depth", AmpLfoDepth, DB(0.) );
-			rSet(r, "amplfo_depthchanaft", AmpLfoDepthChanAft, DB(0.) );
-			rSet(r, "amplfo_depthpolyaft", AmpLfoDepthPolyAft, DB(0.) );
-			rSet(r, "amplfo_freqchanaft", AmpLfoFreqChanAft, Hertz(0.) );
-			rSet(r, "amplfo_freqpolyaft", AmpLfoFreqPolyAft, Hertz(0.) );
-				
-			rSet(r, "eq1_freq", EqFreq(1), Hertz(50.) );
-			rSet(r, "eq2_freq", EqFreq(2), Hertz(500.) );
-			rSet(r, "eq3_freq", EqFreq(3), Hertz(5000.) );
-			rSet(r, "eq1_vel2freq", EqVel2Freq(1), Hertz(0.) );
-			rSet(r, "eq2_vel2freq", EqVel2Freq(2), Hertz(0.) );
-			rSet(r, "eq3_vel2freq", EqVel2Freq(3), Hertz(0.) );
-			rSet(r, "eq1_bw", EqBw(1), Octaves(1.) );
-			rSet(r, "eq2_bw", EqBw(2), Octaves(1.) );
-			rSet(r, "eq3_bw", EqBw(3), Octaves(1.) );
-			rSet(r, "eq1_gain", EqGain(1), DB(0.) );
-			rSet(r, "eq2_gain", EqGain(2), DB(0.) );
-			rSet(r, "eq3_gain", EqGain(3), DB(0.) );
-			rSet(r, "eq1_vel2gain", EqVel2Gain(1), DB(0.) );
-			rSet(r, "eq2_vel2gain", EqVel2Gain(2), DB(0.) );
-			rSet(r, "eq3_vel2gain", EqVel2Gain(3), DB(0.) );
-				
-			rSet(r, "effect1", Effect1, Percentage(0.) );
-			rSet(r, "effect2", Effect2, Percentage(0.) );
-			default_cache = Serializer.run(r);
-			return r;
-		}
+		return Envelope.DSAHDSHR(function(a:Float) { return a; }, env.delay, env.start, 
+			env.attack, env.hold, env.decay, env.sustain, 0., env.release, 1.0, 1.0, 1.0, 
+			[VoiceCommon.AS_VOLUME_ADD]);
 	}
 
+	public static function pitcheg(env : SFZEnvelopeDefinition) : EnvelopeProfile
+	{
+		return Envelope.DSAHDSHR(function(a:Float) { return a; }, env.delay, env.start*env.depth, 
+			env.attack, env.hold, env.decay, env.sustain * env.depth, 0., env.release, 
+				1.0, 1.0, 1.0, [VoiceCommon.AS_PITCH_ADD]);
+	}
+	
+	public static function fileg(env : SFZEnvelopeDefinition) : EnvelopeProfile
+	{
+		return Envelope.DSAHDSHR(function(a:Float) { return a; }, env.delay, env.start*env.depth, 
+			env.attack, env.hold, env.decay, env.sustain * env.depth, 0., env.release, 1.0, 1.0, 1.0, 
+			[VoiceCommon.AS_FREQUENCY_ADD_CENTS]);
+	}
+	
+	public static function amplfo(lfo : SFZLfoDefinition)
+	{
+		return { frequency:lfo.frequency, depth:lfo.depth, delay:lfo.delay, attack:lfo.attack,
+			assigns:[VoiceCommon.AS_VOLUME_ADD]};
+	}
+	
+	public static function pitchlfo(lfo : SFZLfoDefinition)
+	{
+		return { frequency:lfo.frequency, depth:lfo.depth, delay:lfo.delay, attack:lfo.attack,
+			assigns:[VoiceCommon.AS_PITCH_ADD]};
+	}
+	
+	public static function fillfo(lfo : SFZLfoDefinition)
+	{
+		return { frequency:lfo.frequency, depth:lfo.depth, delay:lfo.delay, attack:lfo.attack,
+			assigns:[VoiceCommon.AS_FREQUENCY_ADD_CENTS]};
+	}
+	
 }
 
 enum SFZOpcode

@@ -3,7 +3,7 @@ package com.ludamix.triad.audio;
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.Sequencer;
 
-class SamplerBank
+class SFZBank
 {
 
 	public var samples : Hash<SamplerPatch>;
@@ -18,38 +18,39 @@ class SamplerBank
 		samples = new Hash();
 		programs = new IntHash();
 	}
-
-	public function configureSFZ(opcode_group : SamplerOpcodeGroup, programs : Array<Int>, 
-		patchGenerator : String -> PatchGenerator, ?recache : Bool=true)
+	
+	public function configureSamples(sfz : Array<SFZ>, sampleFileParser : String -> PatchGenerator)
 	{
-		// build patches for each sample
-		var req_samples = opcode_group.getSampleNames();
-		for (n in req_samples)
+		for (s in sfz)
 		{
-			if (!samples.exists(n))
+			for (n in s.getSampleManifest())
 			{
-				var content : PatchGenerator = patchGenerator(n);
-				samples.set(n, content.settings);
-			}
-		}
-		for (program in programs)
-			this.programs.set(program, opcode_group);
-		if (recache) // we're creating new region data
-		{
-			// assign the sample_data parameter
-			for (program in this.programs)
-			{
-				for (region in program.regions)
+				if (!samples.exists(n))
 				{
-					if (region.exists('sample'))
-						region.set('sample_data', samples.get(region.get('sample')));
+					var content : PatchGenerator = sampleFileParser(n);
+					samples.set(n, content.settings);
 				}
 			}
-			opcode_group.parseOpcodes(seq);
 		}
-		
 	}
 
+	public function configureSFZ(sfz: Array<SFZ>, programs : Array<Int>)
+	{
+		for (idx in 0...programs.length)
+		{
+			this.programs.set(programs[idx], 
+				sfz[idx].emitOpcodeGroup(samples));
+		}
+	}
+
+	public function configureSingleSFZ(sfz: SFZ, programs : Array<Int>)
+	{
+		for (program in programs)
+		{
+			this.programs.set(program, sfz.emitOpcodeGroup(samples));
+		}
+	}
+	
 	public function getProgramOfEvent(ev : SequencerEvent, program_number : Int) : Array<PatchEvent>
 	{
 		if (programs.exists(program_number))

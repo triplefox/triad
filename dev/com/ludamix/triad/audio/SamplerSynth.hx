@@ -21,6 +21,8 @@ import com.ludamix.triad.audio.VoiceCommon;
 import com.ludamix.triad.audio.Interpolator;
 import nme.Vector;
 
+typedef Range = {low:Float,high:Float};
+
 typedef SamplerPatch = {
 	sample : SoundSample,
 	tuning : SampleTuning,
@@ -29,11 +31,13 @@ typedef SamplerPatch = {
 	volume : Float,
 	envelope_profiles : Array<EnvelopeProfile>,
 	lfos : Array<LFO>,
-	modulation_lfo : Float, // multiplier if greater than 0
+	modulation_lfos : Array<LFO>,
 	arpeggiation_rate : Float, // 0 = off, hz value	
 	cutoff_frequency : Float,
 	filter_mode : Int,
 	resonance_level : Float,
+	keyrange : Range,
+	velrange : Range,
 	name : String
 };
 
@@ -87,7 +91,7 @@ class SamplerSynth implements SoftSynth
 	// and ramp up priority when sustaining
 	public static inline var PRIORITY_RAMPUP = 1;
 	
-	public static function patchOfSoundSample(tuning : MIDITuning, sample : SoundSample) : SamplerPatch
+	public static function patchOfSoundSample(sample : SoundSample) : SamplerPatch
 	{
 		var loops = new Array<LoopInfo>();
 		for (n in sample.loops)
@@ -100,21 +104,23 @@ class SamplerSynth implements SoftSynth
 			pan:0.5,
 			envelope_profiles:[Envelope.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[VoiceCommon.AS_VOLUME_ADD])],
 			volume:1.0,
-			lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
-			modulation_lfo:1.0,
+			lfos:new Array<LFO>(),
+			modulation_lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
 			arpeggiation_rate:0.0,
 			cutoff_frequency:0.,
 			filter_mode:VoiceCommon.FILTER_OFF,
 			resonance_level:0.,
+			keyrange:{low:0.,high:127.},
+			velrange:{low:0.,high:127.},
 			name:sample.name
 			};
 	}
 	
-	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, name : String)
+	public static function ofWAVE(wav : WAVE, name : String)
 	{
-		var sample = SoundSample.ofWAVE(tuning, wav, name, MIP_LEVELS);
+		var sample = SoundSample.ofWAVE(wav, name, MIP_LEVELS);
 		
-		return new PatchGenerator(patchOfSoundSample(tuning, sample), 
+		return new PatchGenerator(patchOfSoundSample(sample), 
 			function(settings, seq, ev) : Array<PatchEvent> { return [new PatchEvent(ev,settings)]; }
 		);
 	}
@@ -138,13 +144,15 @@ class SamplerSynth implements SoftSynth
 				loops:loops,
 				pan:0.5,
 				volume:1.0,
-				envelope_profiles:[Envelope.ADSR(function(i:Float) { return i; },0.,0.0,1.0,0.0,[VoiceCommon.AS_VOLUME_ADD])],
-				lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
-				modulation_lfo:1.0,
+				envelope_profiles:[Envelope.ADSR(function(i:Float) { return i; }, 0., 0.0, 1.0, 0.0, [VoiceCommon.AS_VOLUME_ADD])],
+				lfos:new Array<LFO>(),
+				modulation_lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
 				arpeggiation_rate:0.0,
 				filter_mode:VoiceCommon.FILTER_OFF,
 				cutoff_frequency:0.,
 				resonance_level:0.,
+				keyrange:{low:0.,high:127.},
+				velrange:{low:0.,high:127.},
 				name:"default"
 			};
 	}

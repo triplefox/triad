@@ -4,6 +4,7 @@ import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.audio.dsp.IIRFilter2;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.tools.MathTools;
+import com.ludamix.triad.audio.MIDITuning;
 
 typedef VoiceFrameInfos = { frequency:Float, wavelength:Float, volume_left:Float, volume_right:Float };
 
@@ -13,6 +14,7 @@ class VoiceCommon
 	public var followers : Array<EventFollower>;
 	public var sequencer : Sequencer;
 	public var freq : Float;
+	public var tuning : MIDITuning;
 	
 	public var master_volume : Float;
 	public var velocity : Float;
@@ -28,19 +30,20 @@ class VoiceCommon
 	public var filter_cutoff_multiplier : Float; // a kind of hacky thing to compensate for a strong/weak filter
 	public var filter_mode : Int;
 	
+	public static inline var FILTER_UNDEFINED = -1;
 	public static inline var FILTER_OFF = 0;
 	public static inline var FILTER_LP = 1;
 	public static inline var FILTER_HP = 2;
 	public static inline var FILTER_BP = 3;
 	public static inline var FILTER_BR = 4;
 	
-	public static inline var AS_PITCH_ADD = 0;
-	public static inline var AS_PITCH_MUL = 1;
-	public static inline var AS_VOLUME_ADD = 2;
-	public static inline var AS_VOLUME_MUL = 3;
-	public static inline var AS_FREQUENCY_ADD = 4;
-	public static inline var AS_FREQUENCY_ADD_CENTS = 5;
-	public static inline var AS_FREQUENCY_MUL = 6;
+	public static inline var AS_PITCH_ADD = 0; // cents
+	public static inline var AS_PITCH_MUL = 1; // cents
+	public static inline var AS_VOLUME_ADD = 2; // of 1. = 100%
+	public static inline var AS_VOLUME_MUL = 3; // of 1. = 100%
+	public static inline var AS_FREQUENCY_ADD = 4; // hz
+	public static inline var AS_FREQUENCY_ADD_CENTS = 5; // cents
+	public static inline var AS_FREQUENCY_MUL = 6; // hz
 	public static inline var AS_RESONANCE_ADD = 7;
 	public static inline var AS_RESONANCE_MUL = 8;
 	
@@ -51,6 +54,7 @@ class VoiceCommon
 		velocity = 1.0;
 		arpeggio = 0.;		
 		filter_cutoff_multiplier = 1.;
+		tuning = EvenTemperament.cache;
 	}
 	
 	public function init(sequencer : Sequencer)
@@ -97,7 +101,7 @@ class VoiceCommon
 				case AS_VOLUME_MUL: frame_vol_adjust *= qty;
 				case AS_FREQUENCY_ADD: frame_frequency_adjust += qty;
 				case AS_FREQUENCY_ADD_CENTS: frame_frequency_adjust += 
-					sequencer.tuning.midiNoteToFrequency(sequencer.tuning.frequencyToMidiNote(
+					tuning.midiNoteToFrequency(tuning.frequencyToMidiNote(
 						frame_frequency_adjust)+qty/100.);
 				case AS_FREQUENCY_MUL: frame_frequency_adjust *= qty;
 				case AS_RESONANCE_ADD: frame_resonance_adjust += qty;
@@ -108,16 +112,33 @@ class VoiceCommon
 	
 	public inline function updateLFO(patch : Dynamic, channel : SequencerChannel, cur_follower : EventFollower)
 	{
-		var lfo_num = 0;
 		for (n in cast(patch.lfos,Array<Dynamic>))
 		{
 			var cycle_length = sequencer.secondsToFrames(1. / n.frequency);
 			var delay_length = sequencer.secondsToFrames(n.delay);
 			var attack_length = sequencer.secondsToFrames(n.attack);
-			var modulation_amount = (lfo_num == 0 && patch.modulation_lfo > 0) ? 
-				patch.modulation_lfo * channel.modulation : 1.0;
 			var mpos = cur_follower.lfo_pos - delay_length;
 			if (mpos > 0)
+			{
+				if (mpos > attack_length)
+				{
+					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) * n.depth, n.assigns);
+				}
+				else // ramp up
+				{
+					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) *
+						(n.depth * (mpos/attack_length)), n.assigns);
+				}
+			}
+		}
+		for (n in cast(patch.modulation_lfos,Array<Dynamic>))
+		{
+			var cycle_length = sequencer.secondsToFrames(1. / n.frequency);
+			var delay_length = sequencer.secondsToFrames(n.delay);
+			var attack_length = sequencer.secondsToFrames(n.attack);
+			var modulation_amount = channel.modulation;
+			var mpos = cur_follower.lfo_pos - delay_length;
+			if (mpos > 0 && modulation_amount > 0)
 			{
 				if (mpos > attack_length)
 				{
@@ -129,7 +150,6 @@ class VoiceCommon
 						(n.depth * (mpos/attack_length)), n.assigns);
 				}
 			}
-			lfo_num++;
 		}
 		cur_follower.lfo_pos += 1;
 	}
@@ -178,6 +198,12 @@ class VoiceCommon
 			
 			updateLFO(patch, channel, follower);
 			
+			if (patch.filter_mode == FILTER_UNDEFINED) // default filter behavior
+			{
+				if (patch.cutoff_frequency >= 0.) patch.filter_mode = FILTER_LP;
+				else patch.filter_mode = FILTER_OFF;
+			}
+			
 			filter_mode = patch.filter_mode;
 			if (filter_mode != FILTER_OFF)
 				filter.set(frame_frequency_adjust, frame_resonance_adjust);
@@ -185,7 +211,7 @@ class VoiceCommon
 			freq = seq_event.data.freq;
 			
 			var wl = sequencer.waveLengthOfBentFrequency(freq, 
-						pitch_bend + Std.int((frame_pitch_adjust * 8192 / sequencer.tuning.bend_semitones)));
+						pitch_bend + Std.int((frame_pitch_adjust * 8192 / tuning.bend_semitones)));
 			
 			freq = sequencer.frequency(wl);
 			

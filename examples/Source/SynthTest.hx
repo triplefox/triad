@@ -1,5 +1,5 @@
 import com.ludamix.triad.audio.Codec;
-import com.ludamix.triad.audio.SamplerBank;
+import com.ludamix.triad.audio.SFZBank;
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.SMFParser;
 import com.ludamix.triad.format.SMF;
@@ -84,8 +84,8 @@ class SynthTest
 	var songs : Array<Array<String>>;
 	var infos : TextField;
 	var infos2 : TextField;
-	var melodic : SamplerBank;
-	var percussion : SamplerBank;
+	var melodic : SFZBank;
+	var percussion : SFZBank;
 
 	#if debug
 		public static inline var VOICES = 4;
@@ -220,16 +220,17 @@ class SynthTest
         var sfzPath = "sfz/";
         var patchGenerator = function(n) {
             var header = WAV.read(Assets.getBytes(sfzPath + n), sfzPath + n);
-            var content : PatchGenerator=  SamplerSynth.ofWAVE(seq.tuning, header, n);
+            var content : PatchGenerator=  SamplerSynth.ofWAVE(header, n);
             return content;
         }
         
-		melodic = new SamplerBank(seq);
+		melodic = new SFZBank(seq);
 		for (n in 0...128)
 		{
-			queueFunction(function(){
-				var sfz_loadable = SFZ.load(seq, Assets.getBytes(sfzPath + Std.string(n+1) + ".sfz"));
-				melodic.configureSFZ(sfz_loadable[0], [n], patchGenerator);
+			queueFunction(function() {
+				var sfz = SFZ.load(seq, Assets.getBytes(sfzPath + Std.string(n + 1) + ".sfz"));
+				melodic.configureSamples([sfz], patchGenerator);
+				melodic.configureSFZ([sfz], [n]);
 				loader_gui.keys.infos.text = "Loaded instrument " + Std.string(n + 1);
 				loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 			});
@@ -237,12 +238,11 @@ class SynthTest
 		}
 
 		queueFunction(function(){
-			percussion = new SamplerBank(seq);
+			percussion = new SFZBank(seq);
 			var sfz_data = SFZ.load(seq, Assets.getBytes(sfzPath + "kit-standard.sfz"));
 			var assign = new Array<Int>();
-			for (n in 0...128)
-				assign.push(n);
-			percussion.configureSFZ(sfz_data[0], assign, patchGenerator);
+			percussion.configureSamples([sfz_data], patchGenerator);
+			for (n in 0...128) percussion.configureSFZ([sfz_data], [n]);
 			loader_gui.keys.infos.text = "Loaded percussion";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});

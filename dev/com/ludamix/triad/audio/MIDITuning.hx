@@ -24,6 +24,8 @@ class EvenTemperament implements MIDITuning
 	
 	public var bend_semitones : Int;
 	
+	public static var cache = new EvenTemperament();
+	
 	public function new()
 	{
 		bend_semitones = 2;

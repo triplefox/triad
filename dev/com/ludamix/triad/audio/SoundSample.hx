@@ -4,6 +4,7 @@ import nme.Vector;
 import com.ludamix.triad.audio.SampleMipMap;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.format.WAV;
+import com.ludamix.triad.audio.MIDITuning;
 
 typedef RawSample = {
 	sample_left : FastFloatBuffer, // only this side is used for mono
@@ -59,7 +60,7 @@ class SoundSample
 		};	
 	}
 
-	public static function ofWAVE(tuning : MIDITuning, wav : WAVE, name : String, mip_levels : Int)
+	public static function ofWAVE(wav : WAVE, name : String, mip_levels : Int)
 	{
 		
 		var wav_data = wav.data;
@@ -94,7 +95,8 @@ class SoundSample
 		sample.mip_levels = SampleMipMap.genRaw(SampleMipMap.genMips(wav.data[0], wav.data[1], mip_levels));
 		sample.loops = loops;
 		
-		var tuning = { base_frequency: tuning.midiNoteToFrequency( midi_unity_note + midi_pitch_fraction / 0xFFFFFFFF),
+		var tuning = { base_frequency: EvenTemperament.cache.midiNoteToFrequency( 
+			midi_unity_note + midi_pitch_fraction / 0xFFFFFFFF),
 			sample_rate : wav.header.samplingRate };
 		sample.tuning = tuning;
 		
