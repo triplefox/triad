@@ -86,55 +86,55 @@ class IIRFilter2
 	  
 	}
 	
-	public inline function firstPass(input : Float)
+	public inline function filterPass(input : Float)
 	{
 		f3 = input - this.damp * f2;
 		f0 = f0 + this.freq * f2;
 		f1 = f3 - f0;
 		f2 = this.freq * f1 + f2;
 	}
-	
-	public inline function secondPass(input : Float)
-	{
-		f3 =  input - this.damp * f2;
-		f0 = f0 + this.freq * f2;
-		f1 = f3 - f0;
-		f2 = this.freq * f1 + f2;		
-	}
 
 	public inline function getLP(input : Float)
 	{
-		firstPass(input);
-		output = 0.5 * f0;
-		secondPass(input);
-		output = 0.5 * f0;
+		filterPass(input);
+		output = 0.33333 * f0;
+		filterPass(input);
+		output = 0.33333 * f0;
+		filterPass(input);
+		output = 0.33333 * f0;
 		return output;
 	}
 	
 	public inline function getHP(input : Float)
 	{
-		firstPass(input);
-		output = 0.5 * f1;
-		secondPass(input);
-		output = 0.5 * f1;
+		filterPass(input);
+		output = 0.33333 * f1;
+		filterPass(input);
+		output = 0.33333 * f1;
+		filterPass(input);
+		output = 0.33333 * f1;
 		return output;
 	}
 	
 	public inline function getBP(input : Float)
 	{
-		firstPass(input);
-		output = 0.5 * f2;
-		secondPass(input);
-		output = 0.5 * f2;
+		filterPass(input);
+		output = 0.33333 * f2;
+		filterPass(input);
+		output = 0.33333 * f2;
+		filterPass(input);
+		output = 0.33333 * f2;
 		return output;
 	}
 	
 	public inline function getBR(input : Float)
 	{
-		firstPass(input);
-		output = 0.5 * f3;
-		secondPass(input);
-		output = 0.5 * f3;
+		filterPass(input);
+		output = 0.33333 * f3;
+		filterPass(input);
+		output = 0.33333 * f3;
+		filterPass(input);
+		output = 0.33333 * f3;
 		return output;
 	}
 	
