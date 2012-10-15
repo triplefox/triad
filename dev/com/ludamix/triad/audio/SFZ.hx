@@ -360,7 +360,7 @@ class SFZ
 					case PitchLfoDelay: pitchlfo_p.delay = u;
 					case PitchLfoFade: pitchlfo_p.attack = u;
 					case PitchLfoFreq: pitchlfo_p.frequency = u;
-					case PitchLfoDepth: pitchlfo_p.depth = u/100.; use_pitchlfo = true;
+					case PitchLfoDepth: pitchlfo_p.depth = u; use_pitchlfo = true;
 					case PitchLfoDepthcc(controller): pitchlfo_p.depthcc.set(controller, u);
 					case PitchLfoDepthChanAft: pitchlfo_p.depthaft.channel = u;
 					case PitchLfoDepthPolyAft: pitchlfo_p.depthaft.poly = u;
@@ -395,7 +395,7 @@ class SFZ
 					case FilLfoDelay: fillfo_p.delay = u;
 					case FilLfoFade: fillfo_p.attack = u;
 					case FilLfoFreq: fillfo_p.frequency = u;
-					case FilLfoDepth: fillfo_p.depth = u/100.; use_fillfo = true;
+					case FilLfoDepth: fillfo_p.depth = u; use_fillfo = true;
 					case FilLfoDepthcc(controller): fillfo_p.depthcc.set(controller, u);
 					case FilLfoDepthChanAft: fillfo_p.depthaft.channel = u;
 					case FilLfoDepthPolyAft: fillfo_p.depthaft.poly = u;
@@ -452,7 +452,7 @@ class SFZ
 					case AmpLfoDelay: amplfo_p.delay = u;
 					case AmpLfoFade: amplfo_p.attack = u;
 					case AmpLfoFreq: amplfo_p.frequency = u;
-					case AmpLfoDepth: amplfo_p.depth = db2pctPower(u/100.); use_amplfo = true;
+					case AmpLfoDepth: amplfo_p.depth = db2pctPower(u)-1.; use_amplfo = true;
 					case AmpLfoDepthcc(controller): amplfo_p.depthcc.set(controller, u);
 					case AmpLfoDepthChanAft: amplfo_p.depthaft.channel = u;
 					case AmpLfoDepthPolyAft: amplfo_p.depthaft.poly = u;
@@ -985,7 +985,7 @@ class SFZ
 	public static function amplfo(lfo : SFZLfoDefinition)
 	{
 		return { frequency:lfo.frequency, depth:lfo.depth, delay:lfo.delay, attack:lfo.attack,
-			assigns:[VoiceCommon.AS_VOLUME_MUL]};
+			assigns:[VoiceCommon.AS_VOLUME_ADD]};
 	}
 	
 	public static function pitchlfo(lfo : SFZLfoDefinition)
