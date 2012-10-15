@@ -1,5 +1,6 @@
 import com.ludamix.triad.audio.Codec;
 import com.ludamix.triad.audio.SamplerSynth;
+import com.ludamix.triad.audio.SFZBank;
 import com.ludamix.triad.audio.SMFParser;
 import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
@@ -228,9 +229,9 @@ class CompressedSynthTest
                 
         
         queueFunction(function() {
-            var assign = new Array<Int>();
+            var assign = new Array<SFZPatchAssignment>();
 			for (n in 0...128)
-				assign.push(n);
+				assign.push({sfz:0,patch:n});
             var percussionData = Assets.getBytes(sfzPath + "percussion.sfc");
             percussionData.endian = Endian.LITTLE_ENDIAN;
             percussion = SFZ.loadCompressed(seq, percussionData, assign);

@@ -228,8 +228,8 @@ class SynthTest
 		{
 			queueFunction(function() {
 				var sfz = SFZ.load(seq, Assets.getBytes(sfzPath + Std.string(n + 1) + ".sfz"));
-				melodic.configureSamples([sfz], patchGenerator);
-				melodic.configureSFZ([sfz], [n]);
+				melodic.configureSamples(sfz, patchGenerator);
+				melodic.configureSFZ(sfz, n);
 				loader_gui.keys.infos.text = "Loaded instrument " + Std.string(n + 1);
 				loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 			});
@@ -238,10 +238,10 @@ class SynthTest
 
 		queueFunction(function(){
 			percussion = new SFZBank(seq);
-			var sfz_data = SFZ.load(seq, Assets.getBytes(sfzPath + "kit-standard.sfz"));
+			var sfz = SFZ.load(seq, Assets.getBytes(sfzPath + "kit-standard.sfz"));
 			var assign = new Array<Int>();
-			percussion.configureSamples([sfz_data], patchGenerator);
-			for (n in 0...128) percussion.configureSFZ([sfz_data], [n]);
+			percussion.configureSamples(sfz, patchGenerator);
+			for (n in 0...128) percussion.configureSFZ(sfz, n);
 			loader_gui.keys.infos.text = "Loaded percussion";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});

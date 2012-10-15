@@ -28,6 +28,7 @@ typedef SFZEnvelopeDefinition = { delay:Float, start:Float, attack:Float, hold:F
 	vel2sustain:Float, vel2release:Float, vel2depth:Float };
 typedef SFZLfoDefinition = { frequency:Float, depth:Float, delay:Float, attack:Float, freqcc:IntHash<Float>,
 	depthcc:IntHash<Float>, depthaft:AftertouchDefinition, freqaft:AftertouchDefinition };
+typedef SFZPatchAssignment = { sfz:Int, patch:Int };
 
 class SFZ
 {
@@ -148,7 +149,8 @@ class SFZ
         return s.toString();
     }
     
-    public static function loadCompressed(seq:Sequencer, file : ByteArray, programs:Array<Int> = null) : SFZBank
+    public static function loadCompressed(seq:Sequencer, file : ByteArray, 
+		programs:Array<SFZPatchAssignment> = null) : SFZBank
     {
         var sfzBank = new SFZBank(seq);
         
@@ -184,19 +186,16 @@ class SFZ
         }
         
         // assign groups to bank
-        for (i in 0 ... sfz_set.length)
-        {
-            var groupPrograms:Array<Int>;
-            if (programs != null)
-            {
-                groupPrograms = programs;
-            }
-            else
-            {
-                groupPrograms = [i];
-            }
-            sfzBank.configureSFZ([sfz_set[i]], groupPrograms);
-        }
+		
+		if (programs == null)
+		{
+			programs = new Array<SFZPatchAssignment>();
+			for (n in 0...sfz_set.length)
+				programs.push({sfz:n,patch:n});
+		}
+		
+		for ( n in programs )
+			sfzBank.configureSFZ(sfz_set[n.sfz], n.patch);
         
         return sfzBank;
     }
