@@ -59,7 +59,7 @@ class SamplerSynth implements SoftSynth
 	
 	public var resample_method : Int;
 	
-	public static inline var MIP_LEVELS = 8;
+	public static inline var MIP_LEVELS = 6;
 	
 	public static inline var RESAMPLE_DROP = 0;
 	public static inline var RESAMPLE_LINEAR = 1;

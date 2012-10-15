@@ -39,7 +39,7 @@ class SFZBank
 		for (idx in 0...programs.length)
 		{
 			this.programs.set(programs[idx], 
-				sfz[idx].emitOpcodeGroup(samples));
+				sfz[idx].emitOpcodeGroup(seq, samples));
 		}
 	}
 
@@ -47,7 +47,7 @@ class SFZBank
 	{
 		for (program in programs)
 		{
-			this.programs.set(program, sfz.emitOpcodeGroup(samples));
+			this.programs.set(program, sfz.emitOpcodeGroup(seq, samples));
 		}
 	}
 	

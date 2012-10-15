@@ -207,14 +207,12 @@ class SFZ
 		return new SFZ(seq, file.readUTFBytes(file.length));
     }
 	
-	public static inline function db2pct(db : Float)
+	public static inline function db2pctPower(db : Float)
 	{
-		// in the sfz spec: "+6db = power*2, -6db = power/2"
-		// but I am using "real" dbs (+/- 10db = power *  / 2) here because it seems a little better.
-		return 1.0 * Math.pow(2, 10. / db);
+		return 1.0 * Math.pow(10, db/20.);
 	}
 	
-	public function emitOpcodeGroup(samples : Hash<SamplerPatch>, ?use_cache=true) : SamplerOpcodeGroup
+	public function emitOpcodeGroup(seq : Sequencer, samples : Hash<SamplerPatch>, ?use_cache=true) : SamplerOpcodeGroup
 	{
 		
 		if (cache != null && use_cache) return cache;
@@ -261,7 +259,7 @@ class SFZ
 			var tune = 0.;
 			
 			var filter_mode = VoiceCommon.FILTER_UNDEFINED;
-			var filter_cutoff = -1.;
+			var filter_cutoff = 0.;
 			var filter_cutoff_cc = new IntHash<Float>();
 			var filter_aft : AftertouchDefinition = {channel:0., poly:0.};
 			var filter_resonance = 0.;
@@ -352,7 +350,7 @@ class SFZ
 					case PitchEgDecay: pitcheg_p.decay = u;
 					case PitchEgSustain: pitcheg_p.sustain = u;
 					case PitchEgRelease: pitcheg_p.release = u;
-					case PitchEgDepth: pitcheg_p.depth = u;
+					case PitchEgDepth: pitcheg_p.depth = u; use_pitcheg = true;
 					case PitchEgVel2Delay: pitcheg_p.vel2delay = u;
 					case PitchEgVel2Attack: pitcheg_p.vel2attack = u;
 					case PitchEgVel2Hold: pitcheg_p.vel2hold = u;
@@ -363,7 +361,7 @@ class SFZ
 					case PitchLfoDelay: pitchlfo_p.delay = u;
 					case PitchLfoFade: pitchlfo_p.attack = u;
 					case PitchLfoFreq: pitchlfo_p.frequency = u;
-					case PitchLfoDepth: pitchlfo_p.depth = u;
+					case PitchLfoDepth: pitchlfo_p.depth = u/100.; use_pitchlfo = true;
 					case PitchLfoDepthcc(controller): pitchlfo_p.depthcc.set(controller, u);
 					case PitchLfoDepthChanAft: pitchlfo_p.depthaft.channel = u;
 					case PitchLfoDepthPolyAft: pitchlfo_p.depthaft.poly = u;
@@ -375,37 +373,37 @@ class SFZ
 					case Cutoffcc(controller): filter_cutoff_cc.set(controller, u);
 					case CutoffChanAft: filter_aft.channel = u;
 					case CutoffPolyAft: filter_aft.poly = u;
-					case Resonance: filter_resonance = u;
+					case Resonance: filter_resonance = u/100.;
 					case FilKeyTrack:
 					case FilKeyCenter:
 					case FilVelTrack:
 					case FilRandom:
-					case FilEgDelay:
-					case FilEgStart:
-					case FilEgAttack:
-					case FilEgHold:
-					case FilEgDecay:
-					case FilEgSustain:
-					case FilEgRelease:
-					case FilEgDepth:
-					case FilEgVel2Delay:
-					case FilEgVel2Attack:
-					case FilEgVel2Hold:
-					case FilEgVel2Decay:
-					case FilEgVel2Sustain:
-					case FilEgVel2Release:
-					case FilEgVel2Depth:
-					case FilLfoDelay:
-					case FilLfoFade:
-					case FilLfoFreq:
-					case FilLfoDepth:
-					case FilLfoDepthcc(controller):
-					case FilLfoDepthChanAft:
-					case FilLfoDepthPolyAft:
-					case FilLfoFreqcc(controller):
-					case FilLfoFreqChanAft:
-					case FilLfoFreqPolyAft:
-					case Volume: patch.volume = db2pct(u);
+					case FilEgDelay: fileg_p.delay = u;
+					case FilEgStart: fileg_p.start = u;
+					case FilEgAttack: fileg_p.attack = u;
+					case FilEgHold: fileg_p.hold = u;
+					case FilEgDecay: fileg_p.decay = u;
+					case FilEgSustain: fileg_p.sustain = u;
+					case FilEgRelease: fileg_p.release = u; 
+					case FilEgDepth: fileg_p.depth = u; use_fileg = true;
+					case FilEgVel2Delay: fileg_p.vel2delay = u;
+					case FilEgVel2Attack: fileg_p.vel2attack = u;
+					case FilEgVel2Hold: fileg_p.vel2hold = u;
+					case FilEgVel2Decay: fileg_p.vel2decay = u;
+					case FilEgVel2Sustain: fileg_p.vel2sustain = u;
+					case FilEgVel2Release: fileg_p.vel2release = u;
+					case FilEgVel2Depth: fileg_p.vel2depth = u;
+					case FilLfoDelay: fillfo_p.delay = u;
+					case FilLfoFade: fillfo_p.attack = u;
+					case FilLfoFreq: fillfo_p.frequency = u;
+					case FilLfoDepth: fillfo_p.depth = u/100.; use_fillfo = true;
+					case FilLfoDepthcc(controller): fillfo_p.depthcc.set(controller, u);
+					case FilLfoDepthChanAft: fillfo_p.depthaft.channel = u;
+					case FilLfoDepthPolyAft: fillfo_p.depthaft.poly = u;
+					case FilLfoFreqcc(controller): fillfo_p.freqcc.set(controller, u);
+					case FilLfoFreqChanAft: fillfo_p.freqaft.channel = u;
+					case FilLfoFreqPolyAft: fillfo_p.freqaft.poly = u;
+					case Volume: patch.volume = db2pctPower(u);
 					case Pan: patch.pan = (u+1)/2.;
 					case Width:
 					case Position:
@@ -455,7 +453,7 @@ class SFZ
 					case AmpLfoDelay: amplfo_p.delay = u;
 					case AmpLfoFade: amplfo_p.attack = u;
 					case AmpLfoFreq: amplfo_p.frequency = u;
-					case AmpLfoDepth: amplfo_p.depth = u;
+					case AmpLfoDepth: amplfo_p.depth = db2pctPower(u/100.); use_amplfo = true;
 					case AmpLfoDepthcc(controller): amplfo_p.depthcc.set(controller, u);
 					case AmpLfoDepthChanAft: amplfo_p.depthaft.channel = u;
 					case AmpLfoDepthPolyAft: amplfo_p.depthaft.poly = u;
@@ -585,9 +583,9 @@ class SFZ
 				base_frequency : EvenTemperament.cache.midiNoteToFrequency(pitch_keycenter - transpose - tune)
 			};
 			
-			patch.envelope_profiles.push(ampeg(ampeg_p));
-			if (use_pitcheg) { patch.envelope_profiles.push(pitcheg(pitcheg_p)); }
-			if (use_fileg) { patch.envelope_profiles.push(fileg(fileg_p)); }
+			patch.envelope_profiles.push(ampeg(seq, ampeg_p));
+			if (use_pitcheg) { patch.envelope_profiles.push(pitcheg(seq, pitcheg_p)); }
+			if (use_fileg) { patch.envelope_profiles.push(fileg(seq, fileg_p)); }
 			if (use_amplfo) { patch.lfos.push(amplfo(amplfo_p)); }
 			if (use_pitchlfo) { patch.lfos.push(pitchlfo(pitchlfo_p)); }
 			if (use_fillfo) { patch.lfos.push(fillfo(fillfo_p)); }
@@ -600,6 +598,8 @@ class SFZ
 			patch.filter_mode = filter_mode;
 			patch.cutoff_frequency = filter_cutoff;
 			patch.resonance_level = filter_resonance;
+			if (patch.cutoff_frequency <= 1.) patch.filter_mode = VoiceCommon.FILTER_OFF;
+			if (patch.cutoff_frequency > seq.sampleRate()>>1) patch.filter_mode = seq.sampleRate()>>1;
 			
 			cache.regions.push(patch);
 		}
@@ -638,8 +638,8 @@ class SFZ
 				}
 			case CurveOption(which): return null;
 			case Semitones(amount): return amount;
-			case Cents(amount): return amount/1200.; // to semitones
-			case Percentage(amount): return amount;
+			case Cents(amount): return amount / 100.; // to semitones
+			case Percentage(amount): return amount / 100.; // to 0-1
 			case Hertz(amount): return amount;
 			case Octaves(amount): return amount;
 			case FilterTypeOption(which): switch(which)
@@ -814,7 +814,7 @@ class SFZ
 			case "fileg_decay": r.op = FilEgDecay; r.value = Seconds(v);
 			case "fileg_sustain": r.op = FilEgSustain; r.value = Percentage(v);
 			case "fileg_release": r.op = FilEgRelease; r.value = Seconds(v);
-			case "fileg_depth": r.op = FilEgDepth; r.value = Cents(v);
+			case "fileg_depth": r.op = FilEgDepth; r.value = Cents(v); 
 			case "fileg_veltodelay": r.op = FilEgVel2Delay; r.value = Seconds(v);
 			case "fileg_veltoattack": r.op = FilEgVel2Attack; r.value = Seconds(v);
 			case "fileg_veltohold": r.op = FilEgVel2Hold; r.value = Seconds(v);
@@ -944,31 +944,49 @@ class SFZ
 		};
 	}
 	
-	public static function ampeg(env : SFZEnvelopeDefinition) : EnvelopeProfile
+	public static function ampeg(seq : Sequencer, env : SFZEnvelopeDefinition) : EnvelopeProfile
 	{
-		return Envelope.DSAHDSHR(function(a:Float) { return a; }, env.delay, env.start, 
-			env.attack, env.hold, env.decay, env.sustain, 0., env.release, 1.0, 1.0, 1.0, 
+		return Envelope.DSAHDSHR(function(a:Float) { return a; }, 
+			seq.secondsToFrames(env.delay), 
+			env.start, 
+			seq.secondsToFrames(env.attack), 
+			seq.secondsToFrames(env.hold), 
+			seq.secondsToFrames(env.decay), env.sustain, 0., 
+			seq.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
 			[VoiceCommon.AS_VOLUME_ADD]);
 	}
 
-	public static function pitcheg(env : SFZEnvelopeDefinition) : EnvelopeProfile
+	public static function pitcheg(seq : Sequencer, env : SFZEnvelopeDefinition) : EnvelopeProfile
 	{
-		return Envelope.DSAHDSHR(function(a:Float) { return a; }, env.delay, env.start*env.depth, 
-			env.attack, env.hold, env.decay, env.sustain * env.depth, 0., env.release, 
+		return Envelope.DSAHDSHR(function(a:Float) { return a; }, 
+			seq.secondsToFrames(env.delay), 
+			env.start*env.depth, 
+			seq.secondsToFrames(env.attack), 
+			seq.secondsToFrames(env.hold), 
+			seq.secondsToFrames(env.decay), 
+			env.sustain * env.depth, 0., 
+			seq.secondsToFrames(env.release), 
 				1.0, 1.0, 1.0, [VoiceCommon.AS_PITCH_ADD]);
 	}
 	
-	public static function fileg(env : SFZEnvelopeDefinition) : EnvelopeProfile
+	public static function fileg(seq : Sequencer, env : SFZEnvelopeDefinition) : EnvelopeProfile
 	{
-		return Envelope.DSAHDSHR(function(a:Float) { return a; }, env.delay, env.start*env.depth, 
-			env.attack, env.hold, env.decay, env.sustain * env.depth, 0., env.release, 1.0, 1.0, 1.0, 
+		return Envelope.DSAHDSHR(function(a:Float) { return a; }, 
+			seq.secondsToFrames(env.delay), 
+			env.start*env.depth, 
+			seq.secondsToFrames(env.attack), 
+			seq.secondsToFrames(env.hold), 
+			seq.secondsToFrames(env.decay), 
+			env.sustain * env.depth, 0., 
+			seq.secondsToFrames(env.release), 
+			1.0, 1.0, 1.0, 
 			[VoiceCommon.AS_FREQUENCY_ADD_CENTS]);
 	}
 	
 	public static function amplfo(lfo : SFZLfoDefinition)
 	{
 		return { frequency:lfo.frequency, depth:lfo.depth, delay:lfo.delay, attack:lfo.attack,
-			assigns:[VoiceCommon.AS_VOLUME_ADD]};
+			assigns:[VoiceCommon.AS_VOLUME_MUL]};
 	}
 	
 	public static function pitchlfo(lfo : SFZLfoDefinition)

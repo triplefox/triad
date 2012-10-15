@@ -100,7 +100,7 @@ class VoiceCommon
 				case AS_VOLUME_ADD: frame_vol_adjust += qty;
 				case AS_VOLUME_MUL: frame_vol_adjust *= qty;
 				case AS_FREQUENCY_ADD: frame_frequency_adjust += qty;
-				case AS_FREQUENCY_ADD_CENTS: frame_frequency_adjust += 
+				case AS_FREQUENCY_ADD_CENTS: frame_frequency_adjust = 
 					tuning.midiNoteToFrequency(tuning.frequencyToMidiNote(
 						frame_frequency_adjust)+qty/100.);
 				case AS_FREQUENCY_MUL: frame_frequency_adjust *= qty;
@@ -200,9 +200,11 @@ class VoiceCommon
 			
 			if (patch.filter_mode == FILTER_UNDEFINED) // default filter behavior
 			{
-				if (patch.cutoff_frequency >= 0.) patch.filter_mode = FILTER_LP;
+				if (patch.cutoff_frequency >= 1.) patch.filter_mode = FILTER_LP;
 				else patch.filter_mode = FILTER_OFF;
 			}
+			if (frame_frequency_adjust >= sequencer.sampleRate() >> 1) 
+				frame_frequency_adjust = sequencer.sampleRate()>>1;
 			
 			filter_mode = patch.filter_mode;
 			if (filter_mode != FILTER_OFF)
@@ -224,8 +226,8 @@ class VoiceCommon
 				frame_vol_adjust;
 			
 			var pan_sum = MathTools.limit(0., 1., pan + 2 * (patch.pan - 0.5));
-			var left = curval * Math.sin(pan_sum * 2);
-			var right = curval * Math.cos(1. - pan_sum) * 2;
+			var left = curval * Math.cos(pan_sum * 2);
+			var right = curval * Math.sin(pan_sum * 2);
 			
 			progress_follower( { frequency:freq, wavelength:wl, volume_left:left, volume_right:right }, 			
 				follower, follower==cur_follower);
