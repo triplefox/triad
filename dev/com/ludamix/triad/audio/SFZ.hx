@@ -150,7 +150,7 @@ class SFZ
     }
     
     public static function loadCompressed(seq:Sequencer, file : ByteArray, 
-		programs:Array<SFZPatchAssignment> = null) : SFZBank
+		programs:Array<SFZPatchAssignment> = null, ?mip_levels = 8) : SFZBank
     {
         var sfzBank = new SFZBank(seq);
         
@@ -158,8 +158,6 @@ class SFZ
         
         var sfz_set:Array<SFZ> = new Array<SFZ>();
 		
-		var mip_levels = 4;
-        
         // read all SFZDefinitionBlocks
         var blockCount = file.readInt();
         for (i in 0 ... blockCount)
