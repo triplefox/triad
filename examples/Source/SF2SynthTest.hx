@@ -1,6 +1,5 @@
 import com.ludamix.triad.audio.Codec;
 import com.ludamix.triad.audio.MIDITuning;
-import com.ludamix.triad.audio.SamplerBank;
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.sf2.SampleHeader;
 import com.ludamix.triad.audio.sf2.SF2;
@@ -189,7 +188,7 @@ class SF2SynthTest
         var sfzPath = "sfz/";
         var patchGenerator = function(n) {
             var header = WAV.read(Assets.getBytes(sfzPath + n), sfzPath + n);
-            var content : PatchGenerator=  SamplerSynth.ofWAVE(seq.tuning, header, n);
+            var content : PatchGenerator=  SamplerSynth.ofWAVE(header, n);
             return content;
         }
         
@@ -201,17 +200,6 @@ class SF2SynthTest
 			//throw ""; // if we want to inspect tracelogs at load time
 		});
 
-		/*queueFunction(function(){
-			percussion = new SamplerBank(seq);
-			var sfz_data = SFZ.load(seq, Assets.getBytes(sfzPath + "kit-standard.sfz"));
-			var assign = new Array<Int>();
-			for (n in 0...128)
-				assign.push(n);
-			percussion.assignSFZ(sfz_data[0], assign, patchGenerator);
-			loader_gui.keys.infos.text = "Loaded percussion";
-			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
-		});
-		*/
 		queueFunction(function(){
 
 			var gui_data = 

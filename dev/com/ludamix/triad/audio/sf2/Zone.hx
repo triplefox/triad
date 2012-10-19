@@ -21,45 +21,18 @@ class Zone
     {
     }
 	
-	public function generatorsAsIntHash()
+	public function generatorsAsIntHash() : IntHash<Generator>
 	{
 		var ih = new IntHash<Generator>();
-		for (g in generators)
+		if (generators != null)
 		{
-			ih.set(Type.enumIndex(g.generator_type), g);
-		}
-	}
-	
-	public function getMerged(zones : Array<Zone>)
-	{
-		
-		/*
-		var gens = generatorsAsIntHash();
-		for (z in zones)
-		{
-			var zg = z.generatorsAsIntHash();
-			for (k in zg.keys())
+			for (g in generators)
 			{
-				var ng : Generator = gens.get(k);
-				var og = zg.get(k);
-				if (ng = null)
-				{ 
-					ng = new Generator(); 
-					gens.set(k, ng); 
-					ng.generator_type = og.generator_type;
-					ng.raw_amount = og.raw_amount; 
-					ng.instrument = og.instrument;
-					ng.sample_header = og.sample_header;
-				}
-				else
-				{
-					ng.raw_amount += og.raw_amount;
-					if (og.instrument == null) ng.instrument = og.instrument;
-					if (og.sample_header == null) ng.sample_header = og.sample_header;
-				}
+				if (g!=null)
+					ih.set(Type.enumIndex(g.generator_type), g);
 			}
 		}
-		*/
+		return ih;
 	}
 	
 }
