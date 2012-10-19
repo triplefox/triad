@@ -19,6 +19,7 @@ import com.ludamix.triad.audio.sf2.GeneratorEnum;
 import com.ludamix.triad.audio.sf2.ModulatorType;
 import com.ludamix.triad.audio.sf2.TransformEnum;
 import com.ludamix.triad.audio.MIDITuning;
+import nme.Lib;
 import nme.utils.ByteArray;
 import nme.utils.Endian;
 import nme.Vector;
@@ -197,7 +198,7 @@ class SF2
 	public static inline function attentuationDBtoPctPower(data : Float) { return 1.0 * Math.pow(10, data/20.);  }
 	public static inline function DBtoCB(data : Float) { return data * 10.; }
 	public static inline function CBtoDB(data : Float) { return data / 10.; }
-	public static inline function getLSMS(lsms : Int) { return [ lsms & 0xFF, lsms >> 8 ]; } // high, low
+	public static inline function getLSMS(lsms : Int) { return [ lsms & 0xFF, lsms >> 8 ]; } // low, high
 	public static inline function toLSMS(low : Int, high : Int) { return (high << 8) | (low); }
 	
 	// generator merging rules:
@@ -415,10 +416,12 @@ class SF2
 		patch.envelope_profiles.push(genAmpeg(ampeg));
 		//patch.cutoff_frequency = fil_cutoff;
 		//patch.resonance_level = fil_resonance;
-		patch.keyrange.low = lo_key;
-		patch.keyrange.high = hi_key;
-		patch.velrange.low = lo_vel;
-		patch.velrange.high = hi_vel;
+		
+		// this "0.001" thing seems like it should be unnecessary...however I'm getting broken ranges without it?
+		patch.keyrange.low = lo_key - 0.001;
+		patch.keyrange.high = hi_key + 0.001;
+		patch.velrange.low = lo_vel - 0.001;
+		patch.velrange.high = hi_vel + 0.001;
 		
 		return patch;
 	}
@@ -513,34 +516,35 @@ class SF2
 		
 	}
 	
-	public function getPatchOfEvent(ev : SequencerEvent, patch_number : Int, bank_number : Int) : Array<PatchEvent>
+	public function getPatchOfEvent(ev : SequencerEvent, patch_number : Int, bank_number : Int,
+		default_patch : Int, default_bank : Int) : Array<PatchEvent>
 	{
 		
 		var result = new Array<PatchEvent>();
 		var b = usable_banks.get(bank_number);
-		if (b!=null)
+		if (b == null) { b = usable_banks.get(default_bank); }
+		var opcode_group = b.get(patch_number);
+		if (opcode_group == null) { opcode_group = b.get(default_patch); }
+		if (opcode_group != null)
 		{
-			//trace(Std.format("${ev.channel}:${bank_number}:${patch_number}"));
-			if (b.exists(patch_number))
-			{
-				var opcode_group = b.get(patch_number);
-				var q = opcode_group.query(ev, sequencer);
-				if (q!=null)
-					result = result.concat(q);
-			}
+			var q = opcode_group.query(ev, sequencer);
+			if (q!=null)
+				result = result.concat(q);
 		}
+		//trace(Std.format("${ev.channel}:${bank_number}:${patch_number}:${ev.data}"));
 		
 		return result;
 		
 	}
     
-    public function getGenerator() : PatchGenerator
+    public function getGenerator(default_patch : Int, default_bank : Int) : PatchGenerator
     {
 		return new PatchGenerator(this, function(settings, seq, seq_event) : Array<PatchEvent> 
 		{
-			return getPatchOfEvent(seq_event, 
+			return getPatchOfEvent(seq_event,
 				seq.channels[seq_event.channel].patch_id, 
-				seq.channels[seq_event.channel].bank_id);
+				seq.channels[seq_event.channel].bank_id,
+				default_patch, default_bank);
 		} );
     } 
 	

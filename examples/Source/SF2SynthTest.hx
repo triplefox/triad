@@ -80,11 +80,11 @@ class SF2SynthTest
 
 			if (n == 9)
 			{
-				seq.addChannel([vgroup], sf2.getGenerator());
+				seq.addChannel([vgroup], sf2.getGenerator(0,128));
 				vgroup.channel.bank_id = 128;
 			}
 			else
-				seq.addChannel([vgroup], sf2.getGenerator());
+				seq.addChannel([vgroup], sf2.getGenerator(0,0));
 
 			/*seq.addChannel([vgroup], SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 
@@ -117,7 +117,7 @@ class SF2SynthTest
 			if (n == 9)
 			{
 				var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
-				seq.addChannel([vgroup], sf2.getGenerator());
+				seq.addChannel([vgroup], sf2.getGenerator(0,128));
 				vgroup.channel.bank_id = 128;
 			}
 			else
@@ -442,11 +442,15 @@ class SF2SynthTest
 		//events = SMFParser.load(seq, SMF.read(Assets.getBytes(songs[song_count][1])).toByteArray());
 		events = SMFParser.load(seq, Assets.getBytes(songs[song_count][1]));
 
-		/*for (e in events)
+		for (e in events)
 		{
-			if (e.type == SequencerEvent.SET_PATCH)
-				e.data = 47;
-		}*/
+			// for some reason a very large number of SMFs will try to set the percussion to the melodic bank,
+			// which sounds idiotic.
+			if (e.type == SequencerEvent.SET_BANK && e.channel == 9 && e.data.value == 0)
+			{
+				e.data = 127; 
+			}
+		}
 
 		seq.pushEvents(events.copy());
 		infos.text = "playing " + songs[song_count][1];
