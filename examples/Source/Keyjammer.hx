@@ -1,5 +1,4 @@
 import com.ludamix.triad.audio.Codec;
-import com.ludamix.triad.audio.SamplerBank;
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.sf2.SF2;
 import com.ludamix.triad.audio.SMFParser;
@@ -46,8 +45,6 @@ class Keyjammer
 	var songs : Array<Array<String>>;
 	var infos : TextField;
 	var infos2 : TextField;
-	var melodic : SamplerBank;
-	var percussion : SamplerBank;
 	var sf2 : SF2;
 	
 	public static inline var MIP_LEVELS = 4;

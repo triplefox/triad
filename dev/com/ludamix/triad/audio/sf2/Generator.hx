@@ -100,8 +100,8 @@ class Generator
 		var result = new Generator();
 		result.raw_amount = other.raw_amount;
 		result.generator_type = other.generator_type;
-		result.instrument = this.instrument!=null ? this.instrument : other.instrument;
-		result.sample_header = this.sample_header != null ? this.sample_header : other.sample_header;
+		result.instrument = other.instrument!=null ? other.instrument : this.instrument;
+		result.sample_header = other.sample_header != null ? other.sample_header : this.sample_header;
 		
 		return result;
 	}

@@ -197,8 +197,8 @@ class SF2
 	public static inline function attentuationDBtoPctPower(data : Float) { return 1.0 * Math.pow(10, data/20.);  }
 	public static inline function DBtoCB(data : Float) { return data * 10.; }
 	public static inline function CBtoDB(data : Float) { return data / 10.; }
-	public static inline function getLSMS(lsms : Int) { return [ lsms & 0xFF, lsms >> 16 ]; } // low, high
-	public static inline function toLSMS(low : Int, high : Int) { return (high << 16) | (low); }
+	public static inline function getLSMS(lsms : Int) { return [ lsms & 0xFF, lsms >> 8 ]; } // high, low
+	public static inline function toLSMS(low : Int, high : Int) { return (high << 8) | (low); }
 	
 	// generator merging rules:
 	// generators in global zones overwrite their default generator
@@ -258,10 +258,9 @@ class SF2
 		
 		var merged : MergedZone = mergeInstrumentPreset(inst, preset);
 		
-		// OK now we can look at the stuff below...
 		// this next part is like the SFZ parser, more or less.
 		
-		// we can follow a similar process:
+		// we follow a similar process:
 		// 1. find the SoundSample. (this is done in init() already, we just need to get the header)
 		// 2. buffer generator changes
 		// 3. apply them all to a final SamplerPatch.
@@ -300,8 +299,8 @@ class SF2
 			{
 				header = g.sample_header;
 				sample = header.triad_soundsample;
-				pitch_keycenter = header.original_pitch;
-				tune = header.pitch_correction;
+				if (header.original_pitch <= 127 && header.original_pitch >= 0) pitch_keycenter = header.original_pitch;
+				tune = -header.pitch_correction/100.;
 				sample_rate = header.sample_rate;
 			}
 			
@@ -343,8 +342,6 @@ class SF2
 				case KeyNumberToModulationEnvelopeHold:
 				case KeyNumberToModulationEnvelopeDecay:
 				case DelayVolumeEnvelope: 
-					// look up what I did for envelopes in SFZ and reuse that strategy.
-					// in general my goal is simply to apply more structure, even if the impl strategy differs
 					ampeg.delay = secondsOfTimeCents(g.raw_amount);
 				case AttackVolumeEnvelope: 
 					ampeg.attack = secondsOfTimeCents(g.raw_amount);
@@ -384,7 +381,7 @@ class SF2
 				case ScaleTuning:
 				case ExclusiveClass:
 				case OverridingRootKey:
-					if (g.raw_amount >= 0) pitch_keycenter_override = g.raw_amount;
+					if (g.raw_amount >= 0 && g.raw_amount < 128) pitch_keycenter_override = g.raw_amount;
 				case Unused5:
 				case UnusedEnd:
 			}
@@ -407,13 +404,14 @@ class SF2
 			var loop_end = header.triad_end_loop + loop_coarse_end * 32768 + loop_fine_end;
 			patch.loops = [{loop_mode:loop_mode,loop_start:loop_start,loop_end:loop_end}];
 			patch.name = header.sample_name;
+			trace(header.sample_name);
 		}
 		
 		patch.pan = pan;
 		patch.volume = volume;
 		patch.envelope_profiles.push(genAmpeg(ampeg));
-		patch.cutoff_frequency = fil_cutoff;
-		patch.resonance_level = fil_cutoff;
+		//patch.cutoff_frequency = fil_cutoff;
+		//patch.resonance_level = fil_resonance;
 		patch.keyrange.low = lo_key;
 		patch.keyrange.high = hi_key;
 		patch.velrange.low = lo_vel;
@@ -501,11 +499,13 @@ class SF2
 							var r = parseZone(seq, instrument, i_g, preset, p_g);
 							r.name = Std.format("${p.name}_${g.instrument.name}");
 							opcode_group.regions.push(r); 
+							//trace([r.tuning, r.cutoff_frequency, r.resonance_level, r.filter_mode, r.name, r.keyrange]);
 						}
 					}
 				}
 			}
 		}
+		//throw null;
 		
 		return opcode_group;
 		
