@@ -475,8 +475,6 @@ class SF2
 		
 		// now drill down into the instruments of each local preset
 		
-		var kill = false;
-		
 		for (preset in p_l)
 		{
 			if (preset != null)
@@ -503,18 +501,13 @@ class SF2
 						{
 							var r = parseZone(seq, instrument, i_g, preset, p_g);
 							r.name = Std.format("${p.name}_${g.instrument.name}");
-							opcode_group.regions.push(r); 
-							if (p.name == "Gun Shot")
-							{
-								kill = true;
-								trace([r.tuning, r.cutoff_frequency, r.resonance_level, r.filter_mode, r.name, r.keyrange]);
-							}
+							if (r.sample!=null)
+								opcode_group.regions.push(r); 
 						}
 					}
 				}
 			}
 		}
-		//if (kill) throw null;
 		
 		return opcode_group;
 		

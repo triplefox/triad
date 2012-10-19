@@ -243,7 +243,8 @@ class SF2SynthTest
 			{
 				//if (n[1] == "assets/smf/doom_1_and_2/D_E1M1 - Hanger.mid")
 				//if (n[1] == "assets/smf/little_big_adventure/LBA1-01.MID")
-				if (n[1] == "assets/smf/wing_commander_1/WC1MID36.MID")
+				if (n[1] == "assets/smf/wing_commander_privateer/Privateer I - Admiral Terell's Office.mid")
+				//if (n[1] == "assets/smf/wing_commander_1/WC1MID36.MID")
 				//if (n[1] == "assets/smf/wing_commander_1/WC1MID21.MID")
 				//if (n[1] == "assets/smf/sam_n_max_hit_the_road/SNMEND.MID")
 				{
