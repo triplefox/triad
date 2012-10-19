@@ -214,10 +214,14 @@ class SF2
 		
 		for (k in gen_zl.keys())
 		{
-			if (gen_zg.exists(k))
-				gen_zone.set(k, gen_zg.get(k).mergeLocalIntoGlobal(gen_zl.get(k)));
+			var local_val = gen_zl.get(k);
+			if (gen_zg.exists(k) && gen_zg.get(k).raw_amount!=gen_zl.get(k).raw_amount)
+			{
+				var global_val = gen_zg.get(k);
+				gen_zone.set(k, global_val.mergeLocalIntoGlobal(local_val));
+			}
 			else
-				gen_zone.set(k, gen_zl.get(k));
+				gen_zone.set(k, local_val);
 		}
 		for (k in gen_zg.keys())
 		{
@@ -404,7 +408,6 @@ class SF2
 			var loop_end = header.triad_end_loop + loop_coarse_end * 32768 + loop_fine_end;
 			patch.loops = [{loop_mode:loop_mode,loop_start:loop_start,loop_end:loop_end}];
 			patch.name = header.sample_name;
-			trace(header.sample_name);
 		}
 		
 		patch.pan = pan;
@@ -460,17 +463,19 @@ class SF2
 		// separate the preset layers into global and local
 		
 		var p_g = new Zone();
-		var p_l = new Array<Zone>();
+		var p_l = p.zones.copy();
 		
-		if (p.zones.length > 1)
+		// the global zone is the first zone, but only if its last generator is not a Instrument
+		if (p_l.length > 1)
 		{
-			p_g = p.zones[0];
-			for (n in 1...p.zones.length)
-				p_l.push(p.zones[n]);
+			var gen = p_l[0].generators[p_l[0].generators.length - 1];
+			if (gen==null || gen.generator_type!=Instrument)
+				p_g = p_l.shift();
 		}
-		else p_l.push(p.zones[0]);
 		
 		// now drill down into the instruments of each local preset
+		
+		var kill = false;
 		
 		for (preset in p_l)
 		{
@@ -483,15 +488,15 @@ class SF2
 						// separate the instrument zones as done with the presets
 						
 						var i_g = new Zone();
-						var i_l = new Array<Zone>();
+						var i_l = g.instrument.zones.copy();
 						
-						if (g.instrument.zones.length > 1)
+						// the global zone is the first zone, but only if its last generator is not a SampleID
+						if (i_l.length > 1)
 						{
-							i_g = g.instrument.zones[0];
-							for (n in 1...g.instrument.zones.length)
-								i_l.push(g.instrument.zones[n]);
+							var gen = i_l[0].generators[i_l[0].generators.length - 1];
+							if (gen == null || gen.generator_type!=SampleID)
+								i_g = i_l.shift();
 						}
-						else i_l.push(g.instrument.zones[0]);
 						
 						// then make a region 
 						for (instrument in i_l)
@@ -499,13 +504,17 @@ class SF2
 							var r = parseZone(seq, instrument, i_g, preset, p_g);
 							r.name = Std.format("${p.name}_${g.instrument.name}");
 							opcode_group.regions.push(r); 
-							//trace([r.tuning, r.cutoff_frequency, r.resonance_level, r.filter_mode, r.name, r.keyrange]);
+							if (p.name == "Gun Shot")
+							{
+								kill = true;
+								trace([r.tuning, r.cutoff_frequency, r.resonance_level, r.filter_mode, r.name, r.keyrange]);
+							}
 						}
 					}
 				}
 			}
 		}
-		//throw null;
+		//if (kill) throw null;
 		
 		return opcode_group;
 		

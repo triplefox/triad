@@ -38,8 +38,8 @@ class SamplerOpcodeGroup
 		for (r in regions)
 		{
 			if (
-				(r.keyrange.low <= note) &&				
-				(r.keyrange.high >= note) &&
+				(r.keyrange.low <= Std.int(note)) &&				
+				(r.keyrange.high >= Std.int(note)) &&
 				(r.velrange.low <= velocity) &&
 				(r.velrange.high >= velocity)
 			)
