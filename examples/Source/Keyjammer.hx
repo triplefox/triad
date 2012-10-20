@@ -80,11 +80,11 @@ class Keyjammer
 			
 			if (n == 9)
 			{
-				seq.addChannel([vgroup], sf2.getGenerator());
+				seq.addChannel([vgroup], sf2.getGenerator(0,127));
 				vgroup.channel.bank_id = 128;
 			}
 			else
-				seq.addChannel([vgroup], sf2.getGenerator());
+				seq.addChannel([vgroup], sf2.getGenerator(0,0));
 			
 			/*seq.addChannel(voices, SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 			
@@ -300,6 +300,9 @@ class Keyjammer
 			case 105: noteOn(7);
 			case 111: noteOn(8);
 			case 112: noteOn(9);
+			case 91: noteOn(10);
+			case 93: noteOn(11);
+			case 92: noteOn(12);
 			case 59: octave--; if (octave < 0) octave = 0;
 			case 39: octave++; if (octave > 9) octave = 9;
 			case 44: patch--; if (patch < 0) patch = 127; setPatch();
@@ -321,6 +324,9 @@ class Keyjammer
 			case 105: noteOff(7);
 			case 111: noteOff(8);
 			case 112: noteOff(9);
+			case 91: noteOff(10);
+			case 93: noteOff(11);
+			case 92: noteOff(12);
 		}
 		
 	}

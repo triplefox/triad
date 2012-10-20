@@ -205,8 +205,11 @@ class VoiceCommon
 			}
 			
 			filter_mode = patch.filter_mode;
-			if (frame_frequency_adjust >= sequencer.sampleRate() >> 2)
+			if (frame_frequency_adjust >= sequencer.sampleRate() >> 1) // very high levels, just cut out filter
 				filter_mode = FILTER_OFF;
+			else if (frame_frequency_adjust >= sequencer.sampleRate() >> 2) // otherwise limit so that a stray lfo sounds OK
+				frame_frequency_adjust = sequencer.sampleRate() >> 2;
+			
 			if (filter_mode != FILTER_OFF)
 				filter.set(frame_frequency_adjust, frame_resonance_adjust);
 			

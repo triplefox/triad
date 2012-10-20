@@ -1,3 +1,5 @@
+package com.ludamix.triad.time;
+
 import flash.Lib;
 
 class Clock
