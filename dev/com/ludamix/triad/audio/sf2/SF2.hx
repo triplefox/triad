@@ -8,6 +8,7 @@
 // and apps you have written
 package com.ludamix.triad.audio.sf2;
 
+import com.ludamix.triad.audio.LFO;
 import com.ludamix.triad.audio.SamplerOpcodeGroup;
 import com.ludamix.triad.audio.SamplerSynth;
 import com.ludamix.triad.audio.Sequencer;
@@ -27,7 +28,11 @@ import nme.Vector;
 typedef SF2Bank = IntHash<SamplerOpcodeGroup>;
 typedef MergedZone = { gen:IntHash<Generator>, mod:IntHash<Modulator> };
 
-typedef SF2Envelope = {delay:Float,attack:Float,hold:Float,decay:Float,sustain:Float,release:Float};
+typedef SF2VolumeEnvelope = {delay:Float,attack:Float,hold:Float,decay:Float,sustain:Float,release:Float};
+typedef SF2ModulationEnvelope = { delay:Float, attack:Float, hold:Float, decay:Float, sustain:Float, release:Float,
+	pitch_depth:Float, filter_depth:Float};
+typedef SF2VibratoLFO = {delay:Float,frequency:Float,pitch_depth:Float};
+typedef SF2ModulationLFO = {delay:Float,frequency:Float,pitch_depth:Float,filter_depth:Float,amp_depth:Float};
 
 class SF2 
 {
@@ -228,7 +233,7 @@ class SF2
 		{
 			if (!gen_zl.exists(k))
 				gen_zone.set(k, gen_zg.get(k));
-		}
+		}	
 		
 		return {gen:gen_zone,mod:mod_zone };
 	}
@@ -295,7 +300,12 @@ class SF2
 		var pitch_keycenter_override = -1.;
 		var sample_rate = 44100;
 		
-		var ampeg : SF2Envelope = { delay:0., attack:0., hold:0., decay:0., sustain:1., release:0. };
+		var ampeg : SF2VolumeEnvelope = { delay:0., attack:0., hold:0., decay:0., sustain:1., release:0. };
+		var modeg : SF2ModulationEnvelope = { delay:0., attack:0., hold:0., decay:0., sustain:1., release:0.,
+			pitch_depth:0., filter_depth:0. };
+		var viblfo : SF2VibratoLFO = { delay:0., frequency:8.176, pitch_depth:0. };
+		var modlfo : SF2ModulationLFO = { delay:0., frequency:8.176, amp_depth:0., pitch_depth:0., filter_depth:0. };
+		
 		var loop_mode = SamplerSynth.LOOP_UNSPECIFIED;
 		
 		for (g in merged.gen)
@@ -319,14 +329,14 @@ class SF2
 				case EndLoopAddressOffset: loop_fine_end = g.raw_amount;
 				case StartLoopAddressCoarseOffset: loop_coarse_start = g.raw_amount;
 				case EndLoopAddressCoarseOffset: loop_coarse_end = g.raw_amount;
-				case ModulationLFOToPitch:
-				case VibratoLFOToPitch:
-				case ModulationEnvelopeToPitch:
+				case ModulationLFOToPitch: modlfo.pitch_depth = g.raw_amount/100.;
+				case VibratoLFOToPitch: viblfo.pitch_depth = g.raw_amount/100.;
+				case ModulationEnvelopeToPitch: modeg.pitch_depth = g.raw_amount/100.;
 				case InitialFilterCutoffFrequency: fil_cutoff = g.raw_amount;
 				case InitialFilterQ: fil_resonance = CBtoDB(g.raw_amount);
-				case ModulationLFOToFilterCutoffFrequency:
-				case ModulationEnvelopeToFilterCutoffFrequency:
-				case ModulationLFOToVolume:
+				case ModulationLFOToFilterCutoffFrequency: modlfo.filter_depth = g.raw_amount / 100.;
+				case ModulationEnvelopeToFilterCutoffFrequency: modeg.filter_depth = g.raw_amount / 100.;
+				case ModulationLFOToVolume: modlfo.amp_depth = attentuationCBtoPctPower(g.raw_amount);
 				case Unused1:
 				case ChorusEffectsSend:
 				case ReverbEffectsSend:
@@ -334,16 +344,16 @@ class SF2
 				case Unused2:
 				case Unused3:
 				case Unused4:
-				case DelayModulationLFO:
-				case FrequencyModulationLFO:
-				case DelayVibratoLFO:
-				case FrequencyVibratoLFO:
-				case DelayModulationEnvelope:
-				case AttackModulationEnvelope:
-				case HoldModulationEnvelope:
-				case DecayModulationEnvelope:
-				case SustainModulationEnvelope:
-				case ReleaseModulationEnvelope:
+				case DelayModulationLFO: modlfo.delay = secondsOfTimeCents(g.raw_amount);
+				case FrequencyModulationLFO: modlfo.frequency = secondsOfTimeCents(g.raw_amount);
+				case DelayVibratoLFO: viblfo.delay = secondsOfTimeCents(g.raw_amount);
+				case FrequencyVibratoLFO: viblfo.frequency = secondsOfTimeCents(g.raw_amount);
+				case DelayModulationEnvelope: modeg.delay = secondsOfTimeCents(g.raw_amount);
+				case AttackModulationEnvelope: modeg.attack = secondsOfTimeCents(g.raw_amount);
+				case HoldModulationEnvelope: modeg.hold = secondsOfTimeCents(g.raw_amount);
+				case DecayModulationEnvelope: modeg.decay = secondsOfTimeCents(g.raw_amount);
+				case SustainModulationEnvelope: modeg.sustain = 1. - g.raw_amount/1000.;
+				case ReleaseModulationEnvelope: modeg.release = secondsOfTimeCents(g.raw_amount);
 				case KeyNumberToModulationEnvelopeHold:
 				case KeyNumberToModulationEnvelopeDecay:
 				case DelayVolumeEnvelope: 
@@ -413,7 +423,23 @@ class SF2
 		
 		patch.pan = pan;
 		patch.volume = volume;
+		
+		// volume envelope
 		patch.envelope_profiles.push(genAmpeg(ampeg));
+		
+		// modulation envelope
+		for (n in genModeg(modeg))
+			patch.envelope_profiles.push(n);
+		
+		// vibrato lfo
+		patch.modulation_lfos[0].delay = sequencer.secondsToFrames(viblfo.delay);
+		patch.modulation_lfos[0].frequency = viblfo.frequency;
+		patch.modulation_lfos[0].depth = viblfo.pitch_depth;
+		
+		// modulation lfo
+		for (n in genModlfo(modlfo))
+			patch.lfos.push(n);
+		
 		//patch.cutoff_frequency = fil_cutoff;
 		//patch.resonance_level = fil_resonance;
 		
@@ -426,7 +452,7 @@ class SF2
 		return patch;
 	}
 	
-	public function genAmpeg(env : SF2Envelope) : EnvelopeProfile
+	public function genAmpeg(env : SF2VolumeEnvelope) : EnvelopeProfile
 	{
 		return Envelope.DSAHDSHR(function(a:Float) { return a; }, 
 			sequencer.secondsToFrames(env.delay), 
@@ -436,6 +462,47 @@ class SF2
 			sequencer.secondsToFrames(env.decay), env.sustain, 0., 
 			sequencer.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
 			[VoiceCommon.AS_VOLUME_ADD]);	
+	}
+	
+	public function genModeg(env : SF2ModulationEnvelope) : Array<EnvelopeProfile>
+	{
+		var result = new Array<EnvelopeProfile>();
+		if (env.filter_depth != 0.) 
+			result.push(Envelope.DSAHDSHR(function(a:Float) { return a; }, 
+				sequencer.secondsToFrames(env.delay), 
+				0., 
+				sequencer.secondsToFrames(env.attack), 
+				sequencer.secondsToFrames(env.hold), 
+				sequencer.secondsToFrames(env.decay), env.sustain*env.filter_depth, 0., 
+				sequencer.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
+				[VoiceCommon.AS_FREQUENCY_ADD_CENTS]));	
+		if (env.pitch_depth != 0.)
+			result.push(Envelope.DSAHDSHR(function(a:Float) { return a; }, 
+				sequencer.secondsToFrames(env.delay), 
+				0., 
+				sequencer.secondsToFrames(env.attack), 
+				sequencer.secondsToFrames(env.hold), 
+				sequencer.secondsToFrames(env.decay), env.sustain*env.pitch_depth, 0., 
+				sequencer.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
+				[VoiceCommon.AS_PITCH_ADD]));
+		return result;
+	}
+	
+	public function genModlfo(lfo : SF2ModulationLFO) : Array<LFO>
+	{
+		var result = new Array<LFO>();
+		var freq = sequencer.secondsToFrames(lfo.frequency);
+		var delay = sequencer.secondsToFrames(lfo.delay);
+		if (lfo.amp_depth!=0.)
+			result.push( { frequency:freq, depth:1.-lfo.amp_depth, delay:delay, attack:0., 
+				assigns:[VoiceCommon.AS_VOLUME_ADD] } );
+		if (lfo.filter_depth!=0.)
+			result.push( { frequency:freq, depth:lfo.filter_depth, delay:delay, attack:0., 
+				assigns:[VoiceCommon.AS_FREQUENCY_ADD_CENTS] } );
+		if (lfo.pitch_depth!=0.)
+			result.push( { frequency:freq, depth:lfo.pitch_depth, delay:delay, attack:0., 
+				assigns:[VoiceCommon.AS_PITCH_ADD] } );
+		return result;
 	}
 	
 	public static function patchDefault() : SamplerPatch
