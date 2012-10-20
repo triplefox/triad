@@ -440,8 +440,8 @@ class SF2
 		for (n in genModlfo(modlfo))
 			patch.lfos.push(n);
 		
-		//patch.cutoff_frequency = fil_cutoff;
-		//patch.resonance_level = fil_resonance;
+		patch.cutoff_frequency = fil_cutoff;
+		patch.resonance_level = fil_resonance;
 		
 		// this "0.001" thing seems like it should be unnecessary...however I'm getting broken ranges without it?
 		patch.keyrange.low = lo_key - 0.001;

@@ -203,10 +203,10 @@ class VoiceCommon
 				if (patch.cutoff_frequency >= 1.) patch.filter_mode = FILTER_LP;
 				else patch.filter_mode = FILTER_OFF;
 			}
-			if (frame_frequency_adjust >= sequencer.sampleRate() >> 1) 
-				frame_frequency_adjust = sequencer.sampleRate()>>1;
 			
 			filter_mode = patch.filter_mode;
+			if (frame_frequency_adjust >= sequencer.sampleRate() >> 2)
+				filter_mode = FILTER_OFF;
 			if (filter_mode != FILTER_OFF)
 				filter.set(frame_frequency_adjust, frame_resonance_adjust);
 			
