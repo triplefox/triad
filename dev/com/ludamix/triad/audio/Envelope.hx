@@ -119,8 +119,6 @@ class Envelope
 		assigns : Array<Int>
 	) : EnvelopeProfile
 	{
-		// if I tap the button for the tiniest fraction of a second, it plays only the release.
-		// Otherwise it goes LOUD *pop* SOFT.
 		
 		attack_time = secondsToFrames(attack_time);
 		attack_hold_time = secondsToFrames(attack_hold_time);

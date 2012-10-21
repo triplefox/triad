@@ -220,8 +220,7 @@ class VoiceCommon
 			
 			freq = seq_event.data.freq;
 			
-			var wl = sequencer.waveLengthOfBentFrequency(freq, 
-						pitch_bend + Std.int((frame_pitch_adjust * 8192 / tuning.bend_semitones)));
+			var wl = sequencer.waveLengthOfBentFrequency(freq + frame_pitch_adjust * 0.01, pitch_bend);
 			
 			freq = sequencer.frequency(wl);
 			

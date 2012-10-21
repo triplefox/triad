@@ -116,7 +116,7 @@ class SynthGUICommon
 			// which sounds idiotic.
 			if (e.type == SequencerEvent.SET_BANK && e.channel == 9 && e.data.value == 0)
 			{
-				e.data = 127; 
+				e.data = -1;
 			}
 		}
 

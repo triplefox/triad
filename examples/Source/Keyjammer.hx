@@ -47,7 +47,7 @@ class Keyjammer
 	var infos2 : TextField;
 	var sf2 : SF2;
 	
-	public static inline var MIP_LEVELS = 4;
+	public static inline var MIP_LEVELS = 0;
 	
 	private function resetSamplerSynth()
 	{
