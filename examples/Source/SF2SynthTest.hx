@@ -65,6 +65,7 @@ class SF2SynthTest
 		{
 			var synth = new SamplerSynth();
 			synth.common.filter_cutoff_multiplier = 4.0;
+			synth.common.filter_resonance_multiplier = 0.5;
 			synth.common.master_volume = 0.5;
 			seq.addSynth(synth);
 			voices.push(synth);
