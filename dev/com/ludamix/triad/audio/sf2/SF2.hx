@@ -443,11 +443,10 @@ class SF2
 		patch.cutoff_frequency = fil_cutoff;
 		patch.resonance_level = fil_resonance;
 		
-		// this "0.001" thing seems like it should be unnecessary...however I'm getting broken ranges without it?
-		patch.keyrange.low = lo_key - 0.001;
-		patch.keyrange.high = hi_key + 0.001;
-		patch.velrange.low = lo_vel - 0.001;
-		patch.velrange.high = hi_vel + 0.001;
+		patch.keyrange.low = lo_key;
+		patch.keyrange.high = hi_key;
+		patch.velrange.low = lo_vel;
+		patch.velrange.high = hi_vel;
 		
 		return patch;
 	}
@@ -571,8 +570,10 @@ class SF2
 						{
 							var r = parseZone(seq, instrument, i_g, preset, p_g);
 							r.name = Std.format("${p.name}_${g.instrument.name}");
-							if (r.sample!=null)
+							if (r.sample != null && r.keyrange.high >= r.keyrange.low)
+							{
 								opcode_group.regions.push(r); 
+							}
 						}
 					}
 				}

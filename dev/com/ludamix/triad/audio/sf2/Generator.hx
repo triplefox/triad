@@ -125,8 +125,8 @@ class Generator
 			case ARange: // find _intersection_ set
 						var one = SF2.getLSMS(this.raw_amount);
 						var two = SF2.getLSMS(other.raw_amount);
-						var hi_r = one[0] < two[0] ? one[0] : two[0];
-						var lo_r = one[1] > two[1] ? one[1] : two[1];
+						var lo_r = one[0] > two[0] ? one[0] : two[0];
+						var hi_r = one[1] < two[1] ? one[1] : two[1];
 						result.raw_amount = SF2.toLSMS(lo_r, hi_r);
 			case AIndex: // overwrite (this really shouldn't happen in PGEN/IGEN mergers)
 						result.raw_amount = other.raw_amount; 

@@ -16,10 +16,10 @@ class SampleMipMap
 	public static inline var PAD_INTERP = 3; // pad each sample for interpolation purposes
 											 // use 1 for linear, 3 for cubic
 
-	private static function _mip2_hermite6(sample : Vector<Float>) : Vector<Float>
+	private static function _mip2_hermite6(sample : Vector<Float>, pow2:Int) : Vector<Float>
 	{
 		// six point hermite spline interpolator
-		var true_len = (sample.length - PAD_INTERP) >> 1;
+		var true_len = (sample.length - PAD_INTERP) >> pow2;
 		var out = new Vector<Float>();
 		var y0 = 0.;
 		var y1 = 0.;
@@ -30,23 +30,24 @@ class SampleMipMap
 		var sl = Std.int(sample.length);
 		for (i in 0...true_len)
 		{
-			if ((i << 1) < sl-6)
+			var ip2 = i << pow2;
+			if ((ip2) < sl-6)
 			{
-				y0 = sample[(i << 1)];
-				y1 = sample[((i << 1) + 1)];
-				y2 = sample[((i << 1) + 2)];
-				y3 = sample[((i << 1) + 3)];
-				y4 = sample[((i << 1) + 4)];
-				y5 = sample[((i << 1) + 5)];
+				y0 = sample[(ip2)];
+				y1 = sample[((ip2) + 1)];
+				y2 = sample[((ip2) + 2)];
+				y3 = sample[((ip2) + 3)];
+				y4 = sample[((ip2) + 4)];
+				y5 = sample[((ip2) + 5)];
 			}
 			else
 			{
-				y0 = sample[(i << 1) % sl];
-				y1 = sample[((i << 1) + 1) % sl];
-				y2 = sample[((i << 1) + 2) % sl];
-				y3 = sample[((i << 1) + 3) % sl];
-				y4 = sample[((i << 1) + 4) % sl];
-				y5 = sample[((i << 1) + 5) % sl];
+				y0 = sample[(ip2) % sl];
+				y1 = sample[((ip2) + 1) % sl];
+				y2 = sample[((ip2) + 2) % sl];
+				y3 = sample[((ip2) + 3) % sl];
+				y4 = sample[((ip2) + 4) % sl];
+				y5 = sample[((ip2) + 5) % sl];
 			}
 			out.push(Interpolator.interp_hermite6p(y0,y1,y2,y3,y4,y5,0.));
 		}
@@ -55,17 +56,17 @@ class SampleMipMap
 		return out;
 	}
 	
-	public static function mipx2(mip_in : MipData): MipData
+	public static function mippow2(mip_in : MipData, pow2 : Int): MipData
 	{
 		var result_l = mip_in.left;
 		var result_r = mip_in.right;
 		
-		result_l = _mip2_hermite6(result_l);
+		result_l = _mip2_hermite6(result_l,pow2);
 		if (mip_in.left == mip_in.right)
 			result_r = result_l;
-		else result_r = _mip2_hermite6(result_r);
+		else result_r = _mip2_hermite6(result_r,pow2);
 		
-		return { left:result_l, right:result_r, rate_multiplier:mip_in.rate_multiplier/2};
+		return { left:result_l, right:result_r, rate_multiplier:mip_in.rate_multiplier/(1<<pow2)};
 	}
 
 	public static function genMips(left : Vector<Float>, right : Vector<Float>, mip_levels : Int) : Array<MipData>
@@ -75,7 +76,7 @@ class SampleMipMap
 		for (n in 0...PAD_INTERP)
 			{ left.push(0.); right.push(0.); }
 		for (n in 0...mip_levels)
-			mips.push(mipx2(mips[mips.length - 1]));
+			mips.push(mippow2(mips[0],n+1));
 		return mips;
 	}
 	
