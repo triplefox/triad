@@ -37,8 +37,8 @@ typedef SF2ModulationLFO = {delay:Float,frequency:Float,pitch_depth:Float,filter
 
 typedef ProgressCount = {done:Int,total:Int};
 
-typedef SF2Progress = { samples_loaded:ProgressCount, samples_mipped:ProgressCount, patches_done:ProgressCount,
-	last_name:String};
+typedef SF2Progress = { samples_loaded:ProgressCount, samples_mipped:ProgressCount, presets_loaded:ProgressCount,
+	text:String};
 
 class SF2 
 {
@@ -91,13 +91,14 @@ class SF2
     }
 
 	// some loader detritus
+	public var progress : SF2Progress;
 	private var sample_idx : Int;
 	private var sample_array : Array<{left:Vector<Float>,right:Vector<Float>,header:SampleHeader}>;
 	private var reassigns : IntHash<{from:Int,to:Int}>;
 	private var ra_result : Array<SoundSample>;
 	private var mip_levels : Int;
 	
-	private function _load_sample(loader_callback : SF2Progress->Void)
+	private function _load_sample()
 	{
 		var sh = this.presets_chunk.sample_headers.data[sample_idx];
 		
@@ -129,9 +130,11 @@ class SF2
 		}				
 		
 		sample_idx++;
+		progress.samples_loaded.done = sample_idx;
+		progress.text = sh.sample_name;
 	}
 	
-	private function _emit_sample(loader_callback : SF2Progress->Void)
+	private function _emit_sample()
 	{
 		var tuning = this.sequencer.tuning;
 		var cur_smp = sample_array[sample_idx];
@@ -151,9 +154,25 @@ class SF2
 		}
 		
 		sample_idx++;	
+		progress.samples_mipped.done = sample_idx;
+		progress.text = cur_smp.header.sample_name;
 	}
 	
-	public function init(mip_levels : Int, ?loader_callback : SF2Progress->Void)
+	private function _parse_preset()
+	{
+		var p = presets_chunk.preset_headers.data[sample_idx];
+		var bank : SF2Bank = null;
+		if (usable_banks.exists(p.bank))
+			bank = usable_banks.get(p.bank);
+		else
+			{ bank = new SF2Bank(); usable_banks.set(p.bank, bank); }
+		bank.set(p.patch_number, parsePreset(this.sequencer, p));	
+		sample_idx++;
+		progress.presets_loaded.done = sample_idx;
+		progress.text = p.name;
+	}
+	
+	public function init(mip_levels : Int, ?return_queue=false) : Array<Dynamic>
 	{
 		
 		// SF2 spec adds a lot of complexity via the linked sample construct.
@@ -169,66 +188,82 @@ class SF2
 		
 		this.sample_data.sample_data.endian = Endian.LITTLE_ENDIAN;
 		
-		sample_idx = 0;
+		progress = { 
+			samples_loaded: { done:0, total:presets_chunk.sample_headers.data.length },
+			samples_mipped: { done:0, total:presets_chunk.sample_headers.data.length },			
+			presets_loaded: { done:0, total:presets_chunk.preset_headers.data.length },
+			text:"Loading SF2"
+		};
+		
+		var queue = new Array<Dynamic>();
+		
+		queue.push(function(){sample_idx = 0;});
 		for (sh in this.presets_chunk.sample_headers.data)
-		{
-			_load_sample(loader_callback);
-		}
+			queue.push(_load_sample);
 		
 		// in the second pass, we use reassignment data to create a stereo sample.
 		
-		for (ra in reassigns)
-		{
-			sample_array[ra.to].left = sample_array[ra.from].left;
-		}
+		queue.push(function() {
+			for (ra in reassigns)
+			{
+				sample_array[ra.to].left = sample_array[ra.from].left;
+			}
+		});
 		
 		// in the third pass, we emit the unique SoundSamples and ignore the linked ones momentarily.
 		
-		ra_result = new Array();
-		sample_idx = 0;
-		for (cur_smp in sample_array)
-		{
-			_emit_sample(loader_callback);
-		}
+		queue.push(function() {
+			ra_result = new Array();
+			sample_idx = 0;
+		});
+		for (cur_smp in 0...this.presets_chunk.sample_headers.data.length)
+			queue.push(_emit_sample);
 		
 		// in the fourth pass, we clean up the references for the reassigned(linked) samples.
 		
 		for (r in reassigns.keys())
 		{
-			ra_result[r] = ra_result[reassigns.get(r).to];
+			queue.push(function() {
+				ra_result[r] = ra_result[reassigns.get(r).to];
+			});
 		}
 		
-		this.usable_samples = ra_result;
+		queue.push(function() {
+			this.usable_samples = ra_result;
+		});
 		
 		// we give the headers a reference to the result so that it's easier to create the samplepatch later.
 		
-		sample_idx = 0;
-		for (cur_smp in sample_array)
-		{
-			cur_smp.header.triad_soundsample = usable_samples[sample_idx];
-			sample_idx++;
-		}
+		queue.push(function() {
+			sample_idx = 0;
+			for (cur_smp in sample_array)
+			{
+				cur_smp.header.triad_soundsample = usable_samples[sample_idx];
+				sample_idx++;
+			}
+		});
 		
 		// now create the preset cache
 		
-		usable_banks = new IntHash();
-		
+		queue.push(function() {
+			usable_banks = new IntHash();		
+			sample_idx = 0;
+		});
 		for (p in presets_chunk.preset_headers.data) 
 		{
-			var bank : SF2Bank = null;
-			if (usable_banks.exists(p.bank))
-				bank = usable_banks.get(p.bank);
-			else
-				{ bank = new SF2Bank(); usable_banks.set(p.bank, bank); }
-			bank.set(p.patch_number, parsePreset(this.sequencer, p));
+			queue.push(_parse_preset);
 		}
 		
-		sample_array = null;
-		reassigns = null;
-		sample_idx = 0;
-		ra_result = null;
-		mip_levels = 0;
+		queue.push(function() {
+			sample_array = null;
+			reassigns = null;
+			sample_idx = 0;
+			ra_result = null;
+			mip_levels = 0;
+		});
 		
+		if (return_queue) return queue;
+		else { while(queue.length>0) queue.shift()(); return null; }
 	}
 	
 	// 10mHz = 0.01hz = 1200log2(.01/8.176) = -11610

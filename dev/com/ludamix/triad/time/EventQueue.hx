@@ -10,6 +10,7 @@ class EventQueue
 
 	public var queue : Array<Dynamic>;
 	public var frame_time_ms : Int;
+	public var inter_queue : Dynamic;
 
 	public function add(func : Dynamic)
 	{
@@ -28,6 +29,7 @@ class EventQueue
 						Lib.current.removeEventListener(Event.ENTER_FRAME, inner_func);
 						queue.shift()(Lib.getTimer());
 					};
+					if (inter_queue!=null) inter_queue();
 					Lib.current.addEventListener(Event.ENTER_FRAME, inner_func);
 				}
 			}

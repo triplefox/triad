@@ -195,8 +195,7 @@ class MIDIPlayer
 					melodic = SFZ.loadCompressed(seq, melodicData);
 					sgc.loader_gui.keys.infos.text = "Loaded all instruments ";
 					sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width/2;
-				});
-				
+				});				
 				
 				eq.add(function() {
 					var assign = new Array<SFZPatchAssignment>();
@@ -243,19 +242,32 @@ class MIDIPlayer
 				});
 			
 			}
+			eq.add(function() { sgc.instSMFPlayer(hardReset); } );		
+			eq.add(function() { sgc.startSMFPlayer(); } );				
 		}
 		else // SF2
 		{
 			eq.add(function() {
 				sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 3.5 MB GM.sf2"));
-				sf2.init(MIP_LEVELS);
-				sgc.loader_gui.keys.infos.text = "Loaded SF2";
-				sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width / 2;
+				for (z in sf2.init(MIP_LEVELS, true))
+					eq.add(z);
+				eq.inter_queue = function()
+				{
+					sgc.loader_gui.keys.infos.text = 
+						Std.format("${sf2.progress.samples_loaded.done}/${sf2.progress.samples_loaded.total} ")+
+						Std.format("${sf2.progress.samples_mipped.done}/${sf2.progress.samples_mipped.total} ")+
+						Std.format("${sf2.progress.presets_loaded.done}/${sf2.progress.presets_loaded.total} ")+
+						Std.format("${sf2.progress.text}");
+					sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width / 2;
+				}
+				eq.add(function()
+				{
+					eq.inter_queue = null;
+				});
+				eq.add(function() { sgc.instSMFPlayer(hardReset); } );
+				eq.add(function() { sgc.startSMFPlayer(); } );				
 			});
 		}
-
-		eq.add(function() { sgc.instSMFPlayer(hardReset); } );		
-		eq.add(function() { sgc.startSMFPlayer(); } );		
 		
 		eq.start();
 
