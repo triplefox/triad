@@ -160,7 +160,7 @@ class SF2SynthTest
         }
         
 		eq.add(function() {
-			sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 2.0 MB GM GS MT Rev N++.sf2"));
+			sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 3.5 MB GM.sf2"));
 			sf2.init(seq, MIP_LEVELS);
 			sgc.loader_gui.keys.infos.text = "Loaded SF2";
 			sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width / 2;

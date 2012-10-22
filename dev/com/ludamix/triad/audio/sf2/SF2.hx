@@ -194,8 +194,7 @@ class SF2
 				bank = usable_banks.get(p.bank);
 			else
 				{ bank = new SF2Bank(); usable_banks.set(p.bank, bank); }
-			if (p.patch_number == 80)
-				bank.set(p.patch_number, parsePreset(seq, p));
+			bank.set(p.patch_number, parsePreset(seq, p));
 		}
 		
 	}
@@ -216,6 +215,7 @@ class SF2
 	public static inline function CBtoDB(data : Float) { return data / 10.; }
 	public static inline function getLSMS(lsms : Int) { return [ lsms & 0xFF, lsms >> 8 ]; } // low, high
 	public static inline function toLSMS(low : Int, high : Int) { return (high << 8) | (low); }
+	public static inline function semitonesOfCentFs(cents : Float) { return cents*0.001; }
 	
 	// generator merging rules:
 	// generators in global zones overwrite their default generator
@@ -332,21 +332,21 @@ class SF2
 			
 			switch(g.generator_type)
 			{
-				case StartAddressOffset: trace(g.raw_amount);
-				case EndAddressOffset: trace(g.raw_amount);
-				case StartAddressCoarseOffset:
-				case EndAddressCoarseOffset: trace(g.raw_amount);
+				case StartAddressOffset: //trace(g.raw_amount);
+				case EndAddressOffset: //trace(g.raw_amount);
+				case StartAddressCoarseOffset: //trace(g.raw_amount);
+				case EndAddressCoarseOffset: //trace(g.raw_amount);
 				case StartLoopAddressOffset: loop_fine_start = g.raw_amount;
 				case EndLoopAddressOffset: loop_fine_end = g.raw_amount;
 				case StartLoopAddressCoarseOffset: loop_coarse_start = g.raw_amount;
 				case EndLoopAddressCoarseOffset: loop_coarse_end = g.raw_amount;
-				case ModulationLFOToPitch: modlfo.pitch_depth = g.raw_amount/100.;
-				case VibratoLFOToPitch: viblfo.pitch_depth = g.raw_amount/100.;
-				case ModulationEnvelopeToPitch: modeg.pitch_depth = g.raw_amount/100.;
+				case ModulationLFOToPitch: modlfo.pitch_depth = semitonesOfCentFs(g.raw_amount);
+				case VibratoLFOToPitch: viblfo.pitch_depth = semitonesOfCentFs(g.raw_amount);
+				case ModulationEnvelopeToPitch: modeg.pitch_depth = semitonesOfCentFs(g.raw_amount);
 				case InitialFilterCutoffFrequency: fil_cutoff = g.raw_amount;
 				case InitialFilterQ: fil_resonance = CBtoDB(g.raw_amount);
-				case ModulationLFOToFilterCutoffFrequency: modlfo.filter_depth = g.raw_amount / 100.;
-				case ModulationEnvelopeToFilterCutoffFrequency: modeg.filter_depth = g.raw_amount / 100.;
+				case ModulationLFOToFilterCutoffFrequency: modlfo.filter_depth = semitonesOfCentFs(g.raw_amount);
+				case ModulationEnvelopeToFilterCutoffFrequency: modeg.filter_depth = semitonesOfCentFs(g.raw_amount);
 				case ModulationLFOToVolume: modlfo.amp_depth = 1. - attentuationCBtoPctPower(g.raw_amount);
 				case Unused1:
 				case ChorusEffectsSend:

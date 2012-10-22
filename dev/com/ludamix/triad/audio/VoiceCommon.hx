@@ -38,8 +38,8 @@ class VoiceCommon
 	public static inline var FILTER_BP = 3;
 	public static inline var FILTER_BR = 4;
 	
-	public static inline var AS_PITCH_ADD = 0; // cents
-	public static inline var AS_PITCH_MUL = 1; // cents
+	public static inline var AS_PITCH_ADD = 0; // semitones
+	public static inline var AS_PITCH_MUL = 1; // of 1. = 100%
 	public static inline var AS_VOLUME_ADD = 2; // of 1. = 100%
 	public static inline var AS_VOLUME_MUL = 3; // of 1. = 100%
 	public static inline var AS_FREQUENCY_ADD = 4; // hz
@@ -220,7 +220,7 @@ class VoiceCommon
 			
 			freq = seq_event.data.freq;
 			
-			var wl = sequencer.waveLengthOfBentFrequency(freq + frame_pitch_adjust * 0.01, pitch_bend);
+			var wl = sequencer.waveLengthOfBentFrequency(freq + frame_pitch_adjust, pitch_bend);
 			
 			freq = sequencer.frequency(wl);
 			
