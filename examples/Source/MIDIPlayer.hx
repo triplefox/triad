@@ -8,6 +8,7 @@ import com.ludamix.triad.audio.SMFParser;
 import com.ludamix.triad.audio.SoundSample;
 import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
+import com.ludamix.triad.audio.SFZBank;
 import com.ludamix.triad.audio.TableSynth;
 import com.ludamix.triad.format.WAV;
 import com.ludamix.triad.time.EventQueue;
@@ -39,21 +40,33 @@ import nme.text.TextField;
 import nme.utils.Endian;
 import nme.Vector;
 
-class SF2SynthTest
+class MIDIPlayer
 {
 
 	var seq : Sequencer;	
+	var events : Array<SequencerEvent>;
+	var song_count : Int;
+	var songs : Array<Array<String>>;
+	var infos : TextField;
+	var infos2 : TextField;
+	
+	var melodic : SFZBank;
+	var percussion : SFZBank;
+	
 	var sf2 : SF2;
 	
-	public static inline var MIP_LEVELS = 8;
+	public static inline var USING_SFZ = false;
+	public static inline var SFZ_COMPRESSED = false;
 
 	#if debug
+		public static inline var MIP_LEVELS = 0;
 		public static inline var VOICES = 4;
 		public static inline var CHANNEL_POLYPHONY = 4;
 		public static inline var PERCUSSION_VOICES = 1;
 	#else
-		public static inline var VOICES = 64;
-		public static inline var CHANNEL_POLYPHONY = 64;
+		public static inline var MIP_LEVELS = 8;
+		public static inline var VOICES = 50;
+		public static inline var CHANNEL_POLYPHONY = 32;
 		public static inline var PERCUSSION_VOICES = 8;
 	#end
 
@@ -65,7 +78,6 @@ class SF2SynthTest
 		{
 			var synth = new SamplerSynth();
 			synth.common.filter_cutoff_multiplier = 4.0;
-			synth.common.filter_resonance_multiplier = 0.5;
 			synth.common.master_volume = 0.5;
 			seq.addSynth(synth);
 			voices.push(synth);
@@ -74,15 +86,26 @@ class SF2SynthTest
 		for (n in 0...16)
 		{
 			var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
-
-			if (n == 9)
+			
+			if (USING_SFZ)
 			{
-				seq.addChannel([vgroup], sf2.getGenerator(0,128));
-				vgroup.channel.bank_id = 128;
+				if (n == 9)
+					seq.addChannel([vgroup], percussion.getGenerator());
+				else
+					seq.addChannel([vgroup], melodic.getGenerator());
 			}
 			else
-				seq.addChannel([vgroup], sf2.getGenerator(0,0));
-
+			{
+			if (n == 9)
+				{
+					seq.addChannel([vgroup], sf2.getGenerator(0,128));
+					vgroup.channel.bank_id = 128;
+				}
+				else
+					seq.addChannel([vgroup], sf2.getGenerator(0,0));			
+			}
+			
+			// simple WAV sampler
 			/*seq.addChannel([vgroup], SamplerSynth.ofWAVE(seq.tuning, wav, wav_data));*/
 
 		}				
@@ -113,9 +136,17 @@ class SF2SynthTest
 		{
 			if (n == 9)
 			{
-				var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
-				seq.addChannel([vgroup], sf2.getGenerator(0,128));
-				vgroup.channel.bank_id = 128;
+				if (USING_SFZ)
+				{
+					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
+					seq.addChannel([vgroup], percussion.getGenerator());
+				}
+				else
+				{
+					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
+					seq.addChannel([vgroup], sf2.getGenerator(0,128));
+					vgroup.channel.bank_id = 128;				
+				}
 			}
 			else
 			{
@@ -152,26 +183,82 @@ class SF2SynthTest
 		eq = new EventQueue();
 		sgc.instPatchLoaderUI();
 
-        var sfzPath = "sfz/";
-        var patchGenerator = function(n) {
-            var header = WAV.read(Assets.getBytes(sfzPath + n), sfzPath + n);
-            var content : PatchGenerator=  SamplerSynth.ofWAVE(header, n);
-            return content;
-        }
-        
-		eq.add(function() {
-			sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 3.5 MB GM.sf2"));
-			sf2.init(seq, MIP_LEVELS);
-			sgc.loader_gui.keys.infos.text = "Loaded SF2";
-			sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width / 2;
-			//throw ""; // if we want to inspect tracelogs at load time
-		});
+		if (USING_SFZ)
+		{
+			if (SFZ_COMPRESSED)
+			{
+				var sfzPath = "sfzcompressed/";
+				
+				eq.add(function() {
+					var melodicData = Assets.getBytes(sfzPath + "melody.sfc");
+					melodicData.endian = Endian.LITTLE_ENDIAN;
+					melodic = SFZ.loadCompressed(seq, melodicData);
+					sgc.loader_gui.keys.infos.text = "Loaded all instruments ";
+					sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width/2;
+				});
+				
+				
+				eq.add(function() {
+					var assign = new Array<SFZPatchAssignment>();
+					for (n in 0...128)
+						assign.push({sfz:0,patch:n});
+					var percussionData = Assets.getBytes(sfzPath + "percussion.sfc");
+					percussionData.endian = Endian.LITTLE_ENDIAN;
+					percussion = SFZ.loadCompressed(seq, percussionData, assign);
+					sgc.loader_gui.keys.infos.text = "Loaded percussion";
+					sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width/2;
+				});
+			
+			}
+			else
+			{
+				var sfzPath = "sfz/";
+				var patchGenerator = function(n) {
+					var header = WAV.read(Assets.getBytes(sfzPath + n), sfzPath + n);
+					var content : PatchGenerator=  SamplerSynth.ofWAVE(header, n);
+					return content;
+				}
+				
+				melodic = new SFZBank(seq);
+				for (n in 0...128)
+				{
+					eq.add(function() {
+						var sfz = SFZ.load(seq, Assets.getBytes(sfzPath + Std.string(n + 1) + ".sfz"));
+						melodic.configureSamples(sfz, patchGenerator);
+						melodic.configureSFZ(sfz, n);
+						sgc.loader_gui.keys.infos.text = "Loaded instrument " + Std.string(n + 1);
+						sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width/2;
+					});
+
+				}
+
+				eq.add(function(){
+					percussion = new SFZBank(seq);
+					var sfz = SFZ.load(seq, Assets.getBytes(sfzPath + "kit-standard.sfz"));
+					var assign = new Array<Int>();
+					percussion.configureSamples(sfz, patchGenerator);
+					for (n in 0...128) percussion.configureSFZ(sfz, n);
+					sgc.loader_gui.keys.infos.text = "Loaded percussion";
+					sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width/2;
+				});
+			
+			}
+		}
+		else // SF2
+		{
+			eq.add(function() {
+				sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 3.5 MB GM.sf2"));
+				sf2.init(seq, MIP_LEVELS);
+				sgc.loader_gui.keys.infos.text = "Loaded SF2";
+				sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width / 2;
+			});
+		}
 
 		eq.add(function() { sgc.instSMFPlayer(hardReset); } );		
 		eq.add(function() { sgc.startSMFPlayer(); } );		
 		
 		eq.start();
 
-	}
+	}	
 
 }

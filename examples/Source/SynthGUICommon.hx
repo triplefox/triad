@@ -242,3 +242,43 @@ class SynthGUICommon
 	}
 
 }
+
+class ADSRUI
+{
+
+	public static function make(seq : Sequencer)
+	{
+		var attack : HSlider6 = null;		
+		var decay : HSlider6 = null;		
+		var sustain : HSlider6 = null;		
+		var release : HSlider6 = null;
+
+		// now have the synths take a template from the channel...
+
+		var update = function() { 
+			var envelopes = SynthTools.interpretADSR(seq.secondsToFrames, attack.highlighted, decay.highlighted,
+				sustain.highlighted, release.highlighted, SynthTools.CURVE_POW, SynthTools.CURVE_SQR, SynthTools.CURVE_POW);
+			for (n in seq.channels) { 
+				//n.patch_generator.settings.attack_envelope = envelopes.attack_envelope; 
+				//n.patch_generator.settings.sustain_envelope = envelopes.sustain_envelope; 
+				//n.patch_generator.settings.release_envelope = envelopes.release_envelope; 
+				} 
+			};
+		attack = new HSlider6(CommonStyle.slider, 100, 0.5, function(v : Float)
+					{ update(); } );
+		decay = new HSlider6(CommonStyle.slider, 100, 0.5, function(v : Float)
+					{ update(); } );
+		sustain = new HSlider6(CommonStyle.slider, 100, 0.5, function(v : Float)
+					{ update(); } );
+		release = new HSlider6(CommonStyle.slider, 100, 0.5, function(v : Float)
+					{ update(); } );
+		return LayoutBuilder.create(0, 0, 300, 300, LDRect9(new Rect9(CommonStyle.rr, 300, 300, true), LAC(0, 0), null,
+			LDPackV(LPMFixed(LSRatio(1)), LAC(0, 0), null, [
+				LDDisplayObject(attack, LAC(0,0), "attack"),
+				LDDisplayObject(decay, LAC(0,0), "decay"),
+				LDDisplayObject(sustain, LAC(0,0), "sustain"),
+				LDDisplayObject(release, LAC(0,0), "release"),
+			])));
+	}
+
+}
