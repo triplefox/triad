@@ -14,6 +14,8 @@ import com.ludamix.triad.time.EventQueue;
 import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.ui.HSlider6;
+import com.ludamix.triad.format.tar.Reader;
+import format.tar.Data;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
 import haxe.Json;
@@ -39,12 +41,14 @@ import nme.text.TextField;
 import nme.utils.Endian;
 import nme.Vector;
 
+typedef SongEntry = {fileName: String, data:Bytes, path: String};
+
 class SynthGUICommon
 {
 
 	public var events : Array<SequencerEvent>;
 	public var song_count : Int;
-	public var songs : Array<Array<String>>;
+	public var songs : Array<SongEntry>;
 	public var infos : TextField;
 	public var infos2 : TextField;
 	public var loader_gui : LayoutResult;
@@ -89,7 +93,7 @@ class SynthGUICommon
 	public function incGroup()
 	{
 		var cur_group = songs[song_count];
-		while (songs[song_count][0] == cur_group[0])
+		while (songs[song_count].path == cur_group.path)
 		{
 			incSong();
 		}
@@ -98,7 +102,7 @@ class SynthGUICommon
 	public function decGroup()
 	{
 		var cur_group = songs[song_count];
-		while (songs[song_count][0] == cur_group[0])
+		while (songs[song_count].path == cur_group.path)
 		{
 			decSong();
 		}
@@ -107,8 +111,8 @@ class SynthGUICommon
 	public function loadSong()
 	{
 		// output of toByteArray isn't rhythm-exact yet...
-		//events = SMFParser.load(seq, SMF.read(Assets.getBytes(songs[song_count][1])).toByteArray());
-		events = SMFParser.load(seq, Assets.getBytes(songs[song_count][1]));
+		//events = SMFParser.load(seq, SMF.read(songs[song_count].data.getData());
+		events = SMFParser.load(seq, songs[song_count].data.getData());
 
 		for (e in events)
 		{
@@ -121,7 +125,7 @@ class SynthGUICommon
 		}
 
 		seq.pushEvents(events.copy());
-		infos.text = "playing " + songs[song_count][1];
+		infos.text = "playing " + songs[song_count].fileName;
 		infos.x = Main.W / 2 - infos.width / 2;
 	}
 
@@ -200,17 +204,27 @@ class SynthGUICommon
 		Lib.current.stage.addChild(CommonStyle.settings);
 		CommonStyle.settings.visible = false;
 
-		songs = Json.parse(Assets.getText("assets/smf/song_db.json"));
+		var tar_reader = new Reader(new BytesInput(Bytes.ofData(Assets.getBytes("assets/smf.tar"))));
+		songs = Lambda.array(Lambda.map(tar_reader.read(), function(e:Entry):SongEntry
+			{
+				var str = StringTools.replace(e.fileName,"\\","/");
+				var split : Array<String> = str.split("/");
+				split.pop();
+				return { fileName:e.fileName, data:e.data, path:split.join("/") }; } 
+			));
+		
 		song_count = 0;
 		for (n in songs)
 		{
-			//if (n[1] == "assets/smf/doom_1_and_2/D_E1M1 - Hanger.mid")
-			//if (n[1] == "assets/smf/little_big_adventure/LBA1-01.MID")
-			if (n[1] == "assets/smf/little_big_adventure/LBA1-04.MID")
-			//if (n[1] == "assets/smf/wing_commander_privateer/Privateer I - Admiral Terell's Office.mid")
-			//if (n[1] == "assets/smf/wing_commander_1/WC1MID36.MID")
-			//if (n[1] == "assets/smf/wing_commander_1/WC1MID21.MID")
-			//if (n[1] == "assets/smf/sam_n_max_hit_the_road/SNMEND.MID")
+			var fname = n.fileName;
+			//if (fname == "sam_n_max_hit_the_road/SNMEND.MID")
+			//if (fname == "doom_1_and_2/D_E1M1 - Hanger.mid")
+			//if (fname == "little_big_adventure/LBA1-01.MID")
+			//if (fname == "little_big_adventure/LBA1-04.MID")
+			//if (fname == "wing_commander_privateer/Privateer I - Admiral Terell's Office.mid")
+			//if (fname == "wing_commander_1/WC1MID36.MID")
+			//if (fname == "wing_commander_1/WC1MID21.MID")
+			if (fname == "sam_n_max_hit_the_road/LAINTRO.MID")
 			{
 				break;
 			}
