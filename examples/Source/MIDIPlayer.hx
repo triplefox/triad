@@ -248,7 +248,7 @@ class MIDIPlayer
 		{
 			eq.add(function() {
 				sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 3.5 MB GM.sf2"));
-				sf2.init(seq, MIP_LEVELS);
+				sf2.init(MIP_LEVELS);
 				sgc.loader_gui.keys.infos.text = "Loaded SF2";
 				sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width / 2;
 			});

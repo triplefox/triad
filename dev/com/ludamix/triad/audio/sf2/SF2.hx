@@ -35,6 +35,11 @@ typedef SF2ModulationEnvelope = { delay:Float, attack:Float, hold:Float, decay:F
 typedef SF2VibratoLFO = {delay:Float,frequency:Float,pitch_depth:Float};
 typedef SF2ModulationLFO = {delay:Float,frequency:Float,pitch_depth:Float,filter_depth:Float,amp_depth:Float};
 
+typedef ProgressCount = {done:Int,total:Int};
+
+typedef SF2Progress = { samples_loaded:ProgressCount, samples_mipped:ProgressCount, patches_done:ProgressCount,
+	last_name:String};
+
 class SF2 
 {
     public var info:InfoChunk;
@@ -84,10 +89,72 @@ class SF2
         
         return sf2;
     }
+
+	// some loader detritus
+	private var sample_idx : Int;
+	private var sample_array : Array<{left:Vector<Float>,right:Vector<Float>,header:SampleHeader}>;
+	private var reassigns : IntHash<{from:Int,to:Int}>;
+	private var ra_result : Array<SoundSample>;
+	private var mip_levels : Int;
 	
-	public function init(seq : Sequencer, mip_levels : Int)
+	private function _load_sample(loader_callback : SF2Progress->Void)
 	{
-		var tuning = seq.tuning;
+		var sh = this.presets_chunk.sample_headers.data[sample_idx];
+		
+		var start = sh.start;
+		var end = sh.end;
+		
+		sh.triad_start_loop = sh.start_loop - sh.start;
+		sh.triad_end_loop = sh.end_loop - sh.start - 1;
+		
+		var vec = new Vector<Float>();
+		this.sample_data.sample_data.position = sh.start * 2;
+		var multiple = 1 / 32768.;
+		for (n in start...end)
+		{
+			vec.push(this.sample_data.sample_data.readShort() * multiple);
+		}
+		//trace(["*****", sh.sample_name, start, end, sh.triad_start_loop, sh.triad_end_loop, vec.length, vec[vec.length-1]]);
+		
+		sample_array.push({left:vec,right:vec,header:sh});
+		
+		if (sh.sf_sample_type == SFSampleLink.LEFT_SAMPLE)
+		{
+			if (sh.sample_link == sample_idx) 
+			{
+				log("sample #${sample_idx} ${sh.sample_name} tried to link to itself - corrupt?");
+			}
+			else
+				reassigns.set(sample_idx, {from:sample_idx,to:sh.sample_link});
+		}				
+		
+		sample_idx++;
+	}
+	
+	private function _emit_sample(loader_callback : SF2Progress->Void)
+	{
+		var tuning = this.sequencer.tuning;
+		var cur_smp = sample_array[sample_idx];
+		if (reassigns.exists(sample_idx)) // don't emit the linked yet
+		{
+			ra_result.push(null);
+		}
+		else
+		{
+			var left = cur_smp.left; var right = cur_smp.right; var sh = cur_smp.header;
+			var sample = SoundSample.ofVector(left,right,sh.sample_rate,
+				tuning.midiNoteBentToFrequency(sh.original_pitch, sh.pitch_correction),
+				sh.sample_name, mip_levels, [
+					{loop_mode:SoundSample.NO_LOOP,
+					 loop_start:sh.triad_start_loop,loop_end:sh.triad_end_loop}]);
+			ra_result.push(sample);
+		}
+		
+		sample_idx++;	
+	}
+	
+	public function init(mip_levels : Int, ?loader_callback : SF2Progress->Void)
+	{
 		
 		// SF2 spec adds a lot of complexity via the linked sample construct.
 		// When samples are linked, we toss out the data for one of the sample headers
@@ -97,41 +164,15 @@ class SF2
 		// in the first pass, we extract the PCM data to a Vector<Float> array, do a preliminary assignment,
 		//		and detect which samples will need a reassignment.
 		
-		var sample_array = new Array<{left:Vector<Float>,right:Vector<Float>,header:SampleHeader}>();
-		var reassigns = new IntHash<{from:Int,to:Int}>();
-		var sample_idx = 0;
+		sample_array = new Array();
+		reassigns = new IntHash();
 		
 		this.sample_data.sample_data.endian = Endian.LITTLE_ENDIAN;
 		
+		sample_idx = 0;
 		for (sh in this.presets_chunk.sample_headers.data)
 		{
-			var start = sh.start;
-			var end = sh.end;
-			
-			sh.triad_start_loop = sh.start_loop - sh.start;
-			sh.triad_end_loop = sh.end_loop - sh.start - 1;
-			
-			var vec = new Vector<Float>();
-			this.sample_data.sample_data.position = sh.start * 2;
-			for (n in start...end)
-			{
-				vec.push(this.sample_data.sample_data.readShort() / 32768.);
-			}
-			//trace(["*****", sh.sample_name, start, end, sh.triad_start_loop, sh.triad_end_loop, vec.length, vec[vec.length-1]]);
-			
-			sample_array.push({left:vec,right:vec,header:sh});
-			
-			if (sh.sf_sample_type == SFSampleLink.LEFT_SAMPLE)
-			{
-				if (sh.sample_link == sample_idx) 
-				{
-					log("sample #${sample_idx} ${sh.sample_name} tried to link to itself - corrupt?");
-				}
-				else
-					reassigns.set(sample_idx, {from:sample_idx,to:sh.sample_link});
-			}
-			
-			sample_idx++;
+			_load_sample(loader_callback);
 		}
 		
 		// in the second pass, we use reassignment data to create a stereo sample.
@@ -143,40 +184,25 @@ class SF2
 		
 		// in the third pass, we emit the unique SoundSamples and ignore the linked ones momentarily.
 		
-		var result = new Array<SoundSample>();
-		var sample_idx = 0;
+		ra_result = new Array();
+		sample_idx = 0;
 		for (cur_smp in sample_array)
 		{
-			if (reassigns.exists(sample_idx)) // don't emit the linked yet
-			{
-				result.push(null);
-			}
-			else
-			{
-				var left = cur_smp.left; var right = cur_smp.right; var sh = cur_smp.header;
-				var sample = SoundSample.ofVector(left,right,sh.sample_rate,
-					tuning.midiNoteBentToFrequency(sh.original_pitch, sh.pitch_correction),
-					sh.sample_name, mip_levels, [
-						{loop_mode:SoundSample.NO_LOOP,
-						 loop_start:sh.triad_start_loop,loop_end:sh.triad_end_loop}]);
-				result.push(sample);
-			}
-			
-			sample_idx++;
+			_emit_sample(loader_callback);
 		}
 		
 		// in the fourth pass, we clean up the references for the reassigned(linked) samples.
 		
 		for (r in reassigns.keys())
 		{
-			result[r] = result[reassigns.get(r).to];
+			ra_result[r] = ra_result[reassigns.get(r).to];
 		}
 		
-		this.usable_samples = result;
+		this.usable_samples = ra_result;
 		
 		// we give the headers a reference to the result so that it's easier to create the samplepatch later.
 		
-		var sample_idx = 0;
+		sample_idx = 0;
 		for (cur_smp in sample_array)
 		{
 			cur_smp.header.triad_soundsample = usable_samples[sample_idx];
@@ -194,8 +220,14 @@ class SF2
 				bank = usable_banks.get(p.bank);
 			else
 				{ bank = new SF2Bank(); usable_banks.set(p.bank, bank); }
-			bank.set(p.patch_number, parsePreset(seq, p));
+			bank.set(p.patch_number, parsePreset(this.sequencer, p));
 		}
+		
+		sample_array = null;
+		reassigns = null;
+		sample_idx = 0;
+		ra_result = null;
+		mip_levels = 0;
 		
 	}
 	
