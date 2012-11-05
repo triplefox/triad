@@ -16,6 +16,11 @@ typedef TableSynthPatch = {
 	modulation_lfos : Array<LFO>,
 	arpeggiation_rate : Float, // 0 = off, hz value
 	base_pulsewidth : Float,
+	filter_mode : Float,
+	cutoff_frequency : Float,
+	volume : Float,
+	pan : Float,
+	transpose : Float
 };
 
 class TableSynth implements SoftSynth
@@ -70,12 +75,17 @@ class TableSynth implements SoftSynth
 	{
 		var m_lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] },
 			{ frequency:1.7, depth:1., delay:0., attack:0., assigns:[AS_PULSEWIDTH] }];
-		return { envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 0.4, 0.5, 0.01, [AS_VOLUME_ADD])],
-				oscillator:SAW_WT,
-				lfos : new Array<LFO>(),
+		return { envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 5.4, 0.5, 0.05, [AS_VOLUME_ADD])],
+				oscillator:PULSE_WT,
+				lfos : [{frequency:8.7, depth:0.5, delay:0., attack:0.3, assigns:[AS_PULSEWIDTH]}],
 				modulation_lfos:m_lfos,
 				arpeggiation_rate:0.0,
-				base_pulsewidth:0.
+				base_pulsewidth:0.,
+				filter_mode:VoiceCommon.FILTER_OFF,
+				cutoff_frequency:0.,
+				volume:0.1,
+				pan:0.5,
+				transpose:0.
 				}
 				;
 	}
@@ -92,10 +102,10 @@ class TableSynth implements SoftSynth
 		return i/wl;
 	}
 	
-	public static inline var TABLE_START = 512; // roughly, the accuracy of our lowest regular note
+	public static inline var TABLE_START = 1024; // roughly, the accuracy of our lowest regular note
 												 // 44100*TABLE_OVERSAMPLE/TABLE_START = the bassiest frequency in hz
 	public static inline var TABLE_PITCHES = 48;// num of unique pitches sampled between table start and end
-    public static function tableMapping(i : Float) : Float {return Math.pow(i, 6);} // biases the pitches we sample from 
+    public static function tableMapping(i : Float) : Float {return i;} // biases the pitches we sample from 
 	public static inline var TABLE_MODULATIONS = 6; // number of unique modulations sampled per pitch
 	public static inline var TABLE_OVERSAMPLE = 1; // determines which table is chosen at runtime. 
 		// Using tables oversampled brings out the highs more prominently, but puts more pressure on resampling accuracy,
@@ -272,69 +282,74 @@ class TableSynth implements SoftSynth
 		var pos = playhead.getSamplePos();
 		buffer.playhead = 0;
 		
-		switch(patch.oscillator)
+		if (common.sequencer.isSuffering()) write = false;
+		
+		if (write)
 		{
-			case PULSE: // naive, run at half rate
-				for (i in 0 ... buffer.length >> 2) {
-					if (pos % wl < hw)
-					{
-						buffer.add(left); buffer.advancePlayheadUnbounded();
-						buffer.add(right); buffer.advancePlayheadUnbounded();
-						buffer.add(left); buffer.advancePlayheadUnbounded();
-						buffer.add(right); buffer.advancePlayheadUnbounded();
+			switch(patch.oscillator)
+			{
+				case PULSE: // naive, run at half rate
+					for (i in 0 ... buffer.length >> 2) {
+						if (pos % wl < hw)
+						{
+							buffer.add(left); buffer.advancePlayheadUnbounded();
+							buffer.add(right); buffer.advancePlayheadUnbounded();
+							buffer.add(left); buffer.advancePlayheadUnbounded();
+							buffer.add(right); buffer.advancePlayheadUnbounded();
+						}
+						else
+						{
+							buffer.add(-left); buffer.advancePlayheadUnbounded();
+							buffer.add(-right); buffer.advancePlayheadUnbounded();
+							buffer.add(-left); buffer.advancePlayheadUnbounded();
+							buffer.add(-right); buffer.advancePlayheadUnbounded();
+						}
+						pos = (pos+4) % wl;
 					}
-					else
+				case SAW: // naive, run at half rate
+					var peak = vol * 2;
+					var one_over_wl = peak / wl;
+					for (i in 0 ... buffer.length >> 2) 
 					{
-						buffer.add(-left); buffer.advancePlayheadUnbounded();
-						buffer.add(-right); buffer.advancePlayheadUnbounded();
-						buffer.add(-left); buffer.advancePlayheadUnbounded();
-						buffer.add(-right); buffer.advancePlayheadUnbounded();
+						var sum = ((wl - (pos << 1)) % wl) * one_over_wl;
+						var l = sum * left;
+						var r = sum * right;
+						buffer.add(l); buffer.advancePlayheadUnbounded();
+						buffer.add(r); buffer.advancePlayheadUnbounded();
+						buffer.add(l); buffer.advancePlayheadUnbounded();
+						buffer.add(r); buffer.advancePlayheadUnbounded();
+						pos = (pos + 4) % wl;
 					}
-					pos = (pos+4) % wl;
-				}
-			case SAW: // naive, run at half rate
-				var peak = vol * 2;
-				var one_over_wl = peak / wl;
-				for (i in 0 ... buffer.length >> 2) 
-				{
-					var sum = ((wl - (pos << 1)) % wl) * one_over_wl;
-					var l = sum * left;
-					var r = sum * right;
-					buffer.add(l); buffer.advancePlayheadUnbounded();
-					buffer.add(r); buffer.advancePlayheadUnbounded();
-					buffer.add(l); buffer.advancePlayheadUnbounded();
-					buffer.add(r); buffer.advancePlayheadUnbounded();
-					pos = (pos+4) % wl;
-				}
-			case TRI: // naive, run at full rate
-				var peak = vol;
-				var one_over_wl = 2. / wl;
-				var h = wl >> 1;
-				for (i in 0 ... buffer.length >> 1) 
-				{
-					var sum = (-((pos + h) << 1)% wl) * one_over_wl;
-					if (pos >= h)
-						sum = -sum - 1;
-					else
-						sum += 1;
-					buffer.add(sum * left); buffer.advancePlayheadUnbounded();
-					buffer.add(sum * right); buffer.advancePlayheadUnbounded();
-					pos = (pos+2) % wl;
-				}
-			case SIN: // using Math.sin()
-				var adjust = 2 * Math.PI / wl;
-				left *= 0.3;
-				right *= 0.3;
-				for (i in 0 ... buffer.length >> 1) 
-				{
-					var sum = Math.sin(pos * adjust);
-					buffer.add(sum * left); buffer.advancePlayheadUnbounded();
-					buffer.add(sum * right); buffer.advancePlayheadUnbounded();
-					pos = (pos+2) % wl;
-				}
-			case PULSE_WT: pos = runWavetable(buffer, pulseWavetable, wl, hw, pos, left, right);
-			case SAW_WT: pos = runWavetable(buffer, sawWavetable, wl, hw, pos, left, right);
-			case TRI_WT: pos = runWavetable(buffer, triWavetable, wl, hw, pos, left, right);
+				case TRI: // naive, run at full rate
+					var peak = vol;
+					var one_over_wl = 2. / wl;
+					var h = wl >> 1;
+					for (i in 0 ... buffer.length >> 1) 
+					{
+						var sum = (-((pos + h) << 1)% wl) * one_over_wl;
+						if (pos >= h)
+							sum = -sum - 1;
+						else
+							sum += 1;
+						buffer.add(sum * left); buffer.advancePlayheadUnbounded();
+						buffer.add(sum * right); buffer.advancePlayheadUnbounded();
+						pos = (pos+2) % wl;
+					}
+				case SIN: // using Math.sin()
+					var adjust = 2 * Math.PI / wl;
+					left *= 0.3;
+					right *= 0.3;
+					for (i in 0 ... buffer.length >> 1) 
+					{
+						var sum = Math.sin(pos * adjust);
+						buffer.add(sum * left); buffer.advancePlayheadUnbounded();
+						buffer.add(sum * right); buffer.advancePlayheadUnbounded();
+						pos = (pos+2) % wl;
+					}
+				case PULSE_WT: pos = runWavetable(buffer, pulseWavetable, wl, hw, pos, left, right);
+				case SAW_WT: pos = runWavetable(buffer, sawWavetable, wl, hw, pos, left, right);
+				case TRI_WT: pos = runWavetable(buffer, triWavetable, wl, hw, pos, left, right);
+			}
 		}
 		
 		playhead.setSamplePos(pos);

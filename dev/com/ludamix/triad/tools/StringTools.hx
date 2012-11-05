@@ -1,4 +1,5 @@
 package com.ludamix.triad.tools;
+import Type;
 
 typedef IInt = #if neko Int #elseif cpp Int #else UInt #end;
 
@@ -86,6 +87,48 @@ class StringTools
 				out += String.fromCharCode(cc);
 		}
 		return out;
+	}
+	
+	public static function parseInterval(i : String) : Array<Int>
+	{
+		// returns a list of integer values based on a string like "0...100" - this is NOT like haxe for syntax,
+		// 0...100 will return 101 numbers in ascending order, while 100...0 will return 101 entries in descending order
+		// 0...0 will return [0]
+		
+		var strings = ["", ""];
+		var which = 0;
+		
+		for (n in 0...i.length)
+		{
+			var z = i.charCodeAt(n);
+			if (z >= 48 && z < 58)
+			{
+				strings[which] += String.fromCharCode(z);
+			}
+			else if (z == 46) // .
+				which = 1;
+		}
+		
+		var start = Std.parseInt(strings[0]);
+		var end = Std.parseInt(strings[1]);
+		var step = 1; if (start > end) step = -1;
+		
+		var ar = new Array();
+		while(start!=end || ar.length<1)
+			{ ar.push(start); start += step; }
+		return ar;
+	}
+	
+	public static function parseIntervalArray(i : Array<Dynamic>) : Array<Int>
+	{
+		// generates an array from a mix of "0...n" interval syntax and enumerated integers
+		var result = new Array<Int>();
+		for (n in i)
+		{
+			if (Type.typeof(n) == ValueType.TInt) result.push(n);
+			else for (z in parseInterval(n)) result.push(z);
+		}
+		return result;
 	}
 	
 }

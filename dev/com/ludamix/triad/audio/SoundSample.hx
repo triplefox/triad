@@ -1,5 +1,6 @@
 package com.ludamix.triad.audio;
 
+import nme.utils.ByteArray;
 import nme.Vector;
 import com.ludamix.triad.audio.SampleMipMap;
 import com.ludamix.triad.tools.FastFloatBuffer;
@@ -23,13 +24,14 @@ typedef SampleTuning = {
 	base_frequency : Float // hz
 };
 
-class SoundSample
+class SoundSample 
 {
 
 	public var mip_levels : Array<RawSample>;
 	public var tuning : SampleTuning;
 	public var stereo : Bool;
-	public var mono_mode : Int; // if the sample is mono, this indicates if it's intended to be paired.
+	public var mono_mode : Int; // if the sample is mono, this indicates if it's intended to be paired l/r 
+								// with another sample or just doubled in the stereo mix.
 	public var loops : Array<LoopInfo>;
 	public var name : String;
 
@@ -123,6 +125,132 @@ class SoundSample
 		sample.loops = loops;
 		
 		return sample;
+	}
+
+	public static inline function getMipmap(wavelength : Float, sample_rate : Int, base_frequency : Float, 
+		sampleset : Array<RawSample>)
+	{
+		// select an appropriate mipmap
+		var ptr = 0;
+		var best_dist = 99999999999.;
+		for (n in 0...sampleset.length)
+		{
+			var dist = Math.abs(wavelength - (sample_rate / base_frequency) * sampleset[n].rate_multiplier);
+			if (dist < best_dist)
+				{ best_dist = dist; ptr = n; }
+		}
+		return ptr;
+	}
+	
+	public static inline function getLoopLen(loop_pos : Float, 
+		buffer : FastFloatBuffer, inc : Float, loop_end : Float) : Int
+	{
+		
+		// Calculates a single loop, starting from the buffer's playhead
+		
+		var len = buffer.length - buffer.playhead;
+		
+		var samples = Std.int(Math.min(len, (loop_end - loop_pos) / inc));
+		
+		// Cut samples in half to account for stereo. Then do some corrections.
+		samples >>= 1;
+		while ((samples) * inc + loop_pos > loop_end) samples--;
+		if (samples < 1 ) samples = 1;
+		
+		return samples;
+		
+	}
+	
+	public static function serializeSamples(st : Array<SoundSample>):ByteArray
+	{
+		// this is intended for cache-and-recall purposes, not long-term storage.
+	
+		var b : ByteArray = new ByteArray();
+		
+		b.writeInt(st.length);
+		for (s in st)
+		{
+			b.writeInt(s.mip_levels.length);
+			for (n in s.mip_levels)
+			{
+				var isStereo = n.sample_left == n.sample_right;
+				b.writeBoolean(isStereo);
+				b.writeFloat(n.rate_multiplier);
+				b.writeInt(n.sample_left.length);
+				for (q in 0...n.sample_left.length)
+					b.writeShort(Math.round(n.sample_left.get(q)*32767));
+				if (isStereo)
+				{
+					b.writeInt(n.sample_right.length);
+					for (q in 0...n.sample_right.length)
+						b.writeShort(Math.round(n.sample_right.get(q)*32767));
+				}
+			}
+			b.writeInt(s.tuning.sample_rate);
+			b.writeFloat(s.tuning.base_frequency);
+			b.writeBoolean(s.stereo);
+			b.writeShort(s.mono_mode);
+			b.writeInt(s.loops.length);
+			for (n in s.loops)
+			{
+				b.writeInt(n.loop_mode);
+				b.writeInt(n.loop_start);
+				b.writeInt(n.loop_end);
+			}
+			b.writeUTF(s.name);
+		}		
+		b.compress();
+		return b;
+	}
+	
+	public static function unserializeSamples(b : ByteArray):Array<SoundSample>	
+	{
+		b.uncompress();
+		
+		var result = new Array<SoundSample>();		
+		
+		var numSamples = b.readInt();
+		for (s_idx in 0...numSamples)
+		{
+			var sample = new SoundSample(); sample.mip_levels = new Array(); result.push(sample);
+			var numMips = b.readInt();
+			for (n_idx in 0...numMips)
+			{
+				var mip : RawSample = { sample_left:null, sample_right:null, rate_multiplier:0. };
+				sample.mip_levels.push(mip);
+				var isStereo = b.readBoolean();
+				mip.rate_multiplier = b.readFloat();
+				var left_length = b.readInt();
+				mip.sample_left = new FastFloatBuffer(left_length);
+				for (q in 0...left_length)
+					mip.sample_left.set(q, b.readShort()/32767);
+				mip.sample_right = mip.sample_left;
+				if (isStereo)
+				{
+					var right_length = b.readInt();
+					mip.sample_right = new FastFloatBuffer(right_length);
+					for (q in 0...right_length)
+						mip.sample_right.set(q, b.readShort()/32767);
+				}
+			}
+			sample.tuning = {sample_rate:0, base_frequency:0.};
+			sample.tuning.sample_rate = b.readInt();
+			sample.tuning.base_frequency = b.readFloat();
+			sample.stereo = b.readBoolean();
+			sample.mono_mode = b.readShort();
+			var numLoops = b.readInt();
+			sample.loops = new Array();
+			for (n in 0...numLoops)
+			{
+				var loop : LoopInfo = { loop_mode:0, loop_start:0, loop_end:0 };
+				sample.loops.push(loop);
+				loop.loop_mode = b.readInt();
+				loop.loop_start = b.readInt();
+				loop.loop_end = b.readInt();
+			}
+			sample.name = b.readUTF();
+		}
+		return result;
 	}
 
 }

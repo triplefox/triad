@@ -10,11 +10,14 @@ import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.SFZBank;
 import com.ludamix.triad.audio.TableSynth;
+import com.ludamix.triad.audio.SwagSynth;
+import com.ludamix.triad.audio.CycleBuilder;
 import com.ludamix.triad.format.WAV;
 import com.ludamix.triad.time.EventQueue;
 import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.ui.HSlider6;
+import flash.utils.ByteArray;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
 import haxe.Json;
@@ -36,9 +39,11 @@ import com.ludamix.triad.ui.SettingsUI;
 import com.ludamix.triad.ui.layout.LayoutBuilder;
 import com.ludamix.triad.ui.Rect9;
 import com.ludamix.triad.ui.Helpers;
+import nme.net.SharedObject;
 import nme.text.TextField;
 import nme.utils.Endian;
 import nme.Vector;
+import com.ludamix.triad.tools.Visualization;
 
 class MIDIPlayer
 {
@@ -77,7 +82,6 @@ class MIDIPlayer
 		for (n in 0...VOICES)
 		{
 			var synth = new SamplerSynth();
-			synth.common.filter_cutoff_multiplier = 4.0;
 			synth.common.master_volume = 0.5;
 			seq.addSynth(synth);
 			voices.push(synth);
@@ -157,6 +161,52 @@ class MIDIPlayer
 		}		
 	}
 
+	private function resetSwagSynth()
+	{
+		var voices = new Array<SoftSynth>();
+		var percussion_voices = new Array<SoftSynth>();
+		// set up melodic voices
+		for (n in 0...VOICES)
+		{
+			var synth = new SwagSynth(wavetable);
+			synth.common.master_volume = 0.5;
+			seq.addSynth(synth);
+			voices.push(synth);
+		}
+		// dedicated percussion
+		for (n in 0...PERCUSSION_VOICES)
+		{
+			var synth = new SamplerSynth();
+			synth.common.master_volume = 0.5;
+			seq.addSynth(synth);
+			percussion_voices.push(synth);
+		}
+		// setup channels
+		for (n in 0...16)
+		{
+			if (n == 9)
+			{
+				if (USING_SFZ)
+				{
+					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
+					seq.addChannel([vgroup], percussion.getGenerator());
+				}
+				else
+				{
+					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
+					seq.addChannel([vgroup], sf2.getGenerator(0,128));
+					vgroup.channel.bank_id = 128;				
+				}
+			}
+			else
+			{
+				var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
+				seq.addChannel([vgroup], SwagSynth.bankGenerator(SwagSynth.buildBank(seq,SwagSynth.defaultBankDefinition())));
+			}
+
+		}		
+	}
+	
 	public function hardReset()
 	{
 		seq.synths = new Array();
@@ -164,10 +214,13 @@ class MIDIPlayer
 		seq.events = new Array();
 		resetSamplerSynth();
 		//resetTableSynth();
+		//resetSwagSynth();
 	}
 
 	public var eq : EventQueue;
 	public var sgc : SynthGUICommon;
+	public var wavetable : Array<SoundSample>;
+	public var shared_object : SharedObject;
 
 	public function new()
 	{
@@ -176,13 +229,98 @@ class MIDIPlayer
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
-		seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 1200, 1.0, 1.0, 0.83, 780, 1024));
-		//seq = new Sequencer(Std.int(44100), 4096,8);
+		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 1200, 1.0, 1.0, 0.83, 780, 1024));
+		seq = new Sequencer(Std.int(44100), 4096,8);
 
 		sgc = new SynthGUICommon(seq);
 		eq = new EventQueue();
 		sgc.instPatchLoaderUI();
-
+		
+		wavetable = new Array();
+		
+		var FLUSH_CACHE = false;
+		
+		shared_object = SharedObject.getLocal("triad_synth_cache");
+		try { if (FLUSH_CACHE) throw null;
+			  var copy = new ByteArray(); // the unserializeSamples decompression is in-place, 
+										  // so we do this to avoid dirtying the cache.
+			  copy.writeBytes(shared_object.data.wavetable, 0, shared_object.data.wavetable.length);
+			  wavetable = SoundSample.unserializeSamples(copy); 
+			  }
+		catch(d:Dynamic)
+		{
+		
+			var viz = new Bitmap(new BitmapData(1, 1, true, 0));
+			Lib.current.stage.addChild(viz);
+			
+			var updateViz = function() {
+				if (wavetable.length > 0)
+				{
+					var v = Visualization.waveform(
+						wavetable[wavetable.length-1].mip_levels[0].sample_left, 
+						Main.W, Main.H >> 1); 
+					viz.bitmapData = v.bitmapData; 
+					viz.x = 0;
+					viz.y = Main.H / 2 - viz.height / 2;
+				}
+			};
+		
+			var count = { var ar = new Array<Int>(); var n = 32; while (n > 0) { ar.push(n); n--; } ar; };
+			
+			var midinotes = new Array<Int>();
+			var mn = 30;
+			while (mn < 128)
+			{
+				midinotes.push(Std.int(seq.sampleRate()/EvenTemperament.cache.midiNoteToFrequency(mn)));
+				mn += 4;
+			}
+		
+			eq.add(function() { eq.inter_queue = updateViz; });
+			for (z in count) {
+			for (n in (CycleBuilder.buildWave(midinotes, 		
+				{ octaves:256, resonance:-1., pluck:(count.length-z)/count.length*200 },
+				CycleBuilder.sawBuilder, "saw_clean", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
+			}
+			for (z in count) {
+			for (n in (CycleBuilder.buildWave(midinotes, 		
+				{ octaves:256, resonance:-1., pluck:0. },
+				CycleBuilder.sawBuilder, "saw_pluck", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
+			}
+			for (z in count) {
+			for (n in (CycleBuilder.buildWave(midinotes, 		
+				{ octaves:6+Math.pow(256-6,z/count.length), resonance:5., pluck:0. },
+				CycleBuilder.sawBuilder, "saw_reso", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
+			}
+			for (pwm in 0...3)
+			{
+				var p = pwm / 4 * 0.5;
+				for (z in count) {
+				for (n in (CycleBuilder.buildWave(midinotes,
+				{ octaves:6+Math.pow(256-6,z/count.length), pulse_width:0.5 - p, resonance:-1., pluck:0. },
+				CycleBuilder.pulseBuilder, "pulse_clean_" + Std.string(0.5 - p), 
+					function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
+				}		
+			}
+			for (pwm in 0...3)
+			{
+				var p = pwm / 4 * 0.5;
+				for (z in count) {
+				for (n in (CycleBuilder.buildWave(midinotes,
+				{ octaves:6+Math.pow(256-6,z/count.length), pulse_width:0.5 - p, resonance:5., pluck:0. },
+				CycleBuilder.pulseBuilder, "pulse_reso_" + Std.string(0.5 - p), 
+					function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
+				}		
+			}
+			for (n in (CycleBuilder.buildWave(midinotes, 		
+				{ octaves:256, resonance:-1., pluck:0. },
+				CycleBuilder.triBuilder, "tri", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
+			for (n in (CycleBuilder.buildWave(midinotes, 		
+				{ octaves:256, resonance:0., pluck:0.01 },
+				CycleBuilder.bellBuilder, "bell", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
+			eq.add(function() { shared_object.setProperty("wavetable", SoundSample.serializeSamples(wavetable));
+								shared_object.flush(); } );
+			eq.add(function() { eq.inter_queue = null; });
+		}
 		if (USING_SFZ)
 		{
 			if (SFZ_COMPRESSED)
@@ -268,6 +406,7 @@ class MIDIPlayer
 				eq.add(function() { sgc.startSMFPlayer(); } );				
 			});
 		}
+		
 		
 		eq.start();
 

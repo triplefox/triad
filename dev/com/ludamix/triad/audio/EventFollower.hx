@@ -1,5 +1,5 @@
 package com.ludamix.triad.audio;
-import com.ludamix.triad.audio.dsp.IIRFilter2;
+import com.ludamix.triad.audio.dsp.SVFilter;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.audio.Envelope;
 
@@ -13,7 +13,7 @@ class EventFollower
 	public var lfo_pos : Int;
 	public var loop_pos : Float;
 	public var loop_state : Int;
-	public var filter : IIRFilter2;
+	public var filter : SVFilter;
 	
 	public static inline var LOOP_PRE = 0;
 	public static inline var LOOP_FORWARD = 1;
@@ -22,15 +22,15 @@ class EventFollower
 	public static inline var LOOP_PONG = 4;
 	public static inline var LOOP_POST = 5;
 	
-	public function new(event : PatchEvent)
+	public function new(event : PatchEvent, seq:Sequencer)
 	{
 		this.patch_event = event; 
 		env = new Array();
 		for (n in cast(event.patch.envelope_profiles,Array<Dynamic>))
-			env.push(new Envelope(n.attack,n.release,n.assigns));
+			env.push(new Envelope(n.attack,n.release,n.assigns,n.endpoint));
 		this.lfo_pos = 0;
 		loop_pos = 0.; loop_state = LOOP_PRE;
-		filter = new IIRFilter2(0,440.,0,44100);
+		filter = new SVFilter(440.,0,seq.sampleRate());
 	}
 	
 	public inline function isOff() { return env[0].isOff(); }

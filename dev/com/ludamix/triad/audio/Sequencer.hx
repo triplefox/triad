@@ -2,6 +2,7 @@ package com.ludamix.triad.audio;
 
 import com.ludamix.triad.audio.dsp.Reverb;
 import com.ludamix.triad.tools.FastFloatBuffer;
+import flash.Lib;
 import nme.events.SampleDataEvent;
 import nme.media.Sound;
 import nme.media.SoundChannel;
@@ -165,7 +166,7 @@ class VoiceGroup
 				// TODO - with region-dependent samples(e.g. GM drums) this concept needs a special case to include
 				// which _notes_ are being played, rather than simply the whole channel.
 				// that way, repetitive samples are discarded without harming the rest of the kit.
-				voice.common.followers.push(new EventFollower(patch_ev));
+				voice.common.followers.push(new EventFollower(patch_ev, voice.common.sequencer));
 				for (f in allocated)
 				{
 					patch_ev.sequencer_event.priority = Std.int((patch_ev.sequencer_event.priority * PRIORITY_VOICE));
@@ -303,6 +304,8 @@ class Sequencer
 	private var FRAMESIZE : Int; // buffer size of mono frame
 	private var DIVISIONS : Int; // to increase the framerate we slice the buffer by this number of divisions
 	
+	public var SUFFERING : Int; // the CPU is being hit too hard to finish the frame!
+	
 	public var bpm : Float;
 	public var cur_beat : Float;
 	
@@ -326,14 +329,14 @@ class Sequencer
 	public inline function beatsToSeconds(beats : Float) : Float { return beats / (bpm / 60); }
 	
 	public inline function waveLength(frequency : Float) { return sampleRate() / frequency; }
-	public inline function frequency(wavelength : Float) { return wavelength / sampleRate(); }
+	public inline function frequency(wavelength : Float) { return sampleRate() / wavelength; }
 	public inline function waveLengthOfBentNote(note : Float, pitch_bend : Int) 
 	{ 
 		return waveLength(tuning.midiNoteBentToFrequency(note, pitch_bend));
 	}
-	public inline function waveLengthOfBentFrequency(frequency : Float, pitch_bend : Int) 
+	public inline function waveLengthOfBentFrequency(frequency : Float, pitch_bend : Int, semitones : Float) 
 	{ 
-		return waveLengthOfBentNote(tuning.frequencyToMidiNote(frequency), pitch_bend);
+		return waveLengthOfBentNote(tuning.frequencyToMidiNote(frequency)+semitones, pitch_bend);
 	}
 	
 	// we should really be using a priority queue but for now I'll sort the array each time we add events...
@@ -421,13 +424,25 @@ class Sequencer
 		for (n in synths) { n.write(); }		
 	}
 	
+	public inline function isSuffering()
+	{
+		return (SUFFERING > DIVISIONS);
+	}
+	
 	public function onSamples(event : SampleDataEvent) 
 	{
+		
+		SUFFERING = SUFFERING >> 1;
+		var time = Lib.getTimer();
 		
 		for (count in 0...DIVISIONS)
 		{
 			
 			executeFrame();
+			
+			var curtime = Lib.getTimer();
+			if (curtime - time > 15)
+				SUFFERING++;
 			
 			if (postFrame != null)
 				postFrame(this, buffer);
@@ -518,6 +533,7 @@ class Sequencer
 	public function new(?rate : Int = 22050, ?framesize : Int = 4096, ?divisions : Int = 4, 
 		?tuning : MIDITuning = null, ?reverb : Reverb = null)
 	{
+		SUFFERING = 0;
 		last_l = 0.;
 		last_r = 0.;
 		this.RATE = rate;

@@ -38,7 +38,8 @@ typedef SamplerPatch = {
 	resonance_level : Float,
 	keyrange : Range,
 	velrange : Range,
-	name : String
+	name : String,
+	transpose : Float
 };
 
 /*
@@ -112,7 +113,8 @@ class SamplerSynth implements SoftSynth
 			resonance_level:0.,
 			keyrange:{low:0.,high:127.},
 			velrange:{low:0.,high:127.},
-			name:sample.name
+			name:sample.name,
+			transpose:0.
 			};
 	}
 	
@@ -153,7 +155,8 @@ class SamplerSynth implements SoftSynth
 				resonance_level:0.,
 				keyrange:{low:0.,high:127.},
 				velrange:{low:0.,high:127.},
-				name:"default"
+				name:"default",
+				transpose:0.
 			};
 	}
 	
@@ -182,15 +185,7 @@ class SamplerSynth implements SoftSynth
 			var sample_rate = patch.tuning.sample_rate;
 			var base_frequency = patch.tuning.base_frequency;
 			
-			// select an appropriate mipmap
-			var ptr = 0;
-			var best_dist = 99999999999.;
-			for (n in 0...sampleset.length)
-			{
-				var dist = Math.abs(wl - (sample_rate / base_frequency) * sampleset[n].rate_multiplier);
-				if (dist < best_dist)
-					{ best_dist = dist; ptr = n; }
-			}
+			var ptr = SoundSample.getMipmap(wl, sample_rate, base_frequency, sampleset);
 			
 			var rate_mult = sampleset[ptr].rate_multiplier;
 			
@@ -208,6 +203,9 @@ class SamplerSynth implements SoftSynth
 			
 			if (patch.loops[0].loop_mode == LOOP_UNSPECIFIED)
 				patch.loops[0].loop_mode = patch.sample.loops[0].loop_mode;
+				
+			if (common.sequencer.isSuffering())
+				write = false;
 			
 			switch(patch.loops[0].loop_mode)
 			{
@@ -270,7 +268,7 @@ class SamplerSynth implements SoftSynth
 		{
 			if (cur_follower.loop_state == EventFollower.LOOP_PRE)
 			{
-				var ll = getLoopLen(temp_pos, buffer, inc, loop_start);
+				var ll = SoundSample.getLoopLen(temp_pos, buffer, inc, loop_start);
 				temp_pos = runSegment2(buffer, temp_pos, inc, left, right, sample_left, 
 					sample_right, ll, write);
 				if (temp_pos >= loop_start) // we crossed the threshold into the loop
@@ -294,7 +292,7 @@ class SamplerSynth implements SoftSynth
 					// forward
 					var lt = temp_pos;
 					temp_pos = ((temp_pos - loop_start) % loop_len) + loop_start;
-					var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
+					var ll = SoundSample.getLoopLen(temp_pos, buffer, inc, loop_end);
 					temp_pos = runSegment(buffer, temp_pos, inc, left, right, sample_left, 
 						sample_right, ll, loop_end, loop_len, write);
 					if (cur_follower.loop_state == EventFollower.LOOP_PING && temp_pos < lt)
@@ -308,7 +306,7 @@ class SamplerSynth implements SoftSynth
 					var lt = temp_pos;
 					temp_pos = ((temp_pos - loop_start) % loop_len) + loop_start;
 					var temp_pos_b = loop_end - temp_pos;
-					var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
+					var ll = SoundSample.getLoopLen(temp_pos, buffer, inc, loop_end);
 					runSegment(buffer, temp_pos_b, -inc, 
 						left, right, sample_left, sample_right, ll, loop_end, loop_len, write);
 					temp_pos += ll * inc;
@@ -343,7 +341,7 @@ class SamplerSynth implements SoftSynth
 			}
 			else
 			{
-				var ll = getLoopLen(temp_pos, buffer, inc, loop_end);
+				var ll = SoundSample.getLoopLen(temp_pos, buffer, inc, loop_end);
 				temp_pos = runSegment2(buffer, temp_pos, inc, left, 
 					right, sample_left, sample_right, ll, write);
 				if (ll < 1)
@@ -351,24 +349,6 @@ class SamplerSynth implements SoftSynth
 			}
 		}
 		cur_follower.loop_pos = temp_pos / sample_left.length;
-	}
-	
-	private inline function getLoopLen(loop_pos : Float, buffer : FastFloatBuffer, inc : Float, loop_end : Float) : Int
-	{
-		
-		// Calculates a single loop, starting from the buffer's playhead
-		
-		var len = buffer.length - buffer.playhead;
-		
-		var samples = Std.int(Math.min(len, (loop_end - loop_pos) / inc));
-		
-		// Cut samples in half to account for stereo. Then do some corrections.
-		samples >>= 1;
-		while ((samples) * inc + loop_pos > loop_end) samples--;
-		if (samples < 1 ) samples = 1;
-		
-		return samples;
-		
 	}
 	
 	private inline function divisorModulo(val : Float, mod : Float) : Float
@@ -416,6 +396,9 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(1, "mirror", ["bandpass_filter"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(1, "mirror", ["bandreject_filter"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+						CopyLoop.copyLoop(1, "mirror", ["ringmod_filter"], "loop");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
 				{
@@ -429,6 +412,9 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","Interpolator.interp_cubic"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(4, "mirror", ["bandreject_filter","Interpolator.interp_cubic"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+						CopyLoop.copyLoop(4, "mirror", ["ringmod_filter","Interpolator.interp_cubic"], "loop");
 				}
 				else // linear mono
 				{
@@ -442,6 +428,9 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","Interpolator.interp_linear"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","Interpolator.interp_linear"], "loop");
+					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+						CopyLoop.copyLoop(2, "mirror", ["ringmod_filter","Interpolator.interp_linear"], "loop");
 				}
 			}
 			else
@@ -458,6 +447,9 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(1, "split", ["bandpass_filter"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(1, "split", ["bandreject_filter"], "loop");
+				else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+						CopyLoop.copyLoop(1, "split", ["ringmod_filter"], "loop");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
 				{
@@ -471,6 +463,9 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(4, "split", ["bandpass_filter","Interpolator.interp_cubic"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(4, "split", ["bandreject_filter","Interpolator.interp_cubic"], "loop");
+				else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+						CopyLoop.copyLoop(4, "split", ["ringmod_filter","Interpolator.interp_cubic"], "loop");
 				}
 				else // linear stereo
 				{
@@ -484,6 +479,9 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(2, "split", ["bandpass_filter","Interpolator.interp_linear"], "loop");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(2, "split", ["bandreject_filter","Interpolator.interp_linear"], "loop");
+				else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+						CopyLoop.copyLoop(2, "split", ["ringmod_filter","Interpolator.interp_linear"], "loop");
 				}
 			}
 			return pos;
@@ -525,6 +523,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(1, "mirror", ["bandpass_filter"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(1, "mirror", ["bandreject_filter"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+						CopyLoop.copyLoop(1, "mirror", ["ringmod_filter"], "cut");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
 				{
@@ -538,6 +538,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","Interpolator.interp_cubic"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(4, "mirror", ["bandreject_filter","Interpolator.interp_cubic"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+						CopyLoop.copyLoop(4, "mirror", ["ringmod_filter","Interpolator.interp_cubic"], "cut");
 				}
 				else // linear mono
 				{
@@ -551,6 +553,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","Interpolator.interp_linear"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","Interpolator.interp_linear"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+						CopyLoop.copyLoop(2, "mirror", ["ringmod_filter","Interpolator.interp_linear"], "cut");
 				}
 			}
 			else
@@ -567,6 +571,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(1, "split", ["bandpass_filter"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(1, "split", ["bandreject_filter"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+						CopyLoop.copyLoop(1, "split", ["ringmod_filter"], "cut");
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
 				{
@@ -580,6 +586,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(4, "split", ["bandpass_filter","Interpolator.interp_cubic"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(4, "split", ["bandreject_filter","Interpolator.interp_cubic"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+						CopyLoop.copyLoop(4, "split", ["ringmod_filter","Interpolator.interp_cubic"], "cut");
 				}
 				else // linear stereo
 				{
@@ -593,6 +601,8 @@ class SamplerSynth implements SoftSynth
 						CopyLoop.copyLoop(2, "split", ["bandpass_filter","Interpolator.interp_linear"], "cut");
 					else if (common.filter_mode == VoiceCommon.FILTER_BR)
 						CopyLoop.copyLoop(2, "split", ["bandreject_filter","Interpolator.interp_linear"], "cut");
+					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+						CopyLoop.copyLoop(2, "split", ["ringmod_filter","Interpolator.interp_linear"], "cut");
 				}
 			}
 			return pos;
@@ -603,5 +613,6 @@ class SamplerSynth implements SoftSynth
 	public inline function highpass_filter(a : Float) { return common.filter.getHP(a); }
 	public inline function bandpass_filter(a : Float) { return common.filter.getBP(a); }
 	public inline function bandreject_filter(a : Float) { return common.filter.getBR(a); }
+	public inline function ringmod_filter(a : Float) { return common.filter.getRingMod(a); }
 	
 }

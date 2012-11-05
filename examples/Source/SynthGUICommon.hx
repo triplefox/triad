@@ -60,25 +60,6 @@ class SynthGUICommon
 		this.seq = seq;
 	}
 
-	public function drawDebugwaveform()
-	{
-		var wf = TableSynth.pulseWavetable[0][0];
-		var spr : Bitmap = new Bitmap(new BitmapData(wf.length, Main.H, false, Color.ARGB(0,0)));
-		Lib.current.stage.addChild(spr);
-		for (n in 0...wf.length)
-		{
-			spr.bitmapData.setPixel(Std.int(n), Std.int(Main.H/2 - 100), 0x444400);
-			spr.bitmapData.setPixel(Std.int(n), Std.int(Main.H/2 + 100), 0x444400);
-			spr.bitmapData.setPixel(Std.int(n), Std.int(Main.H/2), 0x444400);
-		}
-		for (n in 0...wf.length)
-		{
-			spr.bitmapData.setPixel(Std.int(n), Std.int(wf.get(n) * 100 + Main.H/2), 0x00FF00);
-		}
-		spr.scaleX *= Main.W / spr.width;
-		spr.alpha = 0.5;
-	}
-
 	public function decSong()
 	{
 		song_count = (song_count - 1);

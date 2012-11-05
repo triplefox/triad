@@ -1,7 +1,7 @@
 package com.ludamix.triad.audio;
 
+import com.ludamix.triad.audio.dsp.SVFilter;
 import com.ludamix.triad.tools.FastFloatBuffer;
-import com.ludamix.triad.audio.dsp.IIRFilter2;
 import com.ludamix.triad.audio.Sequencer;
 import com.ludamix.triad.tools.MathTools;
 import com.ludamix.triad.audio.MIDITuning;
@@ -23,10 +23,13 @@ class VoiceCommon
 	public var frame_vol_adjust : Float;
 	public var frame_frequency_adjust : Float;
 	public var frame_resonance_adjust : Float;
+	public var frame_custom_adjust : Float;
+	
+	public var custom_data : Dynamic;
 	
 	public var arpeggio : Float;
 	
-	public var filter : IIRFilter2;	
+	public var filter : SVFilter;	
 	public var filter_cutoff_multiplier : Float; // a kind of hacky thing to compensate for a strong/weak filter
 	public var filter_resonance_multiplier : Float; // likewise
 	public var filter_mode : Int;
@@ -37,6 +40,8 @@ class VoiceCommon
 	public static inline var FILTER_HP = 2;
 	public static inline var FILTER_BP = 3;
 	public static inline var FILTER_BR = 4;
+	public static inline var FILTER_RINGMOD = 5;
+	public static inline var FILTER_RINGMOD_TUNED = 6;
 	
 	public static inline var AS_PITCH_ADD = 0; // semitones
 	public static inline var AS_PITCH_MUL = 1; // of 1. = 100%
@@ -48,6 +53,8 @@ class VoiceCommon
 	public static inline var AS_RESONANCE_ADD = 7;
 	public static inline var AS_RESONANCE_MUL = 8;
 	
+	public static inline var AS_CUSTOM_ADD = 9; // of 1. = 100%
+	
 	public function new()
 	{
 		freq = 440.;
@@ -56,6 +63,7 @@ class VoiceCommon
 		arpeggio = 0.;		
 		filter_cutoff_multiplier = 1.;
 		filter_resonance_multiplier = 1.;
+		frame_custom_adjust = 0.;
 		tuning = EvenTemperament.cache;
 	}
 	
@@ -108,7 +116,41 @@ class VoiceCommon
 				case AS_FREQUENCY_MUL: frame_frequency_adjust *= qty;
 				case AS_RESONANCE_ADD: frame_resonance_adjust += qty;
 				case AS_RESONANCE_MUL: frame_resonance_adjust *= qty;
+				case AS_CUSTOM_ADD: frame_custom_adjust += qty;
 			}
+		}
+	}
+	
+	public static function parseAddStyle(i : String)
+	{
+		switch(i)
+		{
+			default: throw "bad style " + i;
+			case "pitch_add": return AS_PITCH_ADD;
+			case "pitch_mul": return AS_PITCH_MUL;
+			case "volume_add": return AS_VOLUME_ADD;
+			case "volume_mul": return AS_VOLUME_MUL;
+			case "frequency_add": return AS_FREQUENCY_ADD;
+			case "frequency_add_cents": return AS_FREQUENCY_ADD_CENTS;
+			case "frequency_mul": return AS_FREQUENCY_MUL;
+			case "resonance_add": return AS_RESONANCE_ADD;
+			case "resonance_mul": return AS_RESONANCE_MUL;
+			case "custom_add": return AS_CUSTOM_ADD;
+		}
+	}
+	
+	public static function parseFilterMode(i : String)
+	{
+		switch(i)
+		{
+			default: throw "bad filter mode " + i;
+			case "bp": return FILTER_BP;
+			case "lp": return FILTER_LP;
+			case "hp": return FILTER_HP;
+			case "br": return FILTER_BR;
+			case "ringmod": return FILTER_RINGMOD;
+			case "ringmod_tuned": return FILTER_RINGMOD_TUNED;
+			case "off": return FILTER_OFF;
 		}
 	}
 	
@@ -182,23 +224,32 @@ class VoiceCommon
 			
 			frame_pitch_adjust = 0.;
 			frame_vol_adjust = 0.;
-			frame_frequency_adjust = patch.cutoff_frequency * filter_cutoff_multiplier;
+			frame_frequency_adjust = patch.cutoff_frequency;
+			if (!(patch.filter_mode == FILTER_RINGMOD || patch.filter_mode == FILTER_RINGMOD_TUNED))
+			{
+				frame_frequency_adjust *= filter_cutoff_multiplier;
+			}
 			frame_resonance_adjust = patch.resonance_level * filter_resonance_multiplier;
+			frame_custom_adjust = 0.;
 			
 			filter = follower.filter;
 			
 			// envelopes
-			var env_num = 0;
 			for (env in follower.env)
 			{
 				if (!env.isOff())
 				{
 					pipeAdjustment(env.update(1.0), env.assigns);
 				}
-				env_num++;
 			}
 			
 			updateLFO(patch, channel, follower);
+			
+			freq = seq_event.data.freq;
+			
+			var wl = sequencer.waveLengthOfBentFrequency(freq + frame_pitch_adjust, pitch_bend, patch.transpose);
+			
+			freq = sequencer.frequency(wl);
 			
 			if (patch.filter_mode == FILTER_UNDEFINED) // default filter behavior
 			{
@@ -207,22 +258,24 @@ class VoiceCommon
 			}
 			
 			filter_mode = patch.filter_mode;
-			if (frame_frequency_adjust >= sequencer.sampleRate() >> 1) // very high levels, just cut out filter
-				{ filter_mode = FILTER_OFF; }
-			else if (frame_frequency_adjust >= sequencer.sampleRate() >> 2) // otherwise limit so that a stray lfo sounds OK
+			if (!(filter_mode == FILTER_RINGMOD || filter_mode == FILTER_RINGMOD_TUNED))
 			{
-				frame_frequency_adjust = sequencer.sampleRate() >> 2;
-				frame_resonance_adjust = 0.; // else it tends to explode
+				if (frame_frequency_adjust >= sequencer.sampleRate() >> 1) // very high levels, just cut out filter
+					{ filter_mode = FILTER_OFF; }
+				else if (frame_frequency_adjust >= sequencer.sampleRate() >> 2) // otherwise limit so that a stray lfo sounds OK
+				{
+					frame_frequency_adjust = sequencer.sampleRate() >> 2;
+					frame_resonance_adjust = 0.; // else it tends to explode
+				}
 			}
+			else if (patch.filter_mode == FILTER_RINGMOD_TUNED)
+			{
+				frame_frequency_adjust = frame_frequency_adjust * freq;
+			}
+			
 			
 			if (filter_mode != FILTER_OFF)
 				filter.set(frame_frequency_adjust, frame_resonance_adjust);
-			
-			freq = seq_event.data.freq;
-			
-			var wl = sequencer.waveLengthOfBentFrequency(freq + frame_pitch_adjust, pitch_bend);
-			
-			freq = sequencer.frequency(wl);
 			
 			velocity = seq_event.data.velocity / 128;
 			

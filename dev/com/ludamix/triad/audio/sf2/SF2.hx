@@ -601,7 +601,8 @@ class SF2
 			keyrange:{low:0.,high:127.},
 			velrange:{low:0.,high:127.},
 			filter_mode:VoiceCommon.FILTER_UNDEFINED,
-			name:null
+			name:null,
+			transpose:0.
 		};
 	}
 	
@@ -670,9 +671,14 @@ class SF2
 		
 		var result = new Array<PatchEvent>();
 		var b = usable_banks.get(bank_number);
-		if (b == null) { b = usable_banks.get(default_bank); }
+		if (b == null) 
+		{ b = usable_banks.get(default_bank); if (b == null) throw "invalid default bank "+Std.string(default_bank); }
 		var opcode_group = b.get(patch_number);
-		if (opcode_group == null) { opcode_group = b.get(default_patch); }
+		if (opcode_group == null) 
+		{ 
+			opcode_group = b.get(default_patch); 
+			if (opcode_group == null) throw "invalid default patch " + Std.string(default_patch); 
+		}
 		if (opcode_group != null)
 		{
 			var q = opcode_group.query(ev, sequencer);

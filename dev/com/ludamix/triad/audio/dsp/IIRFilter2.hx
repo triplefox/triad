@@ -29,9 +29,13 @@ class IIRFilter2
 	public var calcCoeff : Float->Float->Void;
 	public var output : Float;
 	
+	private var ring_cutoff : Float;
+	private var ring_offset : Float;
+
 	public function new(type, cutoff, resonance, sampleRate) {
 	  this.type = type;
 	  this.cutoff = cutoff;
+	  this.ring_offset = 0.;
 	  this.resonance = resonance;
 	  this.sampleRate = sampleRate;
 
@@ -42,8 +46,10 @@ class IIRFilter2
 	  output = 0.;
 	 
 	  this.calcCoeff = function(cutoff, resonance) {
-		this.freq = 2 * Math.sin(Math.PI * Math.min(0.25, cutoff/(this.sampleRate*2)));  
-		this.damp = Math.min(2 * (1 - Math.pow(resonance, 0.25)), Math.min(2, 2/this.freq - this.freq * 0.5));
+		this.freq = 2 * Math.sin(Math.PI * Math.min(0.25, (this.sampleRate * 2)));  
+		this.damp = Math.min(2 * (1 - Math.pow(resonance, 0.25)), Math.min(2, 2 / this.freq - this.freq * 0.5));
+		
+		this.ring_cutoff = (cutoff * Math.PI * 2) / (this.sampleRate);
 	  };
 
 	  this.calcCoeff(cutoff, resonance);
@@ -146,6 +152,12 @@ class IIRFilter2
 			this.cutoff = cutoff;
 			this.resonance = resonance;
 		}
-	}	
+	}
+	
+	public inline function getRingMod(input : Float)
+	{
+		this.ring_offset += this.ring_cutoff;
+		return input * Math.sin(this.ring_offset);
+	}
 	
 }

@@ -35,7 +35,7 @@ class EnvelopeSegment
 	
 }
 
-typedef EnvelopeProfile = {attack:EnvelopeSegment, release:EnvelopeSegment, assigns:Array<Int>};
+typedef EnvelopeProfile = {attack:EnvelopeSegment, release:EnvelopeSegment, assigns:Array<Int>, endpoint:Float};
 
 class Envelope
 {
@@ -44,6 +44,7 @@ class Envelope
 	public var release : EnvelopeSegment;
 	public var position : Float;
 	public var level : Float;
+	public var endpoint : Float;
 	public var release_level : Float;
 	public var assigns : Array<Int>;
 	
@@ -51,11 +52,12 @@ class Envelope
 	
 	public static inline var PEAK = 1.0;
 	
-	public function new(segment, release, assigns)
+	public function new(segment, release, assigns, endpoint)
 	{
 		this.segment = segment;
 		this.release = release;
 		this.assigns = assigns;
+		this.endpoint = endpoint;
 		position = 0.;
 		release_level = PEAK;
 		level = update(0.);
@@ -63,13 +65,13 @@ class Envelope
 	
 	public function update(amount : Float)
 	{
-		if (segment == null) return 0.;
+		if (segment == null) return endpoint;
 		position += amount;
 		while (position >= segment.distance || segment.distance <= 0.)
 		{
 			position -= segment.distance;
 			segment = segment.next; 
-			if (segment == null) return 0.;
+			if (segment == null) { return endpoint; }
 		}
 		if (!releasing())
 		{
@@ -103,7 +105,7 @@ class Envelope
 	
 	public inline function releasing() { return segment==null || segment.releases; }
 	
-	public inline function isOff() { return segment == null; }
+	public inline function isOff() { return segment == null && endpoint==0.; }
 	
 	public static function ADSR(secondsToFrames : Float->Float, 
 		attack_time : Float, decay_time : Float, sustain_level : Float, release_time : Float,
@@ -143,7 +145,8 @@ class Envelope
 		r_h.next = r;
 		r_h.sustains = true;
 		r_h.releases = true;
-		r.next = null;
+		var postrelease = null;
+		r.next = postrelease;
 		r.releases = true;
 		var true_a = a;
 		var true_r = r_h;
@@ -154,8 +157,54 @@ class Envelope
 		while (true_r != null && true_r.distance == 0.)
 			true_r = true_r.next;
 		if (sustain_level == 0.)
-			{d.next = null; }
-		return { attack:true_a, release:true_r, assigns:assigns };
+			{d.next = postrelease; }
+		return { attack:true_a, release:true_r, assigns:assigns, endpoint:0. };
+	}
+	
+	public static function vector(secondsToFrames : Float->Float, 
+		i_attack : Array<Array<Float>>, i_sustain : Array<Array<Float>>, 
+		i_release : Array<Array<Float>>, assigns : Array<Int>, endpoint : Float)
+	{
+		// constructs a vector using more-or-less the exact syntax of EnvelopeSegment
+		var convertVector = function(i : Array<Float>) : EnvelopeSegment
+		{
+			var t = secondsToFrames(i[2]);
+			if (i.length == 3)
+				return new EnvelopeSegment(i[0], i[1], t);
+			if (i.length == 4)
+				return new EnvelopeSegment(i[0], i[1], t, i[3]);							
+			else
+				return new EnvelopeSegment(i[0], i[1], t, i[3], i[4]);
+		}
+		var linkVectors = function(i : Array<Array<Float>>) : Array<EnvelopeSegment>
+		{
+			var result = new Array<EnvelopeSegment>();
+			for ( n in i )
+				result.push(convertVector(n));
+			if (result.length > 1)
+			{
+				for (r in 0...result.length - 1)
+					result[r].next = result[r + 1];
+			}
+			return result;
+		}
+		
+		var attack = linkVectors(i_attack);
+		for (a in attack) a.attacks = true;
+		var release = linkVectors(i_release);
+		for (r in release) r.releases = true;
+		var sustain = release;
+		if (i_sustain != null)
+		{
+			sustain = linkVectors(i_sustain);
+			for (s in sustain) s.sustains = true;
+		}
+		
+		attack[attack.length - 1].next = sustain[0];
+		sustain[sustain.length - 1].next = sustain[0];
+		release[release.length - 1].next = null;
+		
+		return {attack:attack[0], release:release[0], assigns:assigns, endpoint:endpoint};
 	}
 	
 }

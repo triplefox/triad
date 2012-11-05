@@ -835,7 +835,8 @@ class SFZ
 			keyrange:{low:0.,high:127.},
 			velrange:{low:0.,high:127.},
 			filter_mode:VoiceCommon.FILTER_UNDEFINED,
-			name:null
+			name:null,
+			transpose:0.
 		};
 	}
 	
