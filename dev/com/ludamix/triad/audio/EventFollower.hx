@@ -30,7 +30,7 @@ class EventFollower
 			env.push(new Envelope(n.attack,n.release,n.assigns,n.endpoint));
 		this.lfo_pos = 0;
 		loop_pos = 0.; loop_state = LOOP_PRE;
-		filter = new SVFilter(440.,0,seq.sampleRate());
+		filter = new SVFilter(seq.sampleRate()>>1,0,seq.sampleRate());
 	}
 	
 	public inline function isOff() { return env[0].isOff(); }
