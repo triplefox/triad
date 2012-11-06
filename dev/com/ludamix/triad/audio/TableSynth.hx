@@ -73,11 +73,12 @@ class TableSynth implements SoftSynth
 	
 	public static function defaultPatch(seq : Sequencer) : TableSynthPatch
 	{
-		var m_lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD] },
-			{ frequency:1.7, depth:1., delay:0., attack:0., assigns:[AS_PULSEWIDTH] }];
+		var m_lfos : Array<LFO> = [ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[AS_PITCH_ADD],
+			type:VoiceCommon.LFO_SIN},
+			{ frequency:1.7, depth:1., delay:0., attack:0., assigns:[AS_PULSEWIDTH], type:VoiceCommon.LFO_SIN }];
 		return { envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 5.4, 0.5, 0.05, [AS_VOLUME_ADD])],
 				oscillator:PULSE_WT,
-				lfos : [{frequency:8.7, depth:0.5, delay:0., attack:0.3, assigns:[AS_PULSEWIDTH]}],
+				lfos : [{frequency:8.7, depth:0.5, delay:0., attack:0.3, assigns:[AS_PULSEWIDTH], type:VoiceCommon.LFO_SIN}],
 				modulation_lfos:m_lfos,
 				arpeggiation_rate:0.0,
 				base_pulsewidth:0.,

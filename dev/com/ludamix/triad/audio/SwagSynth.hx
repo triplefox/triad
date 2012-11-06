@@ -104,7 +104,8 @@ class SwagSynth implements SoftSynth
 	public static function defaultPatch(seq : Sequencer) : SwagSynthPatch
 	{
 		var m_lfos : Array<LFO> = 
-			[ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[VoiceCommon.AS_PITCH_ADD] } ];
+			[ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[VoiceCommon.AS_PITCH_ADD],
+				type:VoiceCommon.LFO_SIN} ];
 		return 
 			{ envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 2.4, 0.15, 0.5, [VoiceCommon.AS_VOLUME_ADD]),
 			Envelope.vector(seq.secondsToFrames, 
@@ -134,7 +135,7 @@ class SwagSynth implements SoftSynth
 				{wave_sweep:[288], transpose: -0.04, filter_mode:"ringmod_tuned", cutoff_frequency:1.3333, envelopes:[ { adsr:[0.01, 0.1, 0.001, 0., "volume_add"] } ] },
 				{envelopes:[ { adsr:[0.05, 0.1, 0.1, 0.5, "volume_add"] }]},
 				//{transpose:0., filter_mode:"ringmod_tuned", cutoff_frequency:4, lfos:[{frequency:1.2,depth:-0.05,delay:0.,attack:0.5,assigns:["pitch_add"]}]},
-				//{transpose:0.02, wave_sweep:[64], filter_mode:"ringmod_tuned", cutoff_frequency:0.91666666666, lfos:[{frequency:1.,depth:0.05,delay:0.01,attack:0.,assigns:["pitch_add"]}]},
+				//{transpose:0.02, wave_sweep:[64], filter_mode:"ringmod_tuned", cutoff_frequency:0.91666666666, lfos:[{frequency:1.,depth:0.05,delay:0.01,attack:0.,assigns:["pitch_add"],type:"ramp"}]},
 				//{ wave_sweep:["32...63"], volume:-0.15, transpose:-0.04 },
 				//{ wave_sweep:["32...63"], lfos:[{frequency:4, depth:0.015, delay:0.01, attack:0., assigns:["pitch_add","volume_add"]}] },
 				] };
@@ -357,7 +358,7 @@ class SwagSynth implements SoftSynth
 						   depth:l.depth, 
 						   delay:l.delay, 
 						   attack:l.attack, 
-						   assigns:add_styles } );		
+						   assigns:add_styles, type:VoiceCommon.parseLfoType(l.type) } );		
 		}
 		
 		if (Reflect.hasField(patch_voice, "lfos"))

@@ -22,7 +22,24 @@ class EventFollower
 	public static inline var LOOP_PONG = 4;
 	public static inline var LOOP_POST = 5;
 	
-	public function new(event : PatchEvent, seq:Sequencer)
+	public static var pool = new Array<EventFollower>();
+	
+	public static inline function instance(event : PatchEvent, seq:Sequencer) : EventFollower
+	{
+		var e = pool.pop();
+		if (e == null) e = new EventFollower();
+		e.init(event, seq);
+		return e;
+	}
+	
+	public inline function dispose() { pool.push(this); }
+	
+	public function new() 
+	{
+		filter = new SVFilter(9999999999999999., 0, 1);
+	}
+	
+	public function init(event : PatchEvent, seq:Sequencer)
 	{
 		this.patch_event = event; 
 		env = new Array();
@@ -30,7 +47,13 @@ class EventFollower
 			env.push(new Envelope(n.attack,n.release,n.assigns,n.endpoint));
 		this.lfo_pos = 0;
 		loop_pos = 0.; loop_state = LOOP_PRE;
-		filter = new SVFilter(seq.sampleRate()>>1,0,seq.sampleRate());
+		filter.set(filter.samplerate >> 1, 0.);
+		if (filter.samplerate != seq.sampleRate()) 
+		{ 
+			filter.samplerate = seq.sampleRate();
+			filter.calcCoefficients();
+		}
+		filter.cleanup();
 	}
 	
 	public inline function isOff() { return env[0].isOff(); }

@@ -11,7 +11,7 @@ class SVFilter
 {
 
 	public static inline var MAX_FILTER_STAGES = 5;
-	public static inline var MAX_RATE = 3.0;
+	public static inline var MAX_RATE = 2.5;
 	
 	public var low1 : Float; 
 	public var low2 : Float;

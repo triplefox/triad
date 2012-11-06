@@ -70,8 +70,8 @@ class MIDIPlayer
 		public static inline var PERCUSSION_VOICES = 1;
 	#else
 		public static inline var MIP_LEVELS = 8;
-		public static inline var VOICES = 40;
-		public static inline var CHANNEL_POLYPHONY = 32;
+		public static inline var VOICES = 24;
+		public static inline var CHANNEL_POLYPHONY = 24;
 		public static inline var PERCUSSION_VOICES = 8;
 	#end
 

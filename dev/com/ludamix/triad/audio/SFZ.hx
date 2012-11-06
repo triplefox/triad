@@ -828,7 +828,8 @@ class SFZ
 			envelope_profiles:new Array<EnvelopeProfile>(),
 			volume:1.0,
 			lfos:new Array<LFO>(),
-			modulation_lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
+			modulation_lfos:[ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[VoiceCommon.AS_PITCH_ADD],
+				type:VoiceCommon.LFO_SIN}],
 			arpeggiation_rate:0.0,
 			cutoff_frequency:0.,
 			resonance_level:0.,
@@ -882,19 +883,19 @@ class SFZ
 	public static function amplfo(lfo : SFZLfoDefinition)
 	{
 		return { frequency:lfo.frequency, depth:lfo.depth, delay:lfo.delay, attack:lfo.attack,
-			assigns:[VoiceCommon.AS_VOLUME_ADD]};
+			assigns:[VoiceCommon.AS_VOLUME_ADD], type:VoiceCommon.LFO_SIN};
 	}
 	
 	public static function pitchlfo(lfo : SFZLfoDefinition)
 	{
 		return { frequency:lfo.frequency, depth:lfo.depth, delay:lfo.delay, attack:lfo.attack,
-			assigns:[VoiceCommon.AS_PITCH_ADD]};
+			assigns:[VoiceCommon.AS_PITCH_ADD], type:VoiceCommon.LFO_SIN};
 	}
 	
 	public static function fillfo(lfo : SFZLfoDefinition)
 	{
 		return { frequency:lfo.frequency, depth:lfo.depth, delay:lfo.delay, attack:lfo.attack,
-			assigns:[VoiceCommon.AS_FREQUENCY_ADD_CENTS]};
+			assigns:[VoiceCommon.AS_FREQUENCY_ADD_CENTS], type:VoiceCommon.LFO_SIN};
 	}
 	
 }

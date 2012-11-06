@@ -89,16 +89,6 @@ class VoiceGroup
 		this.polyphony = polyphony;
 	}
 	
-	public function priority(synth : SoftSynth) : Int
-	{
-		// this is fairly horrible at this point, and could probably stand a custom optimized version.
-		return MathTools.bestOf(synth.common.getEvents(), 
-			function(inp) { return inp; }, 
-			function(a, b) 
-			{ return a.sequencer_event.priority > b.sequencer_event.priority; }, 
-				{sequencer_event:{priority:-1}} ).sequencer_event.priority;
-	}
-	
 	public function hasEvent(synth : SoftSynth, patchevent : PatchEvent)
 	{
 		return Lambda.exists(synth.common.getEvents(), function(ev : PatchEvent) { 
@@ -138,7 +128,7 @@ class VoiceGroup
 				}
 				// stealing behavior
 				var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(usable, 
-					function(synth : SoftSynth) { return {synth:synth, priority:priority(synth) }; } ,
+					function(synth : SoftSynth) { return {synth:synth, priority:synth.common.event_priority }; } ,
 					function(a, b) { return a.priority < b.priority; }, usable[0] );
 				if (best.priority <= event_priority)
 				{
@@ -166,11 +156,10 @@ class VoiceGroup
 				// TODO - with region-dependent samples(e.g. GM drums) this concept needs a special case to include
 				// which _notes_ are being played, rather than simply the whole channel.
 				// that way, repetitive samples are discarded without harming the rest of the kit.
-				voice.common.followers.push(new EventFollower(patch_ev, voice.common.sequencer));
-				for (f in allocated)
-				{
-					patch_ev.sequencer_event.priority = Std.int((patch_ev.sequencer_event.priority * PRIORITY_VOICE));
-				}
+				voice.common.followers.push(EventFollower.instance(patch_ev, voice.common.sequencer));
+				patch_ev.sequencer_event.priority = Std.int(patch_ev.sequencer_event.priority * 
+					Math.pow(PRIORITY_VOICE, allocated.length));
+				voice.common.event_priority = patch_ev.sequencer_event.priority;
 			case SequencerEvent.NOTE_OFF: 
 				for (n in voice.common.followers) 
 				{ 
@@ -305,6 +294,7 @@ class Sequencer
 	private var DIVISIONS : Int; // to increase the framerate we slice the buffer by this number of divisions
 	
 	public var SUFFERING : Int; // the CPU is being hit too hard to finish the frame!
+	public var desired_render_ms : Int; // how long you want it to take to finish a frame.
 	
 	public var bpm : Float;
 	public var cur_beat : Float;
@@ -411,6 +401,7 @@ class Sequencer
 			{}
 		else
 			{} //trace([events[0].frame, this.frame]);
+		updateSynthPriorities();
 		
 		// clear buffer
 		for (i in 0 ... monoSize()) 
@@ -429,6 +420,18 @@ class Sequencer
 		return (SUFFERING > DIVISIONS);
 	}
 	
+	private function updateSynthPriorities()
+	{
+		for (s in synths)
+		{
+			s.common.event_priority = MathTools.bestOf(s.common.getEvents(), 
+				function(inp) { return inp; }, 
+				function(a, b) 
+				{ return a.sequencer_event.priority > b.sequencer_event.priority; }, 
+					{sequencer_event: { priority: -1 }} ).sequencer_event.priority;
+		}
+	}
+	
 	public function onSamples(event : SampleDataEvent) 
 	{
 		
@@ -441,7 +444,7 @@ class Sequencer
 			executeFrame();
 			
 			var curtime = Lib.getTimer();
-			if (curtime - time > 15)
+			if (curtime - time > desired_render_ms)
 				SUFFERING++;
 			
 			if (postFrame != null)
@@ -531,8 +534,9 @@ class Sequencer
 	}
 	
 	public function new(?rate : Int = 22050, ?framesize : Int = 4096, ?divisions : Int = 4, 
-		?tuning : MIDITuning = null, ?reverb : Reverb = null)
+		?tuning : MIDITuning = null, ?reverb : Reverb = null, ?desired_render_ms : Int = 20)
 	{
+		this.desired_render_ms = desired_render_ms;
 		SUFFERING = 0;
 		last_l = 0.;
 		last_r = 0.;

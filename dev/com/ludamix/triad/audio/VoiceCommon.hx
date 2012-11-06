@@ -16,6 +16,8 @@ class VoiceCommon
 	public var freq : Float;
 	public var tuning : MIDITuning;
 	
+	public var event_priority : Int;
+	
 	public var master_volume : Float;
 	public var velocity : Float;
 	
@@ -54,9 +56,17 @@ class VoiceCommon
 	public static inline var AS_RESONANCE_MUL = 8;
 	
 	public static inline var AS_CUSTOM_ADD = 9; // of 1. = 100%
+
+	public static inline var LFO_SIN = 0;
+	public static inline var LFO_COS = 1;
+	public static inline var LFO_RAMP = 2;
+	public static inline var LFO_SQR = 3;
+	public static inline var LFO_TRI = 4;
+	public static inline var LFO_RAND = 5;
 	
 	public function new()
 	{
+		event_priority = -1;
 		freq = 440.;
 		master_volume = 0.1;
 		velocity = 1.0;
@@ -91,7 +101,7 @@ class VoiceCommon
 	
 	public function allOff()
 	{
-		while (followers.length>0) followers.pop();
+		while (followers.length>0) followers.pop().dispose();
 	}
 	
 	public function allRelease()
@@ -139,6 +149,20 @@ class VoiceCommon
 		}
 	}
 	
+	public static function parseLfoType(i : String)
+	{
+		switch(i)
+		{
+			default: throw "bad lfo type " + i;
+			case "sine","sin": return LFO_SIN;
+			case "cosine","cos": return LFO_COS;
+			case "square","sq","sqr": return LFO_SQR;
+			case "random","rand": return LFO_RAND;
+			case "ramp","saw": return LFO_RAMP;
+			case "triangle","tri": return LFO_TRI;
+		}
+	}
+	
 	public static function parseFilterMode(i : String)
 	{
 		switch(i)
@@ -164,15 +188,23 @@ class VoiceCommon
 			var mpos = cur_follower.lfo_pos - delay_length;
 			if (mpos > 0)
 			{
-				if (mpos > attack_length)
+				var depth : Float = n.depth;
+				if (mpos <= attack_length) // ramp up
 				{
-					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) * n.depth, n.assigns);
+					depth *= (mpos / attack_length);
 				}
-				else // ramp up
+				switch(n.type)
 				{
-					pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) *
-						(n.depth * (mpos/attack_length)), n.assigns);
+					case LFO_SIN: pipeAdjustment(Math.sin(2 * Math.PI * mpos / cycle_length) * depth, n.assigns);
+					case LFO_COS: pipeAdjustment(Math.cos(2 * Math.PI * mpos / cycle_length) * depth, n.assigns);
+					case LFO_RAMP: pipeAdjustment(((mpos % cycle_length) / cycle_length) * depth, n.assigns);
+					case LFO_TRI: pipeAdjustment(((mpos % cycle_length) > cycle_length * 0.5 ? 
+						((mpos % cycle_length) / cycle_length * 2 ) :
+						(1. - 2 * (mpos % cycle_length * 0.5) / cycle_length)) * depth, n.assigns);
+					case LFO_SQR: pipeAdjustment(((mpos % cycle_length) > cycle_length*0.5 ? 1.:-1.) * depth, n.assigns);
+					case LFO_RAND: pipeAdjustment((Math.random() * 2 - 1) * depth, n.assigns);
 				}
+				
 			}
 		}
 		for (n in cast(patch.modulation_lfos,Array<Dynamic>))
@@ -200,7 +232,7 @@ class VoiceCommon
 	
 	public function updateFollowers(progress_follower : VoiceFrameInfos->EventFollower->Bool->Void) : Bool
 	{
-		while (followers.length > 0 && followers[followers.length - 1].isOff()) followers.pop();
+		while (followers.length > 0 && followers[followers.length - 1].isOff()) followers.pop().dispose();
 		if (followers.length < 1) { return false; }
 		
 		var cur_follower : EventFollower = followers[followers.length - 1];		

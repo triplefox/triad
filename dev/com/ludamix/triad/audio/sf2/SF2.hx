@@ -574,13 +574,13 @@ class SF2
 		var delay = sequencer.secondsToFrames(lfo.delay);
 		if (lfo.amp_depth!=0.)
 			result.push( { frequency:freq, depth:lfo.amp_depth, delay:delay, attack:0., 
-				assigns:[VoiceCommon.AS_VOLUME_ADD] } );
+				assigns:[VoiceCommon.AS_VOLUME_ADD], type:VoiceCommon.LFO_SIN } );
 		if (lfo.filter_depth!=0.)
 			result.push( { frequency:freq, depth:lfo.filter_depth, delay:delay, attack:0., 
-				assigns:[VoiceCommon.AS_FREQUENCY_ADD_CENTS] } );
+				assigns:[VoiceCommon.AS_FREQUENCY_ADD_CENTS], type:VoiceCommon.LFO_SIN } );
 		if (lfo.pitch_depth!=0.)
 			result.push( { frequency:freq, depth:lfo.pitch_depth, delay:delay, attack:0., 
-				assigns:[VoiceCommon.AS_PITCH_ADD] } );
+				assigns:[VoiceCommon.AS_PITCH_ADD], type:VoiceCommon.LFO_SIN } );
 		return result;
 	}
 	
@@ -594,7 +594,8 @@ class SF2
 			envelope_profiles:new Array<EnvelopeProfile>(),
 			volume:1.0,
 			lfos:new Array<LFO>(),
-			modulation_lfos:[{frequency:6.,depth:0.5,delay:0.05,attack:0.05,assigns:[VoiceCommon.AS_PITCH_ADD]}],
+			modulation_lfos:[ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[VoiceCommon.AS_PITCH_ADD],
+				type:VoiceCommon.LFO_SIN}],
 			arpeggiation_rate:0.0,
 			cutoff_frequency:0.,
 			resonance_level:0.,
