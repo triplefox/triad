@@ -89,7 +89,7 @@ class MIDIPlayer
 		// setup channels
 		for (n in 0...16)
 		{
-			var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
+			var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY, n==9);
 			
 			if (USING_SFZ)
 			{
@@ -142,19 +142,19 @@ class MIDIPlayer
 			{
 				if (USING_SFZ)
 				{
-					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
+					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length, n==9);
 					seq.addChannel([vgroup], percussion.getGenerator());
 				}
 				else
 				{
-					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
+					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length, n==9);
 					seq.addChannel([vgroup], sf2.getGenerator(0,128));
 					vgroup.channel.bank_id = 128;				
 				}
 			}
 			else
 			{
-				var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
+				var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY, n==9);
 				seq.addChannel([vgroup], TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
 			}
 
@@ -188,19 +188,19 @@ class MIDIPlayer
 			{
 				if (USING_SFZ)
 				{
-					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
+					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length, n==9);
 					seq.addChannel([vgroup], percussion.getGenerator());
 				}
 				else
 				{
-					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length);
+					var vgroup = new VoiceGroup(percussion_voices, percussion_voices.length, n==9);
 					seq.addChannel([vgroup], sf2.getGenerator(0,128));
 					vgroup.channel.bank_id = 128;				
 				}
 			}
 			else
 			{
-				var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY);
+				var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY, n==9);
 				seq.addChannel([vgroup], SwagSynth.bankGenerator(SwagSynth.buildBank(seq,SwagSynth.defaultBankDefinition())));
 			}
 

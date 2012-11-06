@@ -81,12 +81,14 @@ class VoiceGroup
 	public var allocated : Array<SoftSynth>;
 	public var channel : SequencerChannel;
 	public var polyphony : Int;
+	public var percussion_allocator : Bool;
 	
-	public function new(voices : Array<SoftSynth>, polyphony : Int)
+	public function new(voices : Array<SoftSynth>, polyphony : Int, percussion_allocator : Bool )
 	{
 		this.voices = voices;
 		this.allocated = new Array();
 		this.polyphony = polyphony;
+		this.percussion_allocator = percussion_allocator;
 	}
 	
 	public function hasEvent(synth : SoftSynth, patchevent : PatchEvent)
@@ -153,13 +155,31 @@ class VoiceGroup
 				// doing this on note ons naturally favors squashing of repetitive drum hits and stacattos,
 				// which have plenty of release tails, instead of held notes.
 				
-				// TODO - with region-dependent samples(e.g. GM drums) this concept needs a special case to include
-				// which _notes_ are being played, rather than simply the whole channel.
-				// that way, repetitive samples are discarded without harming the rest of the kit.
 				voice.common.followers.push(EventFollower.instance(patch_ev, voice.common.sequencer));
-				patch_ev.sequencer_event.priority = Std.int(patch_ev.sequencer_event.priority * 
-					Math.pow(PRIORITY_VOICE, allocated.length));
-				voice.common.event_priority = patch_ev.sequencer_event.priority;
+				if (percussion_allocator)
+				{
+					// percussion gets special "per-patch" analysis, rather than being channel-global.
+					// this helps keep cymbals alive while staccato drums are playing.
+					var count = 0;
+					for (n in allocated)
+					{
+						for (e in n.common.getEvents())
+						{
+							if (e.sequencer_event.type == SequencerEvent.NOTE_ON && e.patch == patch_ev.patch)
+							{
+								count++;
+							}
+						}
+					}
+					patch_ev.sequencer_event.priority = Std.int(patch_ev.sequencer_event.priority * 
+						Math.pow(PRIORITY_VOICE, count));
+				}
+				else
+				{
+					patch_ev.sequencer_event.priority = Std.int(patch_ev.sequencer_event.priority * 
+						Math.pow(PRIORITY_VOICE, allocated.length));
+				}
+				voice.common.event_priority = patch_ev.sequencer_event.priority;				
 			case SequencerEvent.NOTE_OFF: 
 				for (n in voice.common.followers) 
 				{ 
@@ -189,7 +209,7 @@ class SequencerChannel
 	public var modulation : Float;
 	public var pan : Float;	
 	public var patch_id : Int;	
-	public var bank_id : Int;	
+	public var bank_id : Int;
 	public var sustain : Bool;
 	
 	public var patch_generator : PatchGenerator;
