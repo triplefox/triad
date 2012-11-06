@@ -32,8 +32,6 @@ class VoiceCommon
 	public var arpeggio : Float;
 	
 	public var filter : SVFilter;	
-	public var filter_cutoff_multiplier : Float; // a kind of hacky thing to compensate for a strong/weak filter
-	public var filter_resonance_multiplier : Float; // likewise
 	public var filter_mode : Int;
 	
 	public static inline var FILTER_UNDEFINED = -1;
@@ -71,8 +69,6 @@ class VoiceCommon
 		master_volume = 0.1;
 		velocity = 1.0;
 		arpeggio = 0.;		
-		filter_cutoff_multiplier = 1.;
-		filter_resonance_multiplier = 1.;
 		frame_custom_adjust = 0.;
 		tuning = EvenTemperament.cache;
 	}
@@ -257,11 +253,7 @@ class VoiceCommon
 			frame_pitch_adjust = 0.;
 			frame_vol_adjust = 0.;
 			frame_frequency_adjust = patch.cutoff_frequency;
-			if (!(patch.filter_mode == FILTER_RINGMOD || patch.filter_mode == FILTER_RINGMOD_TUNED))
-			{
-				frame_frequency_adjust *= filter_cutoff_multiplier;
-			}
-			frame_resonance_adjust = patch.resonance_level * filter_resonance_multiplier;
+			frame_resonance_adjust = patch.resonance_level;
 			frame_custom_adjust = 0.;
 			
 			filter = follower.filter;
