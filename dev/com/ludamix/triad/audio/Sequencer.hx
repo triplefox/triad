@@ -252,8 +252,18 @@ class SequencerChannel
 					pan = ev.data;
 				case SequencerEvent.SET_PATCH:
 					patch_id = ev.data;
+					for (g in voice_groups)
+					{
+						for (n in g.allocated)
+							n.common.allRelease();
+					}
 				case SequencerEvent.SET_BANK:
 					bank_id = ev.data;
+					for (g in voice_groups)
+					{
+						for (n in g.allocated)
+							n.common.allRelease();
+					}
 				case SequencerEvent.SUSTAIN_PEDAL:
 					sustain = (ev.data > 63);
 					if (!sustain)
@@ -318,6 +328,7 @@ class Sequencer
 	
 	public var bpm : Float;
 	public var cur_beat : Float;
+	public var filter_enabled : Bool;
 	
 	private var last_l : Float;
 	private var last_r : Float;
@@ -557,6 +568,7 @@ class Sequencer
 		?tuning : MIDITuning = null, ?reverb : Reverb = null, ?desired_render_ms : Int = 20)
 	{
 		this.desired_render_ms = desired_render_ms;
+		filter_enabled = true;
 		SUFFERING = 0;
 		last_l = 0.;
 		last_r = 0.;

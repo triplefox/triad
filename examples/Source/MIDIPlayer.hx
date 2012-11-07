@@ -62,24 +62,16 @@ class MIDIPlayer
 	
 	public static inline var USING_SFZ = false;
 	public static inline var SFZ_COMPRESSED = false;
-
-	#if debug
-		public static inline var MIP_LEVELS = 0;
-		public static inline var VOICES = 4;
-		public static inline var CHANNEL_POLYPHONY = 4;
-		public static inline var PERCUSSION_VOICES = 1;
-	#else
-		public static inline var MIP_LEVELS = 8;
-		public static inline var VOICES = 24;
-		public static inline var CHANNEL_POLYPHONY = 24;
-		public static inline var PERCUSSION_VOICES = 8;
-	#end
+	
+	public static var num_voices = #if debug 4 #else 32 #end;
+	public static var num_percussion_voices = #if debug 1 #else 8 #end;
+	public static inline var MIP_LEVELS = #if debug 0 #else 8 #end;
 
 	private function resetSamplerSynth()
 	{
 		var voices = new Array<SoftSynth>();
 		// set up melodic voices
-		for (n in 0...VOICES)
+		for (n in 0...num_voices)
 		{
 			var synth = new SamplerSynth();
 			synth.common.master_volume = 0.5;
@@ -89,7 +81,7 @@ class MIDIPlayer
 		// setup channels
 		for (n in 0...16)
 		{
-			var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY, n==9);
+			var vgroup = new VoiceGroup(voices, num_voices>>1, n==9);
 			
 			if (USING_SFZ)
 			{
@@ -114,13 +106,28 @@ class MIDIPlayer
 
 		}				
 	}
+	
+	public function addVoice()
+	{
+		num_voices++; hardReset();
+	}
 
+	public function subVoice()
+	{
+		num_voices--; if (num_voices < 0) num_voices = 0; hardReset();
+	}
+	
+	public function toggleFilter()
+	{
+		seq.filter_enabled = !seq.filter_enabled;
+	}
+	
 	private function resetTableSynth()
 	{
 		var voices = new Array<SoftSynth>();
 		var percussion_voices = new Array<SoftSynth>();
 		// set up melodic voices
-		for (n in 0...VOICES)
+		for (n in 0...num_voices)
 		{
 			var synth = new TableSynth();
 			synth.common.master_volume = 0.5;
@@ -128,7 +135,7 @@ class MIDIPlayer
 			voices.push(synth);
 		}
 		// dedicated percussion for when testing tablesynth
-		for (n in 0...PERCUSSION_VOICES)
+		for (n in 0...num_percussion_voices)
 		{
 			var synth = new SamplerSynth();
 			synth.common.master_volume = 0.5;
@@ -154,7 +161,7 @@ class MIDIPlayer
 			}
 			else
 			{
-				var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY, n==9);
+				var vgroup = new VoiceGroup(voices, num_voices>>1, n==9);
 				seq.addChannel([vgroup], TableSynth.generatorOf(TableSynth.defaultPatch(seq)));
 			}
 
@@ -166,7 +173,7 @@ class MIDIPlayer
 		var voices = new Array<SoftSynth>();
 		var percussion_voices = new Array<SoftSynth>();
 		// set up melodic voices
-		for (n in 0...VOICES)
+		for (n in 0...num_voices)
 		{
 			var synth = new SwagSynth(wavetable);
 			synth.common.master_volume = 0.5;
@@ -174,7 +181,7 @@ class MIDIPlayer
 			voices.push(synth);
 		}
 		// dedicated percussion
-		for (n in 0...PERCUSSION_VOICES)
+		for (n in 0...num_percussion_voices)
 		{
 			var synth = new SamplerSynth();
 			synth.common.master_volume = 0.5;
@@ -200,7 +207,7 @@ class MIDIPlayer
 			}
 			else
 			{
-				var vgroup = new VoiceGroup(voices, CHANNEL_POLYPHONY, n==9);
+				var vgroup = new VoiceGroup(voices, num_voices>>1, n==9);
 				seq.addChannel([vgroup], SwagSynth.bankGenerator(SwagSynth.buildBank(seq,SwagSynth.defaultBankDefinition())));
 			}
 
@@ -221,21 +228,9 @@ class MIDIPlayer
 	public var sgc : SynthGUICommon;
 	public var wavetable : Array<SoundSample>;
 	public var shared_object : SharedObject;
-
-	public function new()
+	
+	public function initWavetable()
 	{
-
-		Audio.init({Volume:{vol:1.0,on:true}},true);
-		#if alchemy
-			FastFloatBuffer.init(1024 * 1024 * 32);
-		#end
-		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 1200, 1.0, 1.0, 0.83, 780, 1024));
-		seq = new Sequencer(Std.int(44100), 4096,8);
-
-		sgc = new SynthGUICommon(seq);
-		eq = new EventQueue();
-		sgc.instPatchLoaderUI();
-		
 		wavetable = new Array();
 		
 		var FLUSH_CACHE = false;
@@ -264,63 +259,32 @@ class MIDIPlayer
 					viz.y = Main.H / 2 - viz.height / 2;
 				}
 			};
-		
-			var count = { var ar = new Array<Int>(); var n = 32; while (n > 0) { ar.push(n); n--; } ar; };
 			
-			var midinotes = new Array<Int>();
-			var mn = 30;
-			while (mn < 128)
-			{
-				midinotes.push(Std.int(seq.sampleRate()/EvenTemperament.cache.midiNoteToFrequency(mn)));
-				mn += 4;
-			}
-		
-			eq.add(function() { eq.inter_queue = updateViz; });
-			for (z in count) {
-			for (n in (CycleBuilder.buildWave(midinotes, 		
-				{ octaves:256, resonance:-1., pluck:(count.length-z)/count.length*200 },
-				CycleBuilder.sawBuilder, "saw_clean", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
-			}
-			for (z in count) {
-			for (n in (CycleBuilder.buildWave(midinotes, 		
-				{ octaves:256, resonance:-1., pluck:0. },
-				CycleBuilder.sawBuilder, "saw_pluck", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
-			}
-			for (z in count) {
-			for (n in (CycleBuilder.buildWave(midinotes, 		
-				{ octaves:6+Math.pow(256-6,z/count.length), resonance:5., pluck:0. },
-				CycleBuilder.sawBuilder, "saw_reso", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
-			}
-			for (pwm in 0...3)
-			{
-				var p = pwm / 4 * 0.5;
-				for (z in count) {
-				for (n in (CycleBuilder.buildWave(midinotes,
-				{ octaves:6+Math.pow(256-6,z/count.length), pulse_width:0.5 - p, resonance:-1., pluck:0. },
-				CycleBuilder.pulseBuilder, "pulse_clean_" + Std.string(0.5 - p), 
-					function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
-				}		
-			}
-			for (pwm in 0...3)
-			{
-				var p = pwm / 4 * 0.5;
-				for (z in count) {
-				for (n in (CycleBuilder.buildWave(midinotes,
-				{ octaves:6+Math.pow(256-6,z/count.length), pulse_width:0.5 - p, resonance:5., pluck:0. },
-				CycleBuilder.pulseBuilder, "pulse_reso_" + Std.string(0.5 - p), 
-					function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
-				}		
-			}
-			for (n in (CycleBuilder.buildWave(midinotes, 		
-				{ octaves:256, resonance:-1., pluck:0. },
-				CycleBuilder.triBuilder, "tri", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
-			for (n in (CycleBuilder.buildWave(midinotes, 		
-				{ octaves:256, resonance:0., pluck:0.01 },
-				CycleBuilder.bellBuilder, "bell", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.add(n);
+			eq.add(function() { eq.inter_queue = updateViz; } );
+			for (n in CycleBuilder.defaultBank(seq.sampleRate(), wavetable))
+				eq.add(n);
 			eq.add(function() { shared_object.setProperty("wavetable", SoundSample.serializeSamples(wavetable));
 								shared_object.flush(); } );
 			eq.add(function() { eq.inter_queue = null; });
-		}
+		}	
+	}
+
+	public function new()
+	{
+
+		Audio.init({Volume:{vol:1.0,on:true}},true);
+		#if alchemy
+			FastFloatBuffer.init(1024 * 1024 * 32);
+		#end
+		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 1200, 1.0, 1.0, 0.83, 780, 1024));
+		seq = new Sequencer(Std.int(44100), 4096,8);
+		
+		sgc = new SynthGUICommon(seq);
+		eq = new EventQueue();
+		sgc.instPatchLoaderUI();
+		
+		initWavetable();
+		
 		if (USING_SFZ)
 		{
 			if (SFZ_COMPRESSED)
@@ -380,7 +344,7 @@ class MIDIPlayer
 				});
 			
 			}
-			eq.add(function() { sgc.instSMFPlayer(hardReset); } );		
+			eq.add(function() { sgc.instSMFPlayer(this); } );		
 			eq.add(function() { sgc.startSMFPlayer(); } );				
 		}
 		else // SF2
@@ -402,7 +366,7 @@ class MIDIPlayer
 				{
 					eq.inter_queue = null;
 				});
-				eq.add(function() { sgc.instSMFPlayer(hardReset); } );
+				eq.add(function() { sgc.instSMFPlayer(this); } );
 				eq.add(function() { sgc.startSMFPlayer(); } );				
 			});
 		}

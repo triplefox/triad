@@ -3,6 +3,7 @@ package com.ludamix.triad.audio;
 import nme.Vector;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.audio.SoundSample;
+import com.ludamix.triad.audio.MIDITuning;
 
 class CycleBuilder
 {
@@ -170,6 +171,65 @@ class CycleBuilder
 			if (oo * ofreq > CUTOFF) break; // rendering accuracy limit
 		}
 		return result * 0.125;
+	}
+	
+	public static function defaultBank(sample_rate : Int, wavetable : Array<SoundSample>)
+	{
+		var count = { var ar = new Array<Int>(); var n = 32; while (n > 0) { ar.push(n); n--; } ar; };
+		
+		var midinotes = new Array<Int>();
+		var mn = 30;
+		while (mn < 128)
+		{
+			midinotes.push(Std.int(sample_rate/EvenTemperament.cache.midiNoteToFrequency(mn)));
+			mn += 4;
+		}
+		
+		var eq = new Array<Dynamic>();
+		
+		for (z in count) {
+		for (n in (CycleBuilder.buildWave(midinotes, 		
+			{ octaves:256, resonance:-1., pluck:(count.length-z)/count.length*200 },
+			CycleBuilder.sawBuilder, "saw_clean", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.push(n);
+		}
+		for (z in count) {
+		for (n in (CycleBuilder.buildWave(midinotes, 		
+			{ octaves:256, resonance:-1., pluck:0. },
+			CycleBuilder.sawBuilder, "saw_pluck", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.push(n);
+		}
+		for (z in count) {
+		for (n in (CycleBuilder.buildWave(midinotes, 		
+			{ octaves:6+Math.pow(256-6,z/count.length), resonance:5., pluck:0. },
+			CycleBuilder.sawBuilder, "saw_reso", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.push(n);
+		}
+		for (pwm in 0...3)
+		{
+			var p = pwm / 4 * 0.5;
+			for (z in count) {
+			for (n in (CycleBuilder.buildWave(midinotes,
+			{ octaves:6+Math.pow(256-6,z/count.length), pulse_width:0.5 - p, resonance:-1., pluck:0. },
+			CycleBuilder.pulseBuilder, "pulse_clean_" + Std.string(0.5 - p), 
+				function(ss:SoundSample) { wavetable.push(ss); } ))) eq.push(n);
+			}		
+		}
+		for (pwm in 0...3)
+		{
+			var p = pwm / 4 * 0.5;
+			for (z in count) {
+			for (n in (CycleBuilder.buildWave(midinotes,
+			{ octaves:6+Math.pow(256-6,z/count.length), pulse_width:0.5 - p, resonance:5., pluck:0. },
+			CycleBuilder.pulseBuilder, "pulse_reso_" + Std.string(0.5 - p), 
+				function(ss:SoundSample) { wavetable.push(ss); } ))) eq.push(n);
+			}		
+		}
+		for (n in (CycleBuilder.buildWave(midinotes, 		
+			{ octaves:256, resonance:-1., pluck:0. },
+			CycleBuilder.triBuilder, "tri", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.push(n);
+		for (n in (CycleBuilder.buildWave(midinotes, 		
+			{ octaves:256, resonance:0., pluck:0.01 },
+			CycleBuilder.bellBuilder, "bell", function(ss:SoundSample) { wavetable.push(ss); } ))) eq.push(n);	
+		
+		return eq;
 	}
 	
 }

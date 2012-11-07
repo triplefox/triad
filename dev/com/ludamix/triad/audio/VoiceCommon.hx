@@ -281,8 +281,8 @@ class VoiceCommon
 				else patch.filter_mode = FILTER_OFF;
 			}
 			
-			filter_mode = patch.filter_mode;
-			if (patch.filter_mode == FILTER_RINGMOD_TUNED)
+			filter_mode = sequencer.filter_enabled ? patch.filter_mode : FILTER_OFF;
+			if (filter_mode == FILTER_RINGMOD_TUNED)
 				frame_frequency_adjust = frame_frequency_adjust * freq;
 			if (filter_mode != FILTER_OFF)
 				filter.set(frame_frequency_adjust, frame_resonance_adjust);

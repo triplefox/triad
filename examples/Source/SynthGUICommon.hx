@@ -10,6 +10,7 @@ import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.TableSynth;
 import com.ludamix.triad.format.WAV;
+import com.ludamix.triad.io.FlashIO;
 import com.ludamix.triad.time.EventQueue;
 import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.tools.FastFloatBuffer;
@@ -53,7 +54,7 @@ class SynthGUICommon
 	public var infos2 : TextField;
 	public var loader_gui : LayoutResult;
 	public var seq : Sequencer;
-	public var hardReset : Dynamic;
+	public var app : Dynamic;
 	
 	public function new(seq)
 	{
@@ -88,6 +89,12 @@ class SynthGUICommon
 			decSong();
 		}
 	}
+	
+	public function addSong(entry : SongEntry, ?set_to_song = true)
+	{
+		songs.push(entry);
+		if (set_to_song) song_count = songs.length - 1;
+	}
 
 	public function loadSong()
 	{
@@ -115,7 +122,7 @@ class SynthGUICommon
 		if (seq.events.length<1)
 		{
 			incSong();
-			hardReset();
+			app.hardReset();
 			loadSong();
 		}
 		var cc = 0;
@@ -131,7 +138,8 @@ class SynthGUICommon
 		}
 		var prog_str = "";
 		for (u in programs) prog_str += Std.string(u) + " ";
-		infos2.text = Std.string(cc) + "/" + Std.string(seq.synths.length) + " playing. Programs: "+prog_str;
+		infos2.text = Std.string(cc) + "/" + Std.string(seq.synths.length) + " playing. Programs: " + prog_str +
+			" Filter "+(seq.filter_enabled ? "on." : "off.");
 		infos2.x = Main.W / 2 - infos2.width / 2;
 	}
 	
@@ -147,38 +155,66 @@ class SynthGUICommon
 		Lib.current.stage.addChild(loader_gui.sprite);	
 	}
 	
-	public function instSMFPlayer(hardReset : Dynamic)
+	public function instSMFPlayer(app : Dynamic)
 	{
 		var gui_data = 
-		LayoutBuilder.create(0, 0, Main.W, Main.H, LDRect9(new Rect9(CommonStyle.rr, Main.W, Main.H, true), LAC(0, 0), null,
+		LayoutBuilder.create(0, 0, Main.W, Main.H, 
+			LDRect9(new Rect9(CommonStyle.rr, Main.W, Main.H, true), LAC(0, 0), null,
 			LDPackV(LPMMinimum, LAC(0, 0), null, [
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Settings").button,LAC(0,0),"settings"),
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Prev Track").button,LAC(0,0),"prev_track"),
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Next Track").button,LAC(0,0),"next_track"),
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Prev Group").button,LAC(0,0),"prev_group"),
-				LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Next Group").button,LAC(0,0),"next_group"),
+				LDPackH(LPMMinimum, LAC(0, 0), null, [
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Volume").button,LAC(0,0),"volume"),
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Polyphony+").button,LAC(0,0),"polyphonyadd"),
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Polyphony-").button,LAC(0,0),"polyphonysub"),
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Filter Toggle").button,LAC(0,0),"filter_toggle"),
+				]),
+				LDPackH(LPMMinimum, LAC(0, 0), null, [
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Prev Track").button,LAC(0,0),"prev_track"),
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Next Track").button,LAC(0,0),"next_track"),				
+				]),
+				LDPackH(LPMMinimum, LAC(0, 0), null, [
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Prev Group").button,LAC(0,0),"prev_group"),
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Next Group").button,LAC(0,0),"next_group"),
+				]),
+				LDPackH(LPMMinimum, LAC(0, 0), null, [
+					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Load MIDI File").button,LAC(0,0),"load_midi"),
+				]),
 				LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "Text Infos"),LAC(0,0),"infos"),
-				LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "0/0"),LAC(0,0),"infos2"),
+				LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "0/0"), LAC(0, 0), "infos2"),
 			])));
 
 		infos = gui_data.keys.infos;
 		infos2 = gui_data.keys.infos2;
-		this.hardReset = hardReset;
+		this.app = app;
 
-		gui_data.keys.settings.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+		gui_data.keys.volume.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
 			CommonStyle.settings.visible = true; }
 			);
+		gui_data.keys.polyphonyadd.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+			app.addVoice(); loadSong(); }
+			);
+		gui_data.keys.polyphonysub.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+			app.subVoice(); loadSong(); }
+			);
+		gui_data.keys.filter_toggle.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+			app.toggleFilter(); }
+			);
 		gui_data.keys.next_track.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-			hardReset(); incSong(); loadSong(); }
+			app.hardReset(); incSong(); loadSong(); }
 			);
 		gui_data.keys.prev_track.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-			hardReset(); decSong(); loadSong(); }
+			app.hardReset(); decSong(); loadSong(); }
 			);
 		gui_data.keys.next_group.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-			hardReset(); incGroup(); loadSong(); }
+			app.hardReset(); incGroup(); loadSong(); }
 			);
 		gui_data.keys.prev_group.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-			hardReset(); decGroup(); loadSong(); }
+			app.hardReset(); decGroup(); loadSong(); }
+			);
+		gui_data.keys.load_midi.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+			FlashIO.loadBytes(d, "Standard MIDI Format", "*.mid", function(b : Bytes) { 
+				addSong( { fileName:"User loaded song", data:b, path:"" }, true );
+				app.hardReset(); loadSong();
+			}); }
 			);
 
 		Lib.current.stage.addChild(gui_data.sprite);
@@ -186,13 +222,14 @@ class SynthGUICommon
 		CommonStyle.settings.visible = false;
 
 		var tar_reader = new Reader(new BytesInput(Bytes.ofData(Assets.getBytes("assets/smf.tar"))));
-		songs = Lambda.array(Lambda.map(tar_reader.read(), function(e:Entry):SongEntry
+		var songlist = Lambda.filter((Lambda.map(tar_reader.read(), function(e:Entry):SongEntry
 			{
 				var str = StringTools.replace(e.fileName,"\\","/");
 				var split : Array<String> = str.split("/");
 				split.pop();
 				return { fileName:e.fileName, data:e.data, path:split.join("/") }; } 
-			));
+			)), function(s:SongEntry) { return s.fileName.length>0; } );
+		songs = Lambda.array(songlist);
 		
 		song_count = 0;
 		for (n in songs)
@@ -201,18 +238,18 @@ class SynthGUICommon
 			//if (fname == "sam_n_max_hit_the_road/SNMEND.MID")
 			//if (fname == "doom_1_and_2/D_E1M1 - Hanger.mid")
 			//if (fname == "little_big_adventure/LBA1-01.MID")
-			//if (fname == "little_big_adventure/LBA1-04.MID")
+			if (fname == "little_big_adventure/LBA1-04.MID")
 			//if (fname == "wing_commander_privateer/Privateer I - Admiral Terell's Office.mid")
 			//if (fname == "wing_commander_1/WC1MID36.MID")
 			//if (fname == "wing_commander_1/WC1MID21.MID")
-			if (fname == "sam_n_max_hit_the_road/LAINTRO.MID")
+			//if (fname == "sam_n_max_hit_the_road/LAINTRO.MID")
 			{
 				break;
 			}
 			incSong();
 		}
 
-		hardReset();
+		app.hardReset();
 		loadSong();	
 	}
 	
