@@ -1,0 +1,6 @@
+[
+{
+	"bank":0, "instrument":["0...128"],
+	"voices":[{"wave_sweep":["32...63"]}]
+}
+]

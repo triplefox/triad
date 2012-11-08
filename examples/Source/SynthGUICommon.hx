@@ -139,7 +139,7 @@ class SynthGUICommon
 		var prog_str = "";
 		for (u in programs) prog_str += Std.string(u) + " ";
 		infos2.text = Std.string(cc) + "/" + Std.string(seq.synths.length) + " playing. Programs: " + prog_str +
-			" Filter "+(seq.filter_enabled ? "on." : "off.");
+			(seq.isSuffering() ? " Suffering!" : (" Filter "+(seq.filter_enabled ? "on." : "off.")));
 		infos2.x = Main.W / 2 - infos2.width / 2;
 	}
 	
@@ -236,9 +236,10 @@ class SynthGUICommon
 		{
 			var fname = n.fileName;
 			//if (fname == "sam_n_max_hit_the_road/SNMEND.MID")
+			if (fname == "heart_of_china/HOCGM1.MID")
 			//if (fname == "doom_1_and_2/D_E1M1 - Hanger.mid")
 			//if (fname == "little_big_adventure/LBA1-01.MID")
-			if (fname == "little_big_adventure/LBA1-04.MID")
+			//if (fname == "little_big_adventure/LBA1-04.MID")
 			//if (fname == "wing_commander_privateer/Privateer I - Admiral Terell's Office.mid")
 			//if (fname == "wing_commander_1/WC1MID36.MID")
 			//if (fname == "wing_commander_1/WC1MID21.MID")

@@ -1,7 +1,10 @@
 package com.ludamix.triad.audio;
 
+import Type;
+
 import com.ludamix.triad.audio.SoftSynth;
 import com.ludamix.triad.tools.StringTools;
+import haxe.Json;
 
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.audio.Sequencer;
@@ -24,7 +27,7 @@ typedef SwagSynthPatch = {
 	transpose : Float
 };
 
-typedef SwagSynthBankDefinition = {bank:Int,instrument:Int,voices:Array<Dynamic>};
+typedef SwagSynthBankDefinition = {bank:Int,instrument:Array<Dynamic>,voices:Array<Dynamic>};
 typedef SwagSynthBank = IntHash<IntHash<Array<SwagSynthPatch>>>;
 
 class SwagSynth implements SoftSynth
@@ -96,26 +99,19 @@ class SwagSynth implements SoftSynth
 		} );
 	}
 	
-	public static function defaultCycleSet()
-	{
-		// return the queue. Possibly reverse the sweep direction.
-	}
-	
 	public static function defaultPatch(seq : Sequencer) : SwagSynthPatch
 	{
 		var m_lfos : Array<LFO> = 
 			[ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[VoiceCommon.AS_PITCH_ADD],
 				type:VoiceCommon.LFO_SIN} ];
 		return 
-			{ envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 2.4, 0.15, 0.5, [VoiceCommon.AS_VOLUME_ADD]),
+			{ envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 1.4, 0.5, 0.25, [VoiceCommon.AS_VOLUME_ADD]),
 			Envelope.vector(seq.secondsToFrames, 
-				[[0.0,1.0,1.5]], [[1.0,1.0,1.0]], [[1.0,1.0,1.0]], [VoiceCommon.AS_CUSTOM_ADD],1.)],
+				[[0.0,1.0,0.5]], [[1.0,1.0,1.0]], [[1.0,1.0,1.0]], [VoiceCommon.AS_CUSTOM_ADD],1.)],
 				lfos : new Array<LFO>(),
-				//lfos : [{frequency:1.,depth:0.005,delay:0.,attack:0.5,assigns:[VoiceCommon.AS_FREQUENCY_ADD]}],
 				modulation_lfos:m_lfos,
 				arpeggiation_rate:0.0,
-				//wave_sweep:StringTools.parseIntervalArray(["0..31"]),
-				wave_sweep:StringTools.parseIntervalArray([289]),
+				wave_sweep:StringTools.parseIntervalArray(["0..31"]),
 				filter_mode:VoiceCommon.FILTER_OFF,
 				cutoff_frequency:0.,
 				resonance_level:0.,
@@ -131,14 +127,7 @@ class SwagSynth implements SoftSynth
 		var result = new Array<SwagSynthBankDefinition>();
 		for (n in 0...127)
 		{
-			var r : SwagSynthBankDefinition = { bank:0, instrument:n, voices:[ 
-				{wave_sweep:[288], transpose: -0.04, filter_mode:"ringmod_tuned", cutoff_frequency:1.3333, envelopes:[ { adsr:[0.01, 0.1, 0.001, 0., "volume_add"] } ] },
-				{envelopes:[ { adsr:[0.05, 0.1, 0.1, 0.5, "volume_add"] }]},
-				//{transpose:0., filter_mode:"ringmod_tuned", cutoff_frequency:4, lfos:[{frequency:1.2,depth:-0.05,delay:0.,attack:0.5,assigns:["pitch_add"]}]},
-				//{transpose:0.02, wave_sweep:[64], filter_mode:"ringmod_tuned", cutoff_frequency:0.91666666666, lfos:[{frequency:1.,depth:0.05,delay:0.01,attack:0.,assigns:["pitch_add"],type:"ramp"}]},
-				//{ wave_sweep:["32...63"], volume:-0.15, transpose:-0.04 },
-				//{ wave_sweep:["32...63"], lfos:[{frequency:4, depth:0.015, delay:0.01, attack:0., assigns:["pitch_add","volume_add"]}] },
-				] };
+			var r : SwagSynthBankDefinition = { bank:0, instrument:[n], voices:[{}] };
 			result.push(r);
 		}
 		return result;
@@ -297,13 +286,9 @@ class SwagSynth implements SoftSynth
 	public inline function bandreject_filter(a : Float) { return common.filter.getBR(a); }
 	public inline function ringmod_filter(a : Float) { return common.filter.getRingMod(a); }
 	
-	public static var defaultCache : SwagSynthPatch;
-	
 	private static function _parsePatchVoice(seq : Sequencer, patch_voice : Dynamic) : SwagSynthPatch
 	{
-		if (defaultCache==null)
-			defaultCache = defaultPatch(seq);
-		var result = Reflect.copy(defaultCache);
+		var result = defaultPatch(seq);
 		
 		// here we should fill in the details - the different parse modes for envelopes, etc.
 		
@@ -439,9 +424,15 @@ class SwagSynth implements SoftSynth
 			
 			var cbank = result.get(p.bank);
 			if (cbank == null) { cbank = new IntHash<Array<SwagSynthPatch>>(); result.set(p.bank, cbank); }
-			var cinst = cbank.get(p.instrument);
-			if (cinst == null) { cinst = new Array<SwagSynthPatch>(); cbank.set(p.instrument, cinst); }
-			for (v in voices) cinst.push(v);
+			
+			var instruments : Array<Int> = StringTools.parseIntervalArray(p.instrument);
+			
+			for (i in instruments)
+			{
+				var cinst = cbank.get(i);
+				if (cinst == null) { cinst = new Array<SwagSynthPatch>(); cbank.set(i, cinst); }
+				for (v in voices) cinst.push(v);
+			}
 			
 		}
 		

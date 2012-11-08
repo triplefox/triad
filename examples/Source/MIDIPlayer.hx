@@ -207,8 +207,10 @@ class MIDIPlayer
 			}
 			else
 			{
-				var vgroup = new VoiceGroup(voices, num_voices>>1, n==9);
-				seq.addChannel([vgroup], SwagSynth.bankGenerator(SwagSynth.buildBank(seq,SwagSynth.defaultBankDefinition())));
+				var vgroup = new VoiceGroup(voices, num_voices >> 1, n == 9);
+				//var bankdef = SwagSynth.defaultBankDefinition();
+				var bankdef = Json.parse(Assets.getText("assets/swagpatch.json"));
+				seq.addChannel([vgroup], SwagSynth.bankGenerator(SwagSynth.buildBank(seq,bankdef)));
 			}
 
 		}		
