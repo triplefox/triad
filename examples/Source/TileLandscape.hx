@@ -63,7 +63,7 @@ class TileLandscape
 
 	public function initialize(_ : Dynamic)
 	{
-		graphics_resource = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, true, "assets/", 2);
+		graphics_resource = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, 2, "assets/", 2);
 		sprite_quads = new Quads2D(scene.c);
 		shader = new ShaderGeneral2D(scene.c);
 		shaderZ = new ShaderGeneral2PointFiveD(scene.c);

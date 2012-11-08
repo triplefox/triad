@@ -94,7 +94,7 @@ class GraphicsResource
 	//  rect=[int,int,int,int]; | rectx=int; | recty=int; | rectw=int; | recth=int;
 	
 	public static function read(file : String, sheetsize : Int, 
-		sheet_border : Bool, ?prepend : String, ?skipx : Int=1) : GraphicsResourceData
+		sheet_border : Int, ?prepend : String, ?skipx : Int=1) : GraphicsResourceData
 	{
 		var data : Array<Dynamic> = TriadConfig.parse(file, TCPReject);
 		if (data[0] == file)
@@ -103,7 +103,7 @@ class GraphicsResource
 		var idx = 0;
 		var group_opcodes = new Hash<Dynamic>();
 		
-		var sheet_bitmaps = new Array<{bd:BitmapData,offx:Int,offy:Int}>();
+		var sheet_bitmaps = new Array<{bd:BitmapData,offx:Int,offy:Int,pack:Int}>();
 		var spritesheets = new Array<SpriteDef>();
 		var autotiles = new Array<AutoTileDef>();
 		var masknames = new Hash<Int>();
@@ -210,7 +210,7 @@ class GraphicsResource
 						
 						// generate the final entry data
 						var sheet_idx = sheet_bitmaps.length;	
-						for (n in slices) sheet_bitmaps.push({bd:n,offx:0,offy:0});
+						for (n in slices) sheet_bitmaps.push({bd:n,offx:0,offy:0,pack:TilePack.PACK_BLEED});
 						var at = { sheet_idx:sheet_idx, sheet_len:20, masksend:masksend, maskrecieve:maskrecieve,
 							id:id, file:file, group:group,
 							w:slice_w, h:slice_h, slices:slices }; // (this object is for reference)
@@ -242,7 +242,8 @@ class GraphicsResource
 						
 						// now write the sprite information with adjusted offset data.
 						var sheet_idx = sheet_bitmaps.length;
-						for (n in slices) sheet_bitmaps.push({bd:n,offx:alignoffset[0],offy:alignoffset[1]});
+						for (n in slices) sheet_bitmaps.push( { bd:n, offx:alignoffset[0], offy:alignoffset[1],
+							pack:TilePack.PACK_EMPTY});
 						var sheet_len = slices.length;
 						
 						var spr = { offx:alignoffset[0], offy:alignoffset[1], sheet_idx:sheet_idx, sheet_len:sheet_len,
@@ -264,7 +265,7 @@ class GraphicsResource
 		
 		var tp = new TilePack();
 		for (n in sheet_bitmaps)
-			tp.add(n.bd,n.offx,n.offy);
+			tp.add(n.bd,n.offx,n.offy,n.pack);
 		var infos = tp.compute(sheetsize, sheet_border, skipx);
 		
 		var nodes : Array<PackerNode> = infos.nodes;		

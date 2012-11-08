@@ -31,7 +31,7 @@ class SpritePacking
 	
 	public function doInitial()
 	{
-		var infos = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, true, "assets/");
+		var infos = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, 2, "assets/");
 		
 		//bmp.bitmapData = infos.tilesheet.nmeBitmap;
 		

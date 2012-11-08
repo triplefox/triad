@@ -17,7 +17,7 @@ class ShaderGeneral2D extends format.hxsl.Shader {
 			trgba = rgba;
 		}
 		function fragment( tex : Texture ) {
-			out = tex.get(tuv, clamp, nearest) * trgba;
+			out = tex.get(tuv, clamp) * trgba;
 		}
 	};
 
@@ -38,7 +38,7 @@ class ShaderGeneral2PointFiveD extends format.hxsl.Shader {
 		   trgba = rgba;
 		}
 		function fragment( tex : Texture ) {
-			out = tex.get(tuv, clamp, nearest) * trgba;
+			out = tex.get(tuv, clamp) * trgba;
 		}
 	};
 

@@ -1,15 +1,18 @@
 package com.ludamix.triad.geom;
 
+typedef BinPackerInput = { contents:Dynamic, w:Float, h:Float };
+typedef BinPackerStuff = { > BinPackerInput, id : Int};
+
 class BinPacker
 {
 	
 	public var nodes : Array<PackerNode>;
 	
-	public function new(w:Float,h:Float,inputs: Array<{contents:Dynamic,w:Float,h:Float}>, ?skipx=1, ?always_rescan=false)
+	public function new(w:Float,h:Float,inputs: Array<BinPackerInput>, ?skipx=1, ?always_rescan=false)
 	{
 		// take the inputs and assign ids, then sort by height(this helps pack efficiency)
 		
-		var stuff = new Array<{contents:Dynamic,w:Float,h:Float,id:Int}>();
+		var stuff = new Array<BinPackerStuff>();
 		
 		var id = 0;
 		for (n in inputs)

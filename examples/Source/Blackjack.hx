@@ -47,7 +47,7 @@ class Blackjack
 		bmp = new Bitmap(new BitmapData(Main.W, Main.H, false, BGCOLOR));
 		Lib.current.addChild(bmp);
 		
-		var gr = GraphicsResource.read(Assets.getText("assets/cards.tc"), 1024, false, "assets/");
+		var gr = GraphicsResource.read(Assets.getText("assets/cards.tc"), 1024, 0, "assets/");
 		
 		render = new SpriteRenderer(gr.sprite);
 		var card_info = render.defs_names.get("cards");

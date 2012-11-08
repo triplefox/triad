@@ -37,7 +37,7 @@ class Stage3DTest
 	
 	public function initialize(_ : Dynamic)
 	{
-		graphics_resource = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, true, "assets/", 2);
+		graphics_resource = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, 2, "assets/", 2);
 		quads = new Quads2D(scene.c);
 		shader = new ShaderGeneral2D(scene.c);
 		scene.addTilesheet(graphics_resource.tilesheet);

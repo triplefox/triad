@@ -30,7 +30,7 @@ class Tilemapping
 		
 		var pop = new Array<Int>(); for (n in 0...32 * 32) pop.push( -1);
 		
-		var gr = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, true, "assets/");
+		var gr = GraphicsResource.read(Assets.getText("assets/graphics.tc"), 512, 2, "assets/");
 		
 		grid = new TilesheetGrid(gr.tilesheet, 32, 32, 8, 8, pop);
 		
