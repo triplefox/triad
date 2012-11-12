@@ -537,8 +537,8 @@ class SF2
 			0., 
 			sequencer.secondsToFrames(env.attack), 
 			sequencer.secondsToFrames(env.hold), 
-			sequencer.secondsToFrames(env.decay), env.sustain, 0., 
-			sequencer.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
+			sequencer.secondsToFrames(env.decay), Math.pow(env.sustain,0.1), 0., 
+			sequencer.secondsToFrames(env.release), 0.1, 1.0, 1.0, 
 			[VoiceCommon.AS_VOLUME_ADD],10.);	
 	}
 	

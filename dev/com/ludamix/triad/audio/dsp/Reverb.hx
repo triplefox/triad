@@ -44,8 +44,8 @@ class Reverb
 	public static inline var NR_OF_MULTIDELAYS = 6;
 	public static inline var NR_OF_SINGLEDELAYS = 6;
 	
-	public var LOWPASSL : IIRFilter2;
-	public var LOWPASSR : IIRFilter2;
+	public var LOWPASSL : SVFilter;
+	public var LOWPASSR : SVFilter;
 	public var multiDelays : Array<MultiDelay>;
 	public var singleDelays : Array<SingleDelay>;
 	public var outputSamples : FastFloatBuffer;
@@ -62,8 +62,8 @@ class Reverb
 	  this.delayVolume     = delayVolume;
 	  this.dampFrequency     = dampFrequency;
 	 
-	  this.LOWPASSL = new IIRFilter2(DSP.LOWPASS, dampFrequency, 0, 44100);
-	  this.LOWPASSR = new IIRFilter2(DSP.LOWPASS, dampFrequency, 0, 44100);
+	  this.LOWPASSL = new SVFilter(dampFrequency, 0, 44100);
+	  this.LOWPASSR = new SVFilter(dampFrequency, 0, 44100);
 	 
 	  this.singleDelays = new Array<SingleDelay>();
 	  
@@ -167,8 +167,10 @@ class Reverb
 		right.playhead = 0;
 		for (n in 0...left.length)
 		{
-			left.write(input.read()); input.advancePlayheadUnbounded(); left.advancePlayheadUnbounded();
-			right.write(input.read()); input.advancePlayheadUnbounded(); right.advancePlayheadUnbounded();
+			left.write(this.LOWPASSL.getLP(input.read())); 
+			input.advancePlayheadUnbounded(); left.advancePlayheadUnbounded();
+			right.write(this.LOWPASSR.getLP(input.read())); 
+			input.advancePlayheadUnbounded(); right.advancePlayheadUnbounded();
 		}
 	}
 
@@ -198,8 +200,6 @@ class Reverb
 	 
 	  // Perform low pass on the input samples to mimick damp
 	  deinterleave(interleavedSamples, leftRightMix[0], leftRightMix[1]);
-	  this.LOWPASSL.process( leftRightMix[0] );
-	  this.LOWPASSR.process( leftRightMix[1] ); 
 	  interleave(leftRightMix[0], leftRightMix[1], filteredSamples);
 		
 	  // Process MultiDelays in parallel

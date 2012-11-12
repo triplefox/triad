@@ -848,8 +848,8 @@ class SFZ
 			env.start, 
 			seq.secondsToFrames(env.attack), 
 			seq.secondsToFrames(env.hold), 
-			seq.secondsToFrames(env.decay), env.sustain, 0., 
-			seq.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
+			seq.secondsToFrames(env.decay), Math.pow(env.sustain,0.1), 0., 
+			seq.secondsToFrames(env.release), 0.1, 1.0, 1.0, 
 			[VoiceCommon.AS_VOLUME_ADD],10.);
 	}
 
