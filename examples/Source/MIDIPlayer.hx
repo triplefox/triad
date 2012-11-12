@@ -278,7 +278,7 @@ class MIDIPlayer
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
-		seq = new Sequencer(Std.int(44100), 4096,4,null,new Reverb(1024, 1024, 1.0, 1.0, 0.83, 780, 2048));
+		seq = new Sequencer(Std.int(44100), 4096,4,null,new Reverb(2048, 1800, 1.0, 1.0, 0.93, 1500, 2048));
 		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 1200, 1.0, 1.0, 0.83, 780, 1024));
 		//seq = new Sequencer(Std.int(44100), 4096, 4);		
 		
