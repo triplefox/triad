@@ -7,6 +7,7 @@ import com.ludamix.triad.audio.VoiceCommon;
 import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.TableSynth;
+import com.ludamix.triad.time.EventQueue;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.ui.HSlider6;
 import haxe.io.Bytes;
@@ -60,7 +61,6 @@ class Keyjammer
 		#end
 		{
 			var synth = new SamplerSynth();
-			synth.common.filter_cutoff_multiplier = 4.0;
 			synth.common.master_volume = 0.5;
 			synth.resample_method = SamplerSynth.RESAMPLE_CUBIC;
 			seq.addSynth(synth);
@@ -69,7 +69,7 @@ class Keyjammer
 		// setup channels
 		for (n in 0...16)
 		{
-			var vgroup = new VoiceGroup(voices, 32);
+			var vgroup = new VoiceGroup(voices, 32, n == 9);			
 			
 			/*
 			if (n == 9)
@@ -99,31 +99,14 @@ class Keyjammer
 		resetSamplerSynth();
 	}
 	
+	public var eq : EventQueue;
+	
 	public function queueFunction(func : Dynamic)
 	{
-		// uses closures to run all the events with a frame of gap.
-		if (queue == null) queue = new Array();
-		queue.push(function(time_start : Int) { 
-			func(); 
-			var time_end = Lib.getTimer();
-			if (queue.length > 0)
-			{
-				if (time_end - time_start < 250)
-					queue.shift()(time_start);
-				else
-				{
-					var inner_func : Dynamic = null;
-					inner_func = function(_) {
-						Lib.current.removeEventListener(Event.ENTER_FRAME, inner_func);
-						queue.shift()(Lib.getTimer());
-					};
-					Lib.current.addEventListener(Event.ENTER_FRAME, inner_func);
-				}
-			}
-		});
+		eq.add(func);
 	}
 	
-	public function startQueue() { queue.shift()(Lib.getTimer()); }
+	public function startQueue() { eq.start(); }
 	
 	public var queue : Array<Dynamic>;
 	public var loader_gui : LayoutResult;
@@ -136,12 +119,14 @@ class Keyjammer
 		octave = 4;
 		patch = 0;
 		
+		eq = new EventQueue();
+		
 		Audio.init( { Volume: { vol:1.0, on:true }}, true);
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
 		//seq = new Sequencer(Std.int(44100), 4096,16,null,new Reverb(2048, 983, 1.0, 1.0, 0.83, 780));
-		seq = new Sequencer(Std.int(44100), 4096,8);
+		seq = new Sequencer(Std.int(44100), 4096,32);
 		
 		CommonStyle.init(null, "assets/sfx_test.mp3");
 		loader_gui = 
@@ -152,11 +137,59 @@ class Keyjammer
 		Lib.current.stage.addChild(loader_gui.sprite);
 		
 		queueFunction(function() {
-			sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 2.0 MB GM GS MT Rev N++.sf2"));
-			sf2.init(seq, MIP_LEVELS);
+			sf2 = SF2.load(seq, Assets.getBytes("assets/WeedsGM3.sf2"));
+			for (z in sf2.init(MIP_LEVELS, true))
+				eq.add(z);
+			eq.inter_queue = function()
+			{
+				loader_gui.keys.infos.text = 
+					Std.format("${sf2.progress.samples_loaded.done}/${sf2.progress.samples_loaded.total} ")+
+					Std.format("${sf2.progress.samples_mipped.done}/${sf2.progress.samples_mipped.total} ")+
+					Std.format("${sf2.progress.presets_loaded.done}/${sf2.progress.presets_loaded.total} ")+
+					Std.format("${sf2.progress.text}");
+				loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width / 2;
+			}
+			eq.add(function()
+			{
+				eq.inter_queue = null;
+			});
 			loader_gui.keys.infos.text = "Loaded SF2";
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width / 2;
 			//throw ""; // if we want to inspect tracelogs at load time
+			queueFunction(function(){
+				
+				var gui_data = 
+				LayoutBuilder.create(0, 0, Main.W, Main.H, LDRect9(new Rect9(CommonStyle.rr, Main.W, Main.H, true), LAC(0, 0), null,
+					LDPackV(LPMMinimum, LAC(0, 0), null, [
+						LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Settings").button,LAC(0,0),"settings"),
+						LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "Text Infos"),LAC(0,0),"infos"),
+						LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "0/0"),LAC(0,0),"infos2"),
+					])));
+				
+				infos = gui_data.keys.infos;
+				infos2 = gui_data.keys.infos2;
+				
+				gui_data.keys.settings.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+					CommonStyle.settings.visible = true; }
+					);
+				
+				Lib.current.stage.addChild(gui_data.sprite);
+				Lib.current.stage.addChild(CommonStyle.settings);
+				CommonStyle.settings.visible = false;
+				
+				hardReset();
+			});
+			
+			queueFunction(function(){
+				seq.play("synth", "Volume");
+				Lib.current.stage.addEventListener(Event.ENTER_FRAME, doLoop);
+				Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, onDown);
+				Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, onUp);
+				
+				drawDebugwaveform();
+				
+			});
+			
 		});
 		
 		/*
@@ -184,40 +217,6 @@ class Keyjammer
 			loader_gui.keys.infos.x = Main.W / 2 - loader_gui.keys.infos.width/2;
 		});
 		*/
-		
-		queueFunction(function(){
-			
-			var gui_data = 
-			LayoutBuilder.create(0, 0, Main.W, Main.H, LDRect9(new Rect9(CommonStyle.rr, Main.W, Main.H, true), LAC(0, 0), null,
-				LDPackV(LPMMinimum, LAC(0, 0), null, [
-					LDDisplayObject(Helpers.labelButtonRect9(CommonStyle.basicButton, "Settings").button,LAC(0,0),"settings"),
-					LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "Text Infos"),LAC(0,0),"infos"),
-					LDDisplayObject(Helpers.quickLabel(CommonStyle.cascade, "0/0"),LAC(0,0),"infos2"),
-				])));
-			
-			infos = gui_data.keys.infos;
-			infos2 = gui_data.keys.infos2;
-			
-			gui_data.keys.settings.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
-				CommonStyle.settings.visible = true; }
-				);
-			
-			Lib.current.stage.addChild(gui_data.sprite);
-			Lib.current.stage.addChild(CommonStyle.settings);
-			CommonStyle.settings.visible = false;
-			
-			hardReset();
-		});
-		
-		queueFunction(function(){
-			seq.play("synth", "Volume");
-			Lib.current.stage.addEventListener(Event.ENTER_FRAME, doLoop);
-			Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, onDown);
-			Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, onUp);
-			
-			drawDebugwaveform();
-			
-		});
 		
 		startQueue();
 		
@@ -331,25 +330,26 @@ class Keyjammer
 		
 	}
 	
+	public static var keys = new IntHash<Int>();
+	public static var event_id = 0;
+	
 	public function noteOn(input : Int)
 	{
 		var n = input + octave * 12;
-		var freq = seq.tuning.midiNoteToFrequency(n);
-		for (s in seq.synths)
-		{
-			for (f in s.common.getFollowers())
-			{
-				if (!f.env[0].releasing() && f.patch_event.sequencer_event.data.freq == freq)
-					return;
-			}
+		if (!keys.exists(n) || keys.get(n) == -1) {
+			keys.set(n, event_id);
+			var freq = seq.tuning.midiNoteToFrequency(n);
+			seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, { freq:freq, velocity:127 }, 0, event_id, 0., 0));
+			event_id++; if (event_id == -1) event_id++; 
 		}
-		seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_ON, { freq:freq, velocity:127 }, 0, n, 0., 0));
 	}
 	
 	public function noteOff(input : Int)
 	{
 		var n = input + octave * 12;
-		seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_OFF, { freq:seq.tuning.midiNoteToFrequency(n), velocity:127 }, 0, n, 0., 0));
+		var id = keys.get(n);
+		keys.set(n, -1);
+		seq.pushEvent(new SequencerEvent(SequencerEvent.NOTE_OFF, { freq:seq.tuning.midiNoteToFrequency(n), velocity:127 }, 0, id, 0., 0));
 	}
 	
 	public function setPatch()

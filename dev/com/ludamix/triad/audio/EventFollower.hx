@@ -44,7 +44,7 @@ class EventFollower
 		this.patch_event = event; 
 		env = new Array();
 		for (n in cast(event.patch.envelope_profiles,Array<Dynamic>))
-			env.push(new Envelope(n.attack,n.release,n.assigns,n.endpoint));
+			env.push(new Envelope(n.attack,n.release,n.assigns,n.endpoint,n.curvature));
 		this.lfo_pos = 0;
 		loop_pos = 0.; loop_state = LOOP_PRE;
 		filter.set(filter.samplerate >> 1, 0.);
@@ -60,8 +60,12 @@ class EventFollower
 	
 	public inline function setRelease()
 	{
+		
 		for (e in env)
+		{
 			e.setRelease();
+		}
+		
 	}
 	
 	public inline function setOff()

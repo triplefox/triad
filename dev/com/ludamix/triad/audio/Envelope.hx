@@ -35,7 +35,8 @@ class EnvelopeSegment
 	
 }
 
-typedef EnvelopeProfile = {attack:EnvelopeSegment, release:EnvelopeSegment, assigns:Array<Int>, endpoint:Float};
+typedef EnvelopeProfile = { attack:EnvelopeSegment, release:EnvelopeSegment, assigns:Array<Int>, endpoint:Float,
+	curvature : Float};
 
 class Envelope
 {
@@ -43,21 +44,25 @@ class Envelope
 	public var segment : EnvelopeSegment;
 	public var release : EnvelopeSegment;
 	public var position : Float;
+	public var curvature : Float;
 	public var level : Float;
 	public var endpoint : Float;
 	public var release_level : Float;
 	public var assigns : Array<Int>;
 	
+	
 	// note: env segments should be in the 0.0-1.0 range.
 	
 	public static inline var PEAK = 1.0;
+	public static inline var MIN_POWER = 0.000016; // -96dB
 	
-	public function new(segment, release, assigns, endpoint)
+	public function new(segment, release, assigns, endpoint, curvature)
 	{
 		this.segment = segment;
 		this.release = release;
 		this.assigns = assigns;
 		this.endpoint = endpoint;
+		this.curvature = curvature;
 		position = 0.;
 		release_level = PEAK;
 		level = update(0.);
@@ -75,11 +80,11 @@ class Envelope
 		}
 		if (!releasing())
 		{
-			level = segment.getLevel(position);
-			release_level = level;
+			release_level = segment.getLevel(position);
+			level = Math.pow(release_level, curvature);			
 		}
 		else
-			level = segment.getLevel(position) * release_level;
+			level = Math.pow(segment.getLevel(position) * release_level,curvature);
 		return level;
 	}
 	
@@ -87,6 +92,7 @@ class Envelope
 	{
 		if (!releasing())
 		{
+			release_level = segment.getLevel(position);
 			segment = release;
 			position = 0.;
 		}
@@ -109,61 +115,47 @@ class Envelope
 	
 	public static function ADSR(secondsToFrames : Float->Float, 
 		attack_time : Float, decay_time : Float, sustain_level : Float, release_time : Float,
-		assigns : Array<Int>) : EnvelopeProfile
+		assigns : Array<Int>, curvature : Float) : EnvelopeProfile
 	{
 		return DSAHDSHR(secondsToFrames, 0., 0., attack_time, 0., decay_time, sustain_level, 0., release_time,
-			1.0, 1.0, 1.0, assigns);
+			1.0, 1.0, 1.0, assigns, curvature);
 	}
 	
 	public static function DSAHDSHR(secondsToFrames : Float->Float, delay_time : Float, start_level : Float,
 		attack_time : Float, attack_hold_time : Float, decay_time : Float, sustain_level : Float, 
 		release_hold_time : Float, release_time : Float, attack_curve : Float, decay_curve : Float, release_curve : Float,
-		assigns : Array<Int>
+		assigns : Array<Int>, curvature : Float
 	) : EnvelopeProfile
 	{
 		
-		attack_time = secondsToFrames(attack_time);
-		attack_hold_time = secondsToFrames(attack_hold_time);
-		decay_time = secondsToFrames(decay_time);
-		release_time = secondsToFrames(release_time);
-		release_hold_time = secondsToFrames(release_hold_time);
-		var a = new EnvelopeSegment(start_level, PEAK, attack_time,attack_curve);
-		var a_h = new EnvelopeSegment(PEAK, PEAK, attack_hold_time);
-		var d = new EnvelopeSegment(PEAK, sustain_level, decay_time, decay_curve);
-		var s = new EnvelopeSegment(sustain_level, sustain_level, secondsToFrames(10000.));
-		var r_h = new EnvelopeSegment(1.0, 1.0, release_hold_time);
-		var r = new EnvelopeSegment(1.0, 0., release_time,release_curve);
-		a.next = a_h;
-		a.attacks = true;
-		a_h.attacks = true;
-		a_h.sustains = true;
-		a_h.next = d;
-		d.next = s;
-		d.sustains = true;
-		s.next = s;
-		s.sustains = true;
-		r_h.next = r;
-		r_h.sustains = true;
-		r_h.releases = true;
-		var postrelease = null;
-		r.next = postrelease;
-		r.releases = true;
-		var true_a = a;
-		var true_r = r_h;
-		for (n in [a, a_h, d])
-			{while (n.next.distance == 0.) n.next = n.next.next; }
-		while (true_a.distance == 0.)
-			true_a = true_a.next;
-		while (true_r != null && true_r.distance == 0.)
-			true_r = true_r.next;
-		if (sustain_level == 0.)
-			{d.next = postrelease; }
-		return { attack:true_a, release:true_r, assigns:assigns, endpoint:0. };
+		var l = delay_time<=0 ? null : [start_level, start_level, delay_time, attack_curve];		
+		var a = attack_time<=0 ? null : [start_level, PEAK, attack_time, attack_curve];
+		var a_h = attack_hold_time<=0 ? null : [PEAK, PEAK, attack_hold_time, attack_curve];	
+		var d = decay_time<=0 ? null : [PEAK, sustain_level, decay_time, decay_curve];
+		var s = sustain_level<=MIN_POWER ? null : [sustain_level, sustain_level, 10000, decay_curve];
+		var r_h = release_hold_time<=0 ? null : [PEAK, PEAK, release_hold_time,release_curve];
+		var r = release_time<=0 ? null : [PEAK, MIN_POWER, release_time, release_curve];
+		
+		var base_atk = [l, a, a_h, d];
+		var base_sus = [s];
+		var base_rel = [r_h, r];
+		
+		var atk = new Array<Array<Float>>();
+		var sus = new Array<Array<Float>>();
+		var rel = new Array<Array<Float>>();
+		for (n in base_atk) { if (n!=null && n[3] > 0) atk.push(n); }
+		for (n in base_sus) { if (n!=null && n[3] > 0) sus.push(n); }
+		for (n in base_rel) { if (n!=null && n[3] > 0) rel.push(n); }
+		if (atk.length == 0) atk.push([start_level,PEAK,0.,attack_curve]);
+		if (rel.length == 0) rel.push([PEAK,0.,0.,release_curve]);
+		if (sus.length == 0) sus = null;
+		
+		return vector(secondsToFrames, atk, sus, rel, assigns, 0., curvature);
 	}
 	
 	public static function vector(secondsToFrames : Float->Float, 
 		i_attack : Array<Array<Float>>, i_sustain : Array<Array<Float>>, 
-		i_release : Array<Array<Float>>, assigns : Array<Int>, endpoint : Float)
+		i_release : Array<Array<Float>>, assigns : Array<Int>, endpoint : Float, curvature : Float)
 	{
 		// constructs a vector using more-or-less the exact syntax of EnvelopeSegment
 		var convertVector = function(i : Array<Float>) : EnvelopeSegment
@@ -193,18 +185,14 @@ class Envelope
 		for (a in attack) a.attacks = true;
 		var release = linkVectors(i_release);
 		for (r in release) r.releases = true;
-		var sustain = release;
-		if (i_sustain != null)
-		{
-			sustain = linkVectors(i_sustain);
-			for (s in sustain) s.sustains = true;
-		}
+		var sustain = linkVectors(i_sustain == null ? i_release : i_sustain);		
+		for (s in sustain) s.sustains = true;
 		
 		attack[attack.length - 1].next = sustain[0];
-		sustain[sustain.length - 1].next = sustain[0];
+		sustain[sustain.length - 1].next = i_sustain == null ? null : sustain[0];
 		release[release.length - 1].next = null;
 		
-		return {attack:attack[0], release:release[0], assigns:assigns, endpoint:endpoint};
+		return {attack:attack[0], release:release[0], assigns:assigns, endpoint:endpoint, curvature:curvature};
 	}
 	
 }

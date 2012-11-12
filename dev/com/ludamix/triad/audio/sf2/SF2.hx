@@ -539,7 +539,7 @@ class SF2
 			sequencer.secondsToFrames(env.hold), 
 			sequencer.secondsToFrames(env.decay), env.sustain, 0., 
 			sequencer.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
-			[VoiceCommon.AS_VOLUME_ADD]);	
+			[VoiceCommon.AS_VOLUME_ADD],10.);	
 	}
 	
 	public function genModeg(env : SF2ModulationEnvelope) : Array<EnvelopeProfile>
@@ -553,7 +553,7 @@ class SF2
 				sequencer.secondsToFrames(env.hold), 
 				sequencer.secondsToFrames(env.decay), env.sustain*env.filter_depth, 0., 
 				sequencer.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
-				[VoiceCommon.AS_FREQUENCY_ADD_CENTS]));	
+				[VoiceCommon.AS_FREQUENCY_ADD_CENTS],1.));	
 		// FIXME: pitch eg is calculated wrong somehow, however I haven't been able to figure it out yet.
 		if (env.pitch_depth != 0.)
 			result.push(Envelope.DSAHDSHR(function(a:Float) { return a; }, 
@@ -563,7 +563,7 @@ class SF2
 				sequencer.secondsToFrames(env.hold), 
 				sequencer.secondsToFrames(env.decay), env.sustain*env.pitch_depth, 0., 
 				sequencer.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
-				[VoiceCommon.AS_PITCH_ADD]));
+				[VoiceCommon.AS_PITCH_ADD],1.));
 		return result;
 	}
 	

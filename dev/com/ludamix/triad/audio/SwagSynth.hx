@@ -105,9 +105,9 @@ class SwagSynth implements SoftSynth
 			[ { frequency:6., depth:0.5, delay:0.05, attack:0.05, assigns:[VoiceCommon.AS_PITCH_ADD],
 				type:VoiceCommon.LFO_SIN} ];
 		return 
-			{ envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 1.4, 0.5, 0.25, [VoiceCommon.AS_VOLUME_ADD]),
+			{ envelope_profiles:[Envelope.ADSR(seq.secondsToFrames, 0.01, 1.4, 0.5, 0.25, [VoiceCommon.AS_VOLUME_ADD],10.),
 			Envelope.vector(seq.secondsToFrames, 
-				[[0.0,1.0,0.5]], [[1.0,1.0,1.0]], [[1.0,1.0,1.0]], [VoiceCommon.AS_CUSTOM_ADD],1.)],
+				[[0.0,1.0,0.5]], [[1.0,1.0,1.0]], [[1.0,1.0,1.0]], [VoiceCommon.AS_CUSTOM_ADD],1.,1.)],
 				lfos : new Array<LFO>(),
 				modulation_lfos:m_lfos,
 				arpeggiation_rate:0.0,
@@ -302,20 +302,21 @@ class SwagSynth implements SoftSynth
 				if (Reflect.hasField(e, "adsr"))
 				{
 					var add_styles = new Array<Int>();
-					var ct = 4; 
+					var ct = 5; 
 					while (ct < e.adsr.length) { add_styles.push(VoiceCommon.parseAddStyle(e.adsr[ct])); ct++; }
-					var e = Envelope.ADSR(seq.secondsToFrames, e.adsr[0], e.adsr[1], e.adsr[2], e.adsr[3], add_styles);
+					var e = Envelope.ADSR(seq.secondsToFrames, e.adsr[0], e.adsr[1], e.adsr[2], e.adsr[3],
+						add_styles, e.adsr[4]);
 					ar.push(e);
 				}
 				else if (Reflect.hasField(e, "dsahdshr"))
 				{
 					var add_styles = new Array<Int>();
-					var ct = 11; 
+					var ct = 12; 
 					var env : Array<Dynamic> = e.dsahdshr;
 					while (ct < env.length) { add_styles.push(VoiceCommon.parseAddStyle(env[ct])); ct++; }
 					var e = Envelope.DSAHDSHR(
 						seq.secondsToFrames, env[0], env[1], env[2], env[3], env[4], env[5], env[6],
-							env[7], env[8], env[9], env[10], add_styles);
+							env[7], env[8], env[9], env[10], add_styles, env[11]);
 					ar.push(e);
 				}
 				else if (Reflect.hasField(e, "vector"))
@@ -326,11 +327,11 @@ class SwagSynth implements SoftSynth
 					if (Reflect.hasField(e.vector, "sustain"))
 						ar.push(Envelope.vector(
 							seq.secondsToFrames, e.vector.attack, e.vector.sustain, e.vector.release, add_styles,
-							e.vector.endpoint));
+							e.vector.endpoint, e.vector.curvature));
 					else
 						ar.push(Envelope.vector(
 							seq.secondsToFrames, e.vector.attack, null, e.vector.release, add_styles,
-							e.vector.endpoint));
+							e.vector.endpoint, e.vector.curvature));
 				}
 			}
 		}

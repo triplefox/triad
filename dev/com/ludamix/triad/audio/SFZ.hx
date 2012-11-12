@@ -850,7 +850,7 @@ class SFZ
 			seq.secondsToFrames(env.hold), 
 			seq.secondsToFrames(env.decay), env.sustain, 0., 
 			seq.secondsToFrames(env.release), 1.0, 1.0, 1.0, 
-			[VoiceCommon.AS_VOLUME_ADD]);
+			[VoiceCommon.AS_VOLUME_ADD],10.);
 	}
 
 	public static function pitcheg(seq : Sequencer, env : SFZEnvelopeDefinition) : EnvelopeProfile
@@ -863,7 +863,7 @@ class SFZ
 			seq.secondsToFrames(env.decay), 
 			env.sustain * env.depth, 0., 
 			seq.secondsToFrames(env.release), 
-				1.0, 1.0, 1.0, [VoiceCommon.AS_PITCH_ADD]);
+				1.0, 1.0, 1.0, [VoiceCommon.AS_PITCH_ADD],1.);
 	}
 	
 	public static function fileg(seq : Sequencer, env : SFZEnvelopeDefinition) : EnvelopeProfile
@@ -877,7 +877,7 @@ class SFZ
 			env.sustain * env.depth, 0., 
 			seq.secondsToFrames(env.release), 
 			1.0, 1.0, 1.0, 
-			[VoiceCommon.AS_FREQUENCY_ADD_CENTS]);
+			[VoiceCommon.AS_FREQUENCY_ADD_CENTS],1.);
 	}
 	
 	public static function amplfo(lfo : SFZLfoDefinition)
