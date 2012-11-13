@@ -206,7 +206,7 @@ class SamplerSynth implements SoftSynth
 			if (patch.loops[0].loop_mode == LOOP_UNSPECIFIED)
 				patch.loops[0].loop_mode = patch.sample.loops[0].loop_mode;
 				
-			if (common.sequencer.isSuffering())
+			if (common.sequencer.shouldVoiceMute(left, right))
 				write = false;
 			
 			switch(patch.loops[0].loop_mode)

@@ -134,7 +134,7 @@ class Envelope
 		var d = decay_time<=0 ? null : [PEAK, sustain_level, decay_time, decay_curve];
 		var s = sustain_level<=MIN_POWER ? null : [sustain_level, sustain_level, 10000, decay_curve];
 		var r_h = release_hold_time<=0 ? null : [PEAK, PEAK, release_hold_time,release_curve];
-		var r = release_time<=0 ? null : [PEAK, MIN_POWER, release_time, release_curve];
+		var r = release_time<=0 ? null : [PEAK, 0., release_time, release_curve];
 		
 		var base_atk = [l, a, a_h, d];
 		var base_sus = [s];

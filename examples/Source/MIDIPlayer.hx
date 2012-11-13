@@ -63,8 +63,8 @@ class MIDIPlayer
 	public static inline var USING_SFZ = false;
 	public static inline var SFZ_COMPRESSED = false;
 	
-	public static var num_voices = #if debug 4 #else 32 #end;
-	public static var num_percussion_voices = #if debug 1 #else 8 #end;
+	public static var num_voices = #if debug 4 #else 64 #end;
+	public static var num_percussion_voices = #if debug 1 #else 16 #end;
 	public static inline var MIP_LEVELS = #if debug 0 #else 8 #end;
 
 	private function resetSamplerSynth()
@@ -278,7 +278,7 @@ class MIDIPlayer
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
-		seq = new Sequencer(Std.int(44100), 4096,4,null,new Reverb(2048, 1800, 1.0, 1.0, 0.93, 1500, 2048));
+		seq = new Sequencer(Std.int(44100), 4096,4,null,new Reverb(2048, 1800, 1.0, 1.0, 0.93, 1200, 2048));
 		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 1200, 1.0, 1.0, 0.83, 780, 1024));
 		//seq = new Sequencer(Std.int(44100), 4096, 4);		
 		

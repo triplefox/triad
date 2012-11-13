@@ -329,7 +329,9 @@ class Sequencer
 	public var bpm : Float;
 	public var cur_beat : Float;
 	public var filter_enabled : Bool;
-	
+
+	public var min_power : Float; // volume level at which voices automatically stop writing samples. Great optimization!
+
 	private var last_l : Float;
 	private var last_r : Float;
 	
@@ -564,9 +566,13 @@ class Sequencer
 		
 	}
 	
+	public inline function shouldVoiceMute(left_volume : Float, right_volume : Float)
+	{ return (isSuffering() || (left_volume < min_power && right_volume < min_power) ); }
+	
 	public function new(?rate : Int = 22050, ?framesize : Int = 4096, ?divisions : Int = 4, 
 		?tuning : MIDITuning = null, ?reverb : Reverb = null, ?desired_render_ms : Int = 20)
 	{
+		min_power = 0.000020;
 		this.desired_render_ms = desired_render_ms;
 		filter_enabled = true;
 		SUFFERING = 0;

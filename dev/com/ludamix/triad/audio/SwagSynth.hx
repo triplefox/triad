@@ -166,7 +166,7 @@ class SwagSynth implements SoftSynth
 		
 		var mip = SoundSample.getMipmap(wl, common.sequencer.sampleRate(), freq, wave.mip_levels);
 		
-		if (common.sequencer.isSuffering())
+		if (common.sequencer.shouldVoiceMute(left, right))
 			write = false;
 		
 		if (write) pos = runWavetable(buffer, wave, mip, wl, pos, left, right);

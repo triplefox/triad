@@ -283,7 +283,8 @@ class TableSynth implements SoftSynth
 		var pos = playhead.getSamplePos();
 		buffer.playhead = 0;
 		
-		if (common.sequencer.isSuffering()) write = false;
+		if (common.sequencer.shouldVoiceMute(left, right))
+			write = false;
 		
 		if (write)
 		{
