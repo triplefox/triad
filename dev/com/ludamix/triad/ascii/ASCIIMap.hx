@@ -1,6 +1,5 @@
 package com.ludamix.triad.ascii;
 
-import com.ludamix.triad.blitter.Blitter;
 import com.ludamix.triad.grid.IntGrid;
 import com.ludamix.triad.tools.Color;
 import nme.display.Bitmap;

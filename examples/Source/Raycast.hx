@@ -26,7 +26,7 @@ class RaycastWall
 	public var texture : Int;
 	public function new(solid, texture) { this.solid = solid; this.texture = texture; }
 	public inline function reprRaycast() { return solid ? texture : 0; }
-	public inline function reprOverhead() { return solid ? Color.ARGB(Color.get(CadetBlue),0xFF) : Color.ARGB(0,0); }
+	public inline function reprOverhead() { return solid ? Color.ARGB(Color.get(ColHTML5(CadetBlue)),0xFF) : Color.ARGB(0,0); }
 }
 
 class RayState
@@ -121,10 +121,10 @@ class Raycast
 		bg = new Sprite();
 		Lib.current.addChild(bg);
 		bg.graphics.clear();
-		bg.graphics.beginFill(Color.get(DarkOliveGreen));
+		bg.graphics.beginFill(Color.get(ColHTML5(DarkOliveGreen)));
 		bg.graphics.drawRect(0, 0, view_width, view_height / 2);
 		bg.graphics.endFill();
-		bg.graphics.beginFill(Color.get(DarkGray));
+		bg.graphics.beginFill(Color.get(ColHTML5(DarkGray)));
 		bg.graphics.drawRect(0, view_height/2, view_width, view_height / 2);
 		bg.graphics.endFill();
 		/*surf = new Bitmap(new BitmapData(view_width, view_height, false, Color.ARGB(0,0)));
@@ -377,7 +377,7 @@ class Raycast
 			var y = midpoint - sz / 2;
 			
 			// flat color renderer
-			//surf.bitmapData.fillRect(new Rectangle(x, Std.int(midpoint - sz / 2), 1, sz),Color.getMultiplied(CornflowerBlue, 1., 1., sz/view_height));
+			//surf.bitmapData.fillRect(new Rectangle(x, Std.int(midpoint - sz / 2), 1, sz),Color.getMultiplied(ColHTML5(CornflowerBlue), 1., 1., sz/view_height));
 			
 			var g : Graphics = surf[count].graphics;
 			g.clear();

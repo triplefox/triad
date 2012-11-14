@@ -56,7 +56,7 @@ class SpritePacking
 		pack.add(
 			new BitmapData(Std.int(Math.random() * 30 + 4), Std.int(Math.random() * 30 + 4), 
 			//new BitmapData(16,16,
-				true, 0xFF000000 + Std.int(Math.random() * 0xFFFFFF)),0,0);
+				true, 0xFF000000 + Std.int(Math.random() * 0xFFFFFF)),0,0,TilePack.PACK_EMPTY);
 		for (n in pack.basis)
 		{
 			n.bitmapdata.setPixel32(0, 0, 0xFF000000);
@@ -64,7 +64,7 @@ class SpritePacking
 			n.bitmapdata.setPixel32(0, n.bitmapdata.height-1, 0xFF000000);
 			n.bitmapdata.setPixel32(n.bitmapdata.width-1, n.bitmapdata.height-1, 0xFF000000);
 		}
-		return pack.compute(256, true);
+		return pack.compute(256, 1);
 	}
 	
 }

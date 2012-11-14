@@ -128,7 +128,8 @@ class Helpers
 		switch(hc)
 		{
 			case HCPlaceholder:
-				return { off:Color.get(DarkSlateGray), highlighted:Color.get(SlateGray), down:Color.get(Black) };
+				return { off:Color.get(ColHTML5(DarkSlateGray)), 
+						highlighted:Color.get(ColHTML5(SlateGray)), down:Color.get(ColHTML5(Black)) };
 			case HCHueShift(primary,strength):
 				return { off:Color.getShifted(primary, 0, 0, 0),
 						 highlighted:Color.getShifted(primary, strength, 0, 0),

@@ -16,7 +16,6 @@ import nme.geom.Point;
 import nme.Lib;
 import nme.Assets;
 import com.ludamix.triad.tools.Color;
-import com.ludamix.triad.blitter.Blitter;
 import com.ludamix.triad.geom.SubIPoint;
 import com.ludamix.triad.cards.Card52;
 import com.ludamix.triad.cards.BlackjackGame;
