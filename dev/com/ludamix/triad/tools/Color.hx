@@ -118,6 +118,11 @@ class Color
 		return buildRGB(rgb.r, rgb.g, rgb.b);
 	}
 	
+	public static function asHTMLString(r : Int, g : Int, b : Int)
+	{
+		return Std.string("#0x"+Std.string(r)+Std.string(g)+Std.string(b));
+	}
+	
 	public static function get(c : EColor) : Int
 	{
 		switch(c) {
@@ -128,6 +133,24 @@ class Color
 							  return buildRGB(t.r, t.g, t.b);
 		case ColHex(hv): return hv;
 		case ColString(v): return Std.parseInt(v);
+		case ColHTML5(c): return getHTML5Color(c);
+		}
+	}
+	
+	public static function getRGB(c : EColor) : {r:Int,g:Int,b:Int}
+	{
+		return RGBPx(get(c));
+	}
+	
+	public static function getArray(c : EColor) : Array<Int>
+	{
+		var col = RGBPx(get(c));
+		return [col.r, col.g, col.b];
+	}
+	
+	public static function getHTML5Color(c : HTML5Color)
+	{
+		switch(c) {
 		case AliceBlue: return 0xF0F8FF;
 		case AntiqueWhite: return 0xFAEBD7;
 		case Aqua: return 0x00FFFF;
@@ -286,6 +309,10 @@ ColRGB(r : Int, g : Int, b : Int);
 ColHSV(h : Float, s : Float, v : Float);
 ColHex(ui : Int);
 ColString(v : String);
+ColHTML5(s : HTML5Color);
+}
+
+enum HTML5Color {
 AliceBlue;
 AntiqueWhite;
 Aqua;
