@@ -122,5 +122,10 @@ class Trig
 		else
 			return { left:right, right:left };
 	}
+	
+	public static inline function sinc(x : Float)
+	{
+		return (x == 0) ? 1. : Math.sin(x) / x;
+	}
 
 }
