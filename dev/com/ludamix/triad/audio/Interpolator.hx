@@ -6,7 +6,7 @@ class Interpolator
 	@:extern public static inline function interp_drop(a : Float) { return a; }
 	
 	@:extern public static inline function interp_linear(a : Float, b : Float, x : Float)
-	{ return (a * (1. -x) + b * x); }
+	{ return (a - (a - b) * x); }
 	
 	@:extern public static inline function interp_cubic(y0 : Float, y1 : Float, y2 : Float, y3 : Float, x : Float)
 	{
@@ -14,8 +14,7 @@ class Interpolator
 		var a0 = y3 - y2 - y0 + y1;
 		var a1 = y0 - y1 - a0;
 		var a2 = y2 - y0;
-		var a3 = y1;
-		return (a0*x*x2+a1*x2+a2*x+a3);
+		return (a0*x*x2+a1*x2+a2*x+y1);
 	}
 
 	@:extern public static inline function interp_hermite6p(y0 : Float, y1 : Float, y2 : Float, y3 : Float, 
