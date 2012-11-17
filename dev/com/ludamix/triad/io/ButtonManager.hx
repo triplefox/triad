@@ -19,6 +19,9 @@ class ButtonManager
 	public var events : Array<{button:String,state:Int,ctrl:Bool,shift:Bool}>;
 	public var nextevents : Array<Dynamic>;
 	public var mouseLeft : Int;
+	public var mouseX : Float;
+	public var mouseY : Float;
+	public var mouse_in : Bool;
 	
 	public var version : Int;
 	public var so : SharedObject;
@@ -55,6 +58,8 @@ class ButtonManager
 		Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, onUp);
 		Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, onMDown);
 		Lib.current.stage.addEventListener(MouseEvent.MOUSE_UP, onMUp);
+		Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMMove);
+		Lib.current.stage.addEventListener(MouseEvent.MOUSE_OUT, onMOut);
 		
 		Lib.current.stage.addEventListener(Event.ENTER_FRAME, update);
 		
@@ -180,6 +185,18 @@ class ButtonManager
 	{
 		mouseLeft = UP;
 		nextevents.push({button:"mouse",state:UP,ctrl:ev.ctrlKey,shift:ev.shiftKey});
+	}
+	
+	public function onMMove(ev : MouseEvent)
+	{
+		mouse_in = true;
+		mouseX = ev.stageX;
+		mouseY = ev.stageY;
+	}
+	
+	public function onMOut(ev : MouseEvent)
+	{
+		mouse_in = false;
 	}
 	
 	public function setDown(mapping : String,ctrl:Bool,shift:Bool)
