@@ -54,6 +54,11 @@ class ButtonManager
 		events = new Array();
 		nextevents = new Array();
 		
+		mouseX = 0.;
+		mouseY = 0.;
+		mouse_in = false;
+		mouseLeft = UP;
+		
 		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, onDown);
 		Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, onUp);
 		Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, onMDown);
