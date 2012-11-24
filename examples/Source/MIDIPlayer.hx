@@ -265,8 +265,14 @@ class MIDIPlayer
 			eq.add(function() { eq.inter_queue = updateViz; } );
 			for (n in CycleBuilder.defaultBank(seq.sampleRate(), wavetable))
 				eq.add(n);
-			eq.add(function() { shared_object.setProperty("wavetable", SoundSample.serializeSamples(wavetable));
-								shared_object.flush(); } );
+			eq.add(function() { 
+								#if flash
+								shared_object.setProperty("wavetable", SoundSample.serializeSamples(wavetable));
+								shared_object.flush(); 
+								#else
+								trace("wavetable save not implemented");
+								#end
+								} );
 			eq.add(function() { eq.inter_queue = null; });
 		}	
 	}

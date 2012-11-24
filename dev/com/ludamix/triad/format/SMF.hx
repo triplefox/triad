@@ -1,6 +1,7 @@
 package com.ludamix.triad.format;
 import nme.utils.ByteArray;
 import nme.utils.Endian;
+using com.ludamix.triad.tools.ByteArrayTools;
 
 class SMFEvent
 {
@@ -37,7 +38,7 @@ class SMF
 		var num_tracks = 1;
 		var format = 0;
 		while (bytes.bytesAvailable > 4) { // don't know if it's correct, but some files seem to be padding their ending
-			var type:String = bytes.readMultiByte(4, "us-ascii");
+			var type:String = bytes.readASCII(4);
 			switch(type) {
 			case "MThd": // MIDI header
 				bytes.position += 4;
@@ -118,7 +119,7 @@ class SMF
 				var metaEventType:Int = bytes.readUnsignedByte() | 0xff00;
 				var len = readVariableLength(bytes);				
 				if ((metaEventType & 0x00f0) == 0) {
-					var text = bytes.readMultiByte(len, "us-ascii");
+					var text = bytes.readASCII(len);
 					track_text.push({tick:time,message:text,type:metaEventType});
 				} else {
 					switch (metaEventType) {
@@ -279,7 +280,7 @@ class SMF
 		
 		var bytes = new ByteArray();
 		bytes.endian = Endian.BIG_ENDIAN;
-		bytes.writeMultiByte("MThd", "us-ascii");
+		bytes.writeASCII("MThd");
 		bytes.writeInt(6);
 		
 		var prepped_tracks = new Array<Array<SMFEvent>>();
@@ -352,7 +353,7 @@ class SMF
 		{
 			var cur_tick = 0;
 			
-			bytes.writeMultiByte("MTrk", "us-ascii");
+			bytes.writeASCII("MTrk");
 			var tl_pos = bytes.position;
 			bytes.writeUnsignedInt(0xDEADBEEF); // placeholder
 			
@@ -391,7 +392,7 @@ class SMF
 				case META_TEXT, META_AUTHOR, META_LYRICS, META_CUE, META_MARKER, META_TITLE, 
 					META_INSTRUMENT, META_PROGRAM_NAME, META_DEVICE_NAME:
 					writeVariableLength(bytes, ev.data.length);
-					bytes.writeMultiByte(ev.data, "us-ascii");
+					bytes.writeASCII(ev.data);
 				case META_SEQNUM: // the seq number for type 2 MIDI
 					writeVariableLength(bytes, 2);
 					bytes.writeShort(ev.data);
@@ -431,7 +432,7 @@ class SMF
 		{
 			bytes.writeShort(ev.type);
 			writeVariableLength(bytes, ev.data.length);
-			bytes.writeMultiByte(ev.data, "us-ascii");
+			bytes.writeASCII(ev.data);
 		}
 		else
 		{

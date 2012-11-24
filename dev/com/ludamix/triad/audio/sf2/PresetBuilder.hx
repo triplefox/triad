@@ -9,6 +9,7 @@
 package com.ludamix.triad.audio.sf2;
 
 import nme.utils.ByteArray;
+using com.ludamix.triad.tools.ByteArrayTools;
 using com.ludamix.triad.tools.StringTools;
 using com.ludamix.triad.audio.sf2.ArrayExtensions;
 
@@ -31,7 +32,7 @@ class PresetBuilder extends StructureBuilder<Preset>
     public override function read(d:ByteArray) : Preset
     {
         var p = new Preset();
-        var s = d.readString(20);
+        var s = d.readASCII(20);
         p.name = s.cleanASCII();
         p.patch_number = d.readShort();
         p.bank = d.readShort();

@@ -10,6 +10,7 @@ package com.ludamix.triad.audio.sf2;
 
 import nme.utils.ByteArray;
 using com.ludamix.triad.tools.StringTools;
+using com.ludamix.triad.tools.ByteArrayTools;
 using com.ludamix.triad.audio.sf2.ArrayExtensions;
 
 class InstrumentBuilder extends StructureBuilder<Instrument>
@@ -29,7 +30,7 @@ class InstrumentBuilder extends StructureBuilder<Instrument>
     public override function read(d:ByteArray) : Instrument
     {
         var i = new Instrument();
-        i.name = d.readString(20);
+        i.name = d.readASCII(20);
 		i.name = i.name.cleanASCII();
         i.start_instrument_zoneindex = d.readShort();
         if(last_instrument != null)

@@ -10,6 +10,7 @@ package com.ludamix.triad.audio.sf2;
 
 import nme.utils.ByteArray;
 using com.ludamix.triad.tools.StringTools;
+using com.ludamix.triad.tools.ByteArrayTools;
 using com.ludamix.triad.audio.sf2.ArrayExtensions;
 
 class SampleHeaderBuilder extends StructureBuilder<SampleHeader>
@@ -27,7 +28,7 @@ class SampleHeaderBuilder extends StructureBuilder<SampleHeader>
     public override function read(d:ByteArray) : SampleHeader
     {
         var sh = new SampleHeader();
-        sh.sample_name = d.readString(20);
+        sh.sample_name = d.readASCII(20);
 		sh.sample_name = sh.sample_name.cleanASCII();
         sh.start = d.readInt();
         sh.end = d.readInt();

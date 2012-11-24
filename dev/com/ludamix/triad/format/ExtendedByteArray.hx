@@ -1,5 +1,6 @@
 package com.ludamix.triad.format;
 
+using com.ludamix.triad.tools.ByteArrayTools;
 import nme.utils.ByteArray;
 import nme.Vector;
 
@@ -57,7 +58,7 @@ class ExtendedByteArray
 		var chunks = new Array<FourByteChunk>();
 		while (Std.int(b.position)<chunk_end)
 		{
-			var name = b.readMultiByte(4, "us-ascii");
+			var name = b.readASCII(4);
 			var len = b.readUnsignedInt();
 			
 			chunks.push( { name:name, position:b.position, len:len } );
@@ -133,7 +134,7 @@ class ExtendedByteArray
 						for (entry in 0...len) ar.push(b.readMultiByte(i_len, encoding));
 						return ar;
 					case STASCII(i_len): var ar = new Array<String>();
-						for (entry in 0...len) ar.push(b.readMultiByte(i_len, "us-ascii"));
+						for (entry in 0...len) ar.push(b.readASCII(i_len));
 						return ar;
 					case STUTF8: var ar = new Array<String>();
 						for (entry in 0...len) ar.push(b.readUTF());
@@ -190,7 +191,7 @@ class ExtendedByteArray
 						for (entry in 0...len) ar.push(b.readMultiByte(i_len, encoding));
 						return ar;
 					case STASCII(i_len): var ar = new Vector<String>();
-						for (entry in 0...len) ar.push(b.readMultiByte(i_len, "us-ascii"));
+						for (entry in 0...len) ar.push(b.readASCII(i_len));
 						return ar;
 					case STUTF8: var ar = new Vector<String>();
 						for (entry in 0...len) ar.push(b.readUTF());
@@ -283,7 +284,7 @@ class ExtendedByteArray
 						return fields;
 					case STBooleanNonZeroByte: return b.readBoolean();
 					case STString(i_len, encoding): return b.readMultiByte(i_len, encoding);
-					case STASCII(i_len): return b.readMultiByte(i_len, "us-ascii");
+					case STASCII(i_len): return b.readASCII(i_len);
 					case STUTF8: return b.readUTF();
 					case STUTF8Length(i_len): return b.readUTFBytes(i_len);
 					case STByte: return b.readByte();

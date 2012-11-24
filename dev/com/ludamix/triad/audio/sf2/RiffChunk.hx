@@ -9,7 +9,10 @@
 package com.ludamix.triad.audio.sf2;
 
 import nme.utils.ByteArray;
+using com.ludamix.triad.tools.ByteArrayTools;
 using com.ludamix.triad.audio.sf2.ArrayExtensions;
+
+#if cpp typedef UInt = Int; #end
 
 class RiffChunk
 {
@@ -35,7 +38,7 @@ class RiffChunk
 
     public function readChunkID() : String
     {
-        return riff_file.readString(4);
+        return riff_file.readASCII(4);
     }
 
     private function readChunk() 

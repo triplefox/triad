@@ -32,9 +32,11 @@
 package com.ludamix.triad.format;
 import com.ludamix.triad.audio.Codec;
 import com.ludamix.triad.format.ExtendedByteArray;
+import com.ludamix.triad.format.ExtendedByteArray;
 import nme.utils.ByteArray;
 import nme.Vector;
 import nme.utils.Endian;
+using com.ludamix.triad.tools.ByteArrayTools;
 
 private typedef IFFSubChunk = {name:String,idx:Int,len:Int,bytes:haxe.io.Bytes};
 
@@ -234,12 +236,12 @@ class WAVBuffer
 		ba = new ByteArray();
 		ba.endian = Endian.LITTLE_ENDIAN;
 		
-		ba.writeMultiByte("RIFF", "us-ascii");
+		ba.writeASCII("RIFF");
 		riff_byte_offset = ba.position;
 		ba.writeInt(36 + 0);
-		ba.writeMultiByte("WAVE", "us-ascii");
+		ba.writeASCII("WAVE");
 
-		ba.writeMultiByte("fmt ", "us-ascii");
+		ba.writeASCII("fmt ");
 		ba.writeInt(16);
 		ba.writeShort(1);
 		ba.writeShort(header.channels);
@@ -248,7 +250,7 @@ class WAVBuffer
 		ba.writeShort(header.blockAlign);
 		ba.writeShort(header.bitsPerSample);
 		
-		ba.writeMultiByte("data", "us-ascii");
+		ba.writeASCII("data");
 		data_byte_offset = ba.position;
 		ba.writeInt(0);
 		

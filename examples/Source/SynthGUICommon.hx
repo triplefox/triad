@@ -10,14 +10,15 @@ import com.ludamix.triad.format.SMF;
 import com.ludamix.triad.audio.SFZ;
 import com.ludamix.triad.audio.TableSynth;
 import com.ludamix.triad.format.WAV;
-import com.ludamix.triad.io.FlashIO;
 import com.ludamix.triad.time.EventQueue;
 import com.ludamix.triad.tools.Color;
 import com.ludamix.triad.tools.FastFloatBuffer;
 import com.ludamix.triad.ui.HSlider6;
 import com.ludamix.triad.format.tar.Reader;
+import nme.utils.ByteArray;
 import format.tar.Data;
 import haxe.io.Bytes;
+import haxe.io.BytesData;
 import haxe.io.BytesInput;
 import haxe.Json;
 import nme.Assets;
@@ -41,6 +42,10 @@ import com.ludamix.triad.ui.Helpers;
 import nme.text.TextField;
 import nme.utils.Endian;
 import nme.Vector;
+
+using com.ludamix.triad.tools.ByteArrayTools;
+
+#if flash import com.ludamix.triad.io.FlashIO; #end
 
 typedef SongEntry = {fileName: String, data:Bytes, path: String};
 
@@ -99,8 +104,9 @@ class SynthGUICommon
 	public function loadSong()
 	{
 		// output of toByteArray isn't rhythm-exact yet...
-		//events = SMFParser.load(seq, SMF.read(songs[song_count].data.getData());
-		events = SMFParser.load(seq, songs[song_count].data.getData());
+		//events = SMFParser.load(seq, SMF.read(songs[song_count].data.getData().bytesData2ByteArray());
+		
+		events = SMFParser.load(seq, songs[song_count].data.getData().bytesData2ByteArray());
 
 		for (e in events)
 		{
@@ -211,17 +217,24 @@ class SynthGUICommon
 			app.hardReset(); decGroup(); loadSong(); }
 			);
 		gui_data.keys.load_midi.addEventListener(MouseEvent.CLICK, function(d:Dynamic) { 
+			#if flash
 			FlashIO.loadBytes(d, "Standard MIDI Format", "*.mid", function(b : Bytes) { 
 				addSong( { fileName:"User loaded song", data:b, path:"" }, true );
 				app.hardReset(); loadSong();
-			}); }
+			}); 
+			#else
+			trace("midi load not implemented");			
+			#end
+			}
 			);
 
 		Lib.current.stage.addChild(gui_data.sprite);
 		Lib.current.stage.addChild(CommonStyle.settings);
 		CommonStyle.settings.visible = false;
-
-		var tar_reader = new Reader(new BytesInput(Bytes.ofData(Assets.getBytes("assets/smf.tar"))));
+		
+		var smfbytearray = Assets.getBytes("assets/smf.tar");		
+		
+		var tar_reader = new Reader(new BytesInput(smfbytearray.byteArray2Bytes()));
 		var songlist = Lambda.filter((Lambda.map(tar_reader.read(), function(e:Entry):SongEntry
 			{
 				var str = StringTools.replace(e.fileName,"\\","/");
