@@ -29,7 +29,7 @@ Example:
 Spec:
 
 	These sigils are recognized:
-		[ ] ; = [" "]
+		[ ] ; = {" "}
 	The backslash character \ is used to escape these sigils.
 	
 	The reference implementation follows these passes:
@@ -38,7 +38,7 @@ Spec:
 		[ ] ; = act as delimiters.
 		The Atom type is defined as either a null, string, integer, or floating point number. 
 			They are intialized as "unparsed" strings.
-		When [" is encountered, characters until a corresponding "] are accumulated into a single string Atom.
+		When {" is encountered, characters until a corresponding "} are accumulated into a single string Atom.
 	2. (recursive) Rewrite unparsed atoms.
 		Leading and ending whitespace(including newlines) is trimmed.
 		The character "_" (with no additional text after trim) are turned into a null. To escape "_" use a long string.
@@ -112,7 +112,7 @@ class TriadConfig
 				var c = str.charAt(ct);
 				
 				if (c == "\\") { ct++; c = str.charAt(ct); accumulator+=c; ct++; }
-				else if (c == '"') { matchLookahead(']') ? 
+				else if (c == '"') { matchLookahead('}') ? 
 					{ ct+=3; toks.push(TCAtom(accumulator)); accumulator = ""; return; } : 
 					{ accumulator += c; ct++; } }
 				else { accumulator += c; ct++; }
@@ -125,8 +125,8 @@ class TriadConfig
 			
 			if (c == "\\") { ct++; c = str.charAt(ct); accumulator+=c; ct++; }
 			else if (c == ";") { tokAdvance(TCDelimit); }
-			else if (c == "[") { matchLookahead('"') ? { ct--;  doDelimit(); ct += 3; longString(); } : 
-								 tokAdvance(TCOpenSequence); }
+			else if (c == "{" && matchLookahead('"')) { ct--;  doDelimit(); ct += 3; longString(); }
+			else if (c == "[") { tokAdvance(TCOpenSequence); }
 			else if (c == "]") { tokAdvance(TCCloseSequence); }
 			else if (c == "=") { tokAdvance(TCAssign); }
 			else { accumulator += c; ct++; }

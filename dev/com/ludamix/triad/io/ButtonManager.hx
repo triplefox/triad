@@ -1,5 +1,6 @@
 package com.ludamix.triad.io;
 
+import nme.display.Sprite;
 import nme.events.Event;
 import nme.events.KeyboardEvent;
 import nme.events.MouseEvent;
@@ -26,13 +27,15 @@ class ButtonManager
 	public var version : Int;
 	public var so : SharedObject;
 	
+	public var clicker : Sprite;
+	
 	// states
 	public static inline var UP = 0;
 	public static inline var DOWN = 1;
 	
 	public static inline var MOUSE = -1;
 	
-	public function new(inmappings : Array<{name:String,code:KeyInfos,group:String}>, version : Int)
+	public function new(inmappings : Array<{name:String,code:KeyInfos,group:String}>, version : Int, clicker : Sprite)
 	{
 		
 		so = SharedObject.getLocal("triad_button");
@@ -59,13 +62,19 @@ class ButtonManager
 		mouse_in = false;
 		mouseLeft = UP;
 		
+		if (clicker != null)
+		{
+			this.clicker = clicker;
+			Lib.current.addChild(clicker);
+			
+			clicker.addEventListener(MouseEvent.MOUSE_DOWN, onMDown);
+			clicker.addEventListener(MouseEvent.MOUSE_UP, onMUp);
+			clicker.addEventListener(MouseEvent.MOUSE_MOVE, onMMove);
+			clicker.addEventListener(MouseEvent.MOUSE_OUT, onMOut);
+		}
+		
 		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, onDown);
 		Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, onUp);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, onMDown);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_UP, onMUp);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMMove);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_OUT, onMOut);
-		
 		Lib.current.stage.addEventListener(Event.ENTER_FRAME, update);
 		
 	}

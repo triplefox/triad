@@ -41,7 +41,7 @@ class GUITests
 			keys.push({name:"Foo"+Std.string(n),code:{keyCode:Keyboard.LEFT,charCode:0}, group:"Foo"});
 		}
 		
-		buttonmanager = new ButtonManager(keys, 2);
+		buttonmanager = new ButtonManager(keys, 2, null);
 		Audio.init();
 		
 		CommonStyle.init(buttonmanager,"assets/sfx_test.mp3");

@@ -33,6 +33,39 @@ class Helpers
 		return CascadingText.injectDef(style, { text:text, autoSize:TextFieldAutoSize.LEFT } );
 	}
 	
+	// A single frame with text - ideal for tooltips
+	public static function labelRect9(style_rect9 : LabelRect9Style, sizing : ButtonSizingStrategy)
+	{
+		
+		var w = -1.; var addw = 0.; 
+		var h = -1.; var addh = 0.; 
+		
+		switch(sizing)
+		{
+			case BSSFixed(_w, _h):w = _w; h = _h;
+			case BSSPad(w, h):addw = w; addh = h;
+		}
+		
+		// we always add autosizing for our labels.
+		var addWH = function(d : Array<Dynamic>) { 
+			var mine = new Array<Dynamic>();  for (n in d) { mine.push(n); }
+				mine.push( { autoSize:TextFieldAutoSize.LEFT } );
+			return mine; }
+		
+		var castxt = new CascadingText(addWH(style_rect9.cascade.field), style_rect9.cascade.format);	
+		
+		w = castxt.width += addw;
+		h = castxt.height += addh;
+			
+		var iw = Std.int(w);
+		var ih = Std.int(h);
+		return LayoutBuilder.create(0, 0, w, h, LDRect9(new Rect9(style_rect9.rect9, iw,ih, true), LATL(0, 0), "frame", 
+			LDDisplayObject(castxt,LAC(0,0),"text"))
+		);
+		
+	}
+	
+	// button with three push states and labels
 	public static function labelButtonRect9(
 		style : LabelButtonStyle,
 		?inject_text : String = null)
