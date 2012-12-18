@@ -87,7 +87,7 @@ class VoiceGroup
 	{
 		this.voices = voices;
 		this.allocated = new Array();
-		this.polyphony = polyphony;
+		this.polyphony = (polyphony < 1) ? 1 : polyphony;
 		this.percussion_allocator = percussion_allocator;
 	}
 	
@@ -129,7 +129,7 @@ class VoiceGroup
 					}
 				}
 				// stealing behavior
-				var best : {priority:Int,synth:SoftSynth} = MathTools.bestOf(usable, 
+				var best : { priority:Int, synth:SoftSynth } = MathTools.bestOf(usable, 
 					function(synth : SoftSynth) { return {synth:synth, priority:synth.common.event_priority }; } ,
 					function(a, b) { return a.priority < b.priority; }, usable[0] );
 				if (best.priority <= event_priority)
@@ -327,6 +327,7 @@ class Sequencer
 	public var desired_render_ms : Int; // how long you want it to take to finish a frame.
 	
 	public var bpm : Float;
+	public var fractional_beat : Float;
 	public var cur_beat : Float;
 	public var filter_enabled : Bool;
 
@@ -410,17 +411,20 @@ class Sequencer
 	{
 		this.bpm = bpm;
 		if (!preserve_beats)
+		{
+			this.fractional_beat = 0.;
 			this.cur_beat = 0.;
+		}
 	}
 	
 	public inline function executeFrame()
 	{
 		if (onFrame != null) onFrame(this);
 		
-		cur_beat = cur_beat + framesToBeats(1, this.bpm);
-		while (cur_beat > 1)
+		fractional_beat = fractional_beat + framesToBeats(1, this.bpm);
+		while (fractional_beat > 1)
 		{
-			cur_beat -= 1; if (onBeat != null) onBeat(this);
+			fractional_beat -= 1; cur_beat += 1; if (onBeat != null) onBeat(this);
 		}
 		
 		// process the current frame

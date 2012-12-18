@@ -166,8 +166,8 @@ class IntGrid
 	public inline function pxAABBtileAABB(px : Float, py : Float, pw : Float, ph : Float)
 	{
 		var tp = cffp(px, py);
-		var tr = (px+pw) / twidth; var ttw = Math.ceil(tr)-tp.x+1;
-		var tb = (py+ph) / theight; var tth = Math.ceil(tb)-tp.y+1;
+		var tr = (px+pw) / twidth; var ttw = Math.ceil(tr)-tp.x;
+		var tb = (py+ph) / theight; var tth = Math.ceil(tb)-tp.y;
 		return {x:tp.x,y:tp.y,w:ttw,h:tth};
 	}
 	
