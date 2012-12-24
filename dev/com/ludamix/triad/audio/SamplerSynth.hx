@@ -363,14 +363,248 @@ class SamplerSynth implements SoftSynth
 		return mod - ( -val % mod);
 	}
 	
-	private inline function runSegment(buffer : FastFloatBuffer, 
+	private function dropMono1(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int, loop_end : Float, loop_len : Float)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(1, "mirror", [], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(1, "mirror", ["lowpass_filter"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(1, "mirror", ["highpass_filter"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(1, "mirror", ["bandpass_filter"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(1, "mirror", ["bandreject_filter"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+			 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+			CopyLoop.copyLoop(1, "mirror", ["ringmod_filter"], "loop");	
+		return pos;
+	}
+	
+	private function cubicMono1(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int, loop_end : Float, loop_len : Float)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(4, "mirror", ["Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(4, "mirror", ["lowpass_filter","Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(4, "mirror", ["highpass_filter","Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(4, "mirror", ["bandreject_filter","Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+			 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+			CopyLoop.copyLoop(4, "mirror", ["ringmod_filter","Interpolator.interp_cubic"], "loop");	
+		return pos;
+	}
+	
+	private function linearMono1(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int, loop_end : Float, loop_len : Float)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(2, "mirror", ["Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(2, "mirror", ["highpass_filter","Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+			 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+			CopyLoop.copyLoop(2, "mirror", ["ringmod_filter","Interpolator.interp_linear"], "loop");
+		return pos;
+	}
+	
+	private function dropStereo1(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int, loop_end : Float, loop_len : Float)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(1, "split", [], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(1, "split", ["lowpass_filter"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(1, "split", ["highpass_filter"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(1, "split", ["bandpass_filter"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(1, "split", ["bandreject_filter"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+				common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+			CopyLoop.copyLoop(1, "split", ["ringmod_filter"], "loop");
+		return pos;
+	}
+	
+	private function cubicStereo1(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int, loop_end : Float, loop_len : Float)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(4, "split", ["Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(4, "split", ["lowpass_filter","Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(4, "split", ["highpass_filter","Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(4, "split", ["bandpass_filter","Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(4, "split", ["bandreject_filter","Interpolator.interp_cubic"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+			 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+			CopyLoop.copyLoop(4, "split", ["ringmod_filter","Interpolator.interp_cubic"], "loop");
+		return pos;
+	}
+	
+	private function linearStereo1(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int, loop_end : Float, loop_len : Float)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(2, "split", ["Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(2, "split", ["lowpass_filter","Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(2, "split", ["highpass_filter","Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(2, "split", ["bandpass_filter","Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(2, "split", ["bandreject_filter","Interpolator.interp_linear"], "loop");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+			 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+			CopyLoop.copyLoop(2, "split", ["ringmod_filter","Interpolator.interp_linear"], "loop");
+		return pos;
+	}
+	
+	private function dropMono2(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(1, "mirror", [], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(1, "mirror", ["lowpass_filter"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(1, "mirror", ["highpass_filter"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(1, "mirror", ["bandpass_filter"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(1, "mirror", ["bandreject_filter"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+			CopyLoop.copyLoop(1, "mirror", ["ringmod_filter"], "cut");
+		return pos;
+	}
+	
+	private function cubicMono2(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(4, "mirror", ["Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(4, "mirror", ["lowpass_filter","Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(4, "mirror", ["highpass_filter","Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(4, "mirror", ["bandreject_filter","Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+			CopyLoop.copyLoop(4, "mirror", ["ringmod_filter","Interpolator.interp_cubic"], "cut");
+		return pos;
+	}
+	
+	private function linearMono2(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(2, "mirror", ["Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(2, "mirror", ["highpass_filter","Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+			CopyLoop.copyLoop(2, "mirror", ["ringmod_filter","Interpolator.interp_linear"], "cut");
+		return pos;
+	}
+	
+	private function dropStereo2(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(1, "split", [], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(1, "split", ["lowpass_filter"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(1, "split", ["highpass_filter"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(1, "split", ["bandpass_filter"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(1, "split", ["bandreject_filter"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+			CopyLoop.copyLoop(1, "split", ["ringmod_filter"], "cut");
+		return pos;
+	}
+	
+	private function cubicStereo2(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(4, "split", ["Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(4, "split", ["lowpass_filter","Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(4, "split", ["highpass_filter","Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(4, "split", ["bandpass_filter","Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(4, "split", ["bandreject_filter","Interpolator.interp_cubic"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+			CopyLoop.copyLoop(4, "split", ["ringmod_filter","Interpolator.interp_cubic"], "cut");
+		return pos;
+	}
+	
+	private function linearStereo2(buffer : FastFloatBuffer, 
+		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
+		sample_right : FastFloatBuffer, samples_requested : Int)
+	{
+		if (common.filter_mode == VoiceCommon.FILTER_OFF)
+			CopyLoop.copyLoop(2, "split", ["Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_LP)
+			CopyLoop.copyLoop(2, "split", ["lowpass_filter","Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_HP)
+			CopyLoop.copyLoop(2, "split", ["highpass_filter","Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BP)
+			CopyLoop.copyLoop(2, "split", ["bandpass_filter","Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_BR)
+			CopyLoop.copyLoop(2, "split", ["bandreject_filter","Interpolator.interp_linear"], "cut");
+		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
+			CopyLoop.copyLoop(2, "split", ["ringmod_filter","Interpolator.interp_linear"], "cut");
+		return pos;
+	}
+	
+	private function runSegment(buffer : FastFloatBuffer, 
 		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer, sample_right : FastFloatBuffer,
 		samples_requested : Int, loop_end : Float, loop_len : Float, write : Bool)
 	{
 		// Copy exactly the number of samples requested for the buffer.
 		// Callee has to figure out how to fill buffer correctly.
 		
-		var len = (sample_left.length - SampleMipMap.PAD_INTERP);
+		//var len = Std.int(sample_left.length - SampleMipMap.PAD_INTERP);
 		if (!write)
 		{
 			buffer.playhead += samples_requested * 2;
@@ -388,109 +622,43 @@ class SamplerSynth implements SoftSynth
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop mono
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(1, "mirror", [], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(1, "mirror", ["lowpass_filter"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(1, "mirror", ["highpass_filter"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(1, "mirror", ["bandpass_filter"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(1, "mirror", ["bandreject_filter"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
-						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
-						CopyLoop.copyLoop(1, "mirror", ["ringmod_filter"], "loop");
+					pos = dropMono1(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested, loop_end, loop_len);
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(4, "mirror", ["Interpolator.interp_cubic"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(4, "mirror", ["lowpass_filter","Interpolator.interp_cubic"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(4, "mirror", ["highpass_filter","Interpolator.interp_cubic"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","Interpolator.interp_cubic"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(4, "mirror", ["bandreject_filter","Interpolator.interp_cubic"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
-						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
-						CopyLoop.copyLoop(4, "mirror", ["ringmod_filter","Interpolator.interp_cubic"], "loop");
+					pos = cubicMono1(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested, loop_end, loop_len);
 				}
 				else // linear mono
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(2, "mirror", ["Interpolator.interp_linear"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","Interpolator.interp_linear"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(2, "mirror", ["highpass_filter","Interpolator.interp_linear"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","Interpolator.interp_linear"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","Interpolator.interp_linear"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
-						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
-						CopyLoop.copyLoop(2, "mirror", ["ringmod_filter","Interpolator.interp_linear"], "loop");
+					pos = linearMono1(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested, loop_end, loop_len);
 				}
 			}
 			else
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop stereo
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(1, "split", [], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(1, "split", ["lowpass_filter"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(1, "split", ["highpass_filter"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(1, "split", ["bandpass_filter"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(1, "split", ["bandreject_filter"], "loop");
-				else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
-						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
-						CopyLoop.copyLoop(1, "split", ["ringmod_filter"], "loop");
+					pos = dropStereo1(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested, loop_end, loop_len);
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(4, "split", ["Interpolator.interp_cubic"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(4, "split", ["lowpass_filter","Interpolator.interp_cubic"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(4, "split", ["highpass_filter","Interpolator.interp_cubic"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(4, "split", ["bandpass_filter","Interpolator.interp_cubic"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(4, "split", ["bandreject_filter","Interpolator.interp_cubic"], "loop");
-				else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
-						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
-						CopyLoop.copyLoop(4, "split", ["ringmod_filter","Interpolator.interp_cubic"], "loop");
+					pos = cubicStereo1(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested, loop_end, loop_len);
 				}
 				else // linear stereo
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(2, "split", ["Interpolator.interp_linear"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(2, "split", ["lowpass_filter","Interpolator.interp_linear"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(2, "split", ["highpass_filter","Interpolator.interp_linear"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(2, "split", ["bandpass_filter","Interpolator.interp_linear"], "loop");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(2, "split", ["bandreject_filter","Interpolator.interp_linear"], "loop");
-				else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
-						 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
-						CopyLoop.copyLoop(2, "split", ["ringmod_filter","Interpolator.interp_linear"], "loop");
+					pos = linearStereo1(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested, loop_end, loop_len);
 				}
 			}
 			return pos;
 		}
 	}
 	
-	private inline function runSegment2(buffer : FastFloatBuffer, 
+	private function runSegment2(buffer : FastFloatBuffer, 
 		pos : Float, inc : Float, left : Float, right : Float, 
 		sample_left : FastFloatBuffer, sample_right : FastFloatBuffer, 
 		samples_requested : Int, write : Bool)
@@ -515,96 +683,36 @@ class SamplerSynth implements SoftSynth
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop mono
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(1, "mirror", [], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(1, "mirror", ["lowpass_filter"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(1, "mirror", ["highpass_filter"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(1, "mirror", ["bandpass_filter"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(1, "mirror", ["bandreject_filter"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
-						CopyLoop.copyLoop(1, "mirror", ["ringmod_filter"], "cut");
+					pos = dropMono2(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested);
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic mono
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(4, "mirror", ["Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(4, "mirror", ["lowpass_filter","Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(4, "mirror", ["highpass_filter","Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(4, "mirror", ["bandpass_filter","Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(4, "mirror", ["bandreject_filter","Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
-						CopyLoop.copyLoop(4, "mirror", ["ringmod_filter","Interpolator.interp_cubic"], "cut");
+					pos = cubicMono2(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested);
 				}
 				else // linear mono
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(2, "mirror", ["Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(2, "mirror", ["highpass_filter","Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
-						CopyLoop.copyLoop(2, "mirror", ["ringmod_filter","Interpolator.interp_linear"], "cut");
+					pos = linearMono2(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested);
 				}
 			}
 			else
 			{
 				if (inc == 1. || resample_method == RESAMPLE_DROP) // drop stereo
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(1, "split", [], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(1, "split", ["lowpass_filter"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(1, "split", ["highpass_filter"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(1, "split", ["bandpass_filter"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(1, "split", ["bandreject_filter"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
-						CopyLoop.copyLoop(1, "split", ["ringmod_filter"], "cut");
+					pos = dropStereo2(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested);
 				}
 				else if (resample_method == RESAMPLE_CUBIC) // cubic stereo
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(4, "split", ["Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(4, "split", ["lowpass_filter","Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(4, "split", ["highpass_filter","Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(4, "split", ["bandpass_filter","Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(4, "split", ["bandreject_filter","Interpolator.interp_cubic"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
-						CopyLoop.copyLoop(4, "split", ["ringmod_filter","Interpolator.interp_cubic"], "cut");
+					pos = cubicStereo2(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested);
 				}
 				else // linear stereo
 				{
-					if (common.filter_mode == VoiceCommon.FILTER_OFF)
-						CopyLoop.copyLoop(2, "split", ["Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_LP)
-						CopyLoop.copyLoop(2, "split", ["lowpass_filter","Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_HP)
-						CopyLoop.copyLoop(2, "split", ["highpass_filter","Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BP)
-						CopyLoop.copyLoop(2, "split", ["bandpass_filter","Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_BR)
-						CopyLoop.copyLoop(2, "split", ["bandreject_filter","Interpolator.interp_linear"], "cut");
-					else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD)
-						CopyLoop.copyLoop(2, "split", ["ringmod_filter","Interpolator.interp_linear"], "cut");
+					pos = linearStereo2(buffer, pos, inc, left, right, sample_left, sample_right, 
+						samples_requested);
 				}
 			}
 			return pos;

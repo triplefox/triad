@@ -1,14 +1,14 @@
 //typedef MyExample = GUITests;
 //typedef MyExample = Blackjack;
 //typedef MyExample = ASCIITest;
-//typedef MyExample = MIDIPlayer;
+typedef MyExample = MIDIPlayer;
 //typedef MyExample = Tilemapping;
 //typedef MyExample = SpritePacking;
 //typedef MyExample = Keyjammer;
 //typedef MyExample = AssetReloading;
 //typedef MyExample = Assistant;
 //typedef MyExample = Raycast;
-typedef MyExample = TriadConfigTest;
+//typedef MyExample = TriadConfigTest;
 //typedef MyExample = Stage3DTest;
 //typedef MyExample = TileLandscape;
 
