@@ -112,6 +112,8 @@ class SVFilter
 		par_q_sqrt = Math.sqrt(par_q);
 		
 		this.ring_cutoff = (freq_to * Math.PI * 2) / (this.samplerate);
+		
+		antiDenormal();
 	}
 
 	public function setFrequency(frequency : Float)
@@ -224,6 +226,18 @@ class SVFilter
 	{
 		this.ring_offset += this.ring_cutoff;
 		return input * Math.sin(this.ring_offset);
+	}
+	
+	public inline function antiDenormal()
+	{
+		if (Math.abs(this.band1) < 0.0000001) 
+		{
+			this.band1 = 0.;
+			this.band2 = 0.;
+			this.band3 = 0.;
+			this.band4 = 0.;
+			this.band5 = 0.;
+		}
 	}
 	
 }

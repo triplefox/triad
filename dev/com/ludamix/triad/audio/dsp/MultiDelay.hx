@@ -98,6 +98,8 @@ class MultiDelay
 		#if alchemy throw "potential leak detected"; #end
 	  }
 	  
+	  var total_amp = 0.;
+	  
 	  outputSamples.playhead = 0;
 	  delayBufferSamples.playhead = 0;
 	  samples.playhead = 0;
@@ -111,13 +113,24 @@ class MultiDelay
 	   
 		// Mix normal audio data with delayed audio
 		var sample = (delaySample * this.delayVolume) + samples.read(); samples.advancePlayheadUnbounded();
-	   
+	    total_amp += sample;
+		
 		// Add audio data with the delay in the delay buffer
 		this.delayBufferSamples.write(sample); delayBufferSamples.advancePlayhead();
 	   
 		// Return the audio with delay mix
 		outputSamples.write(sample * this.masterVolume); outputSamples.advancePlayheadUnbounded();
-		 
+		
+	  }
+	  
+	  // avoid denormals! go back and zero the buffer if needed
+	  if (Math.abs(total_amp * samples.length_inv) < 0.000020 && total_amp != 0.)
+	  {
+		  this.delayBufferSamples.playhead = 0;
+		  for (i in 0...this.delayBufferSamples.length)
+		  {
+		       this.delayBufferSamples.write(0.);
+		  }
 	  }
 	 
 	  return outputSamples;

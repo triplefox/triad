@@ -165,11 +165,16 @@ class Reverb
 		input.playhead = 0;
 		left.playhead = 0;
 		right.playhead = 0;
+		
+		LOWPASSL.antiDenormal();
+		LOWPASSR.antiDenormal();
 		for (n in 0...left.length)
 		{
-			left.write(this.LOWPASSL.getLP(input.read())); 
+			var l = input.read();
+			left.write(this.LOWPASSL.getLP(l)); 
 			input.advancePlayheadUnbounded(); left.advancePlayheadUnbounded();
-			right.write(this.LOWPASSR.getLP(input.read())); 
+			var r = input.read();
+			right.write(this.LOWPASSR.getLP(r)); 
 			input.advancePlayheadUnbounded(); right.advancePlayheadUnbounded();
 		}
 	}
