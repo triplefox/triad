@@ -62,7 +62,7 @@ class Keyjammer
 		{
 			var synth = new SamplerSynth();
 			synth.common.master_volume = 0.5;
-			synth.resample_method = SamplerSynth.RESAMPLE_CUBIC;
+			//synth.resample_method = SamplerSynth.RESAMPLE_CUBIC;
 			seq.addSynth(synth);
 			voices.push(synth);
 		}
@@ -137,7 +137,7 @@ class Keyjammer
 		Lib.current.stage.addChild(loader_gui.sprite);
 		
 		queueFunction(function() {
-			sf2 = SF2.load(seq, Assets.getBytes("assets/WeedsGM3.sf2"));
+			sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 3.5 MB GM.sf2"));
 			for (z in sf2.init(MIP_LEVELS, true))
 				eq.add(z);
 			eq.inter_queue = function()

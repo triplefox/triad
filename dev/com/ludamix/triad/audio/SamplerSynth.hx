@@ -407,19 +407,38 @@ class SamplerSynth implements SoftSynth
 		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
 		sample_right : FastFloatBuffer, samples_requested : Int, loop_end : Float, loop_len : Float)
 	{
-		if (common.filter_mode == VoiceCommon.FILTER_OFF)
-			CopyLoop.copyLoop(2, "mirror", ["Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_LP)
-			CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_HP)
-			CopyLoop.copyLoop(2, "mirror", ["highpass_filter","Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_BP)
-			CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_BR)
-			CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
-			 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
-			CopyLoop.copyLoop(2, "mirror", ["ringmod_filter","Interpolator.interp_linear"], "loop");
+		if (inc < 1.)
+		{
+			if (common.filter_mode == VoiceCommon.FILTER_OFF)
+				CopyLoop.copyLoop(2, "mirror", ["Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_LP)
+				CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_HP)
+				CopyLoop.copyLoop(2, "mirror", ["highpass_filter","Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_BP)
+				CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_BR)
+				CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+				 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+				CopyLoop.copyLoop(2, "mirror", ["ringmod_filter","Interpolator.interp_smoothstep"], "loop");
+		}
+		else
+		{
+			if (common.filter_mode == VoiceCommon.FILTER_OFF)
+				CopyLoop.copyLoop(2, "mirror", ["Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_LP)
+				CopyLoop.copyLoop(2, "mirror", ["lowpass_filter","Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_HP)
+				CopyLoop.copyLoop(2, "mirror", ["highpass_filter","Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_BP)
+				CopyLoop.copyLoop(2, "mirror", ["bandpass_filter","Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_BR)
+				CopyLoop.copyLoop(2, "mirror", ["bandreject_filter","Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+				 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+				CopyLoop.copyLoop(2, "mirror", ["ringmod_filter","Interpolator.interp_linear"], "loop");
+		}
 		return pos;
 	}
 	
@@ -467,19 +486,38 @@ class SamplerSynth implements SoftSynth
 		pos : Float, inc : Float, left : Float, right : Float, sample_left : FastFloatBuffer,
 		sample_right : FastFloatBuffer, samples_requested : Int, loop_end : Float, loop_len : Float)
 	{
-		if (common.filter_mode == VoiceCommon.FILTER_OFF)
-			CopyLoop.copyLoop(2, "split", ["Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_LP)
-			CopyLoop.copyLoop(2, "split", ["lowpass_filter","Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_HP)
-			CopyLoop.copyLoop(2, "split", ["highpass_filter","Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_BP)
-			CopyLoop.copyLoop(2, "split", ["bandpass_filter","Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_BR)
-			CopyLoop.copyLoop(2, "split", ["bandreject_filter","Interpolator.interp_linear"], "loop");
-		else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
-			 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
-			CopyLoop.copyLoop(2, "split", ["ringmod_filter","Interpolator.interp_linear"], "loop");
+		if (inc < 1.)
+		{
+			if (common.filter_mode == VoiceCommon.FILTER_OFF)
+				CopyLoop.copyLoop(2, "split", ["Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_LP)
+				CopyLoop.copyLoop(2, "split", ["lowpass_filter","Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_HP)
+				CopyLoop.copyLoop(2, "split", ["highpass_filter","Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_BP)
+				CopyLoop.copyLoop(2, "split", ["bandpass_filter","Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_BR)
+				CopyLoop.copyLoop(2, "split", ["bandreject_filter","Interpolator.interp_smoothstep"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+				 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+				CopyLoop.copyLoop(2, "split", ["ringmod_filter","Interpolator.interp_smoothstep"], "loop");
+		}
+		else
+		{
+			if (common.filter_mode == VoiceCommon.FILTER_OFF)
+				CopyLoop.copyLoop(2, "split", ["Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_LP)
+				CopyLoop.copyLoop(2, "split", ["lowpass_filter","Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_HP)
+				CopyLoop.copyLoop(2, "split", ["highpass_filter","Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_BP)
+				CopyLoop.copyLoop(2, "split", ["bandpass_filter","Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_BR)
+				CopyLoop.copyLoop(2, "split", ["bandreject_filter","Interpolator.interp_linear"], "loop");
+			else if (common.filter_mode == VoiceCommon.FILTER_RINGMOD || 
+				 common.filter_mode == VoiceCommon.FILTER_RINGMOD_TUNED)
+				CopyLoop.copyLoop(2, "split", ["ringmod_filter","Interpolator.interp_linear"], "loop");
+		}
 		return pos;
 	}
 	

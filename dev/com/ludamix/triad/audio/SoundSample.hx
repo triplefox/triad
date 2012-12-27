@@ -94,7 +94,8 @@ class SoundSample
 		if (loops.length == 0) loops = [defaultLoop(wav_data.length)];
 		
 		var sample = new SoundSample();
-		sample.mip_levels = SampleMipMap.genRaw(SampleMipMap.genMips(wav.data[0], wav.data[1], mip_levels));
+		sample.mip_levels = SampleMipMap.genRaw(
+			SampleMipMap.genMips(wav.data[0], wav.data[1], mip_levels, wav.header.samplingRate));			
 		sample.loops = loops;
 		
 		var tuning = { base_frequency: EvenTemperament.cache.midiNoteToFrequency( 
@@ -115,7 +116,7 @@ class SoundSample
 	{
 		var sample = new SoundSample();
 		
-		sample.mip_levels = SampleMipMap.genRaw(SampleMipMap.genMips(left, right, mip_levels));
+		sample.mip_levels = SampleMipMap.genRaw(SampleMipMap.genMips(left, right, mip_levels, sample_rate));
 		sample.tuning = { base_frequency: base_frequency, sample_rate : sample_rate };
 		sample.stereo = (left != right);
 		sample.name = name;

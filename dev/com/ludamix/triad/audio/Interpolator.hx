@@ -8,6 +8,10 @@ class Interpolator
 	@:extern public static inline function interp_linear(a : Float, b : Float, x : Float)
 	{ return (a - (a - b) * x); }
 	
+	// Recommendation: only use smoothstep for upsampling(lower pitch). It's too noisy for downsampling.
+	@:extern public static inline function interp_smoothstep(a : Float, b : Float, x : Float)
+	{ return (a - (a - b) * x * x * (3 - 2 * x)); }
+
 	@:extern public static inline function interp_cubic(y0 : Float, y1 : Float, y2 : Float, y3 : Float, x : Float)
 	{
 		var x2 = x*x;
