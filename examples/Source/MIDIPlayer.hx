@@ -65,7 +65,8 @@ class MIDIPlayer
 	
 	public static var num_voices = #if debug 4 #else 64 #end;
 	public static var num_percussion_voices = #if debug 1 #else 16 #end;
-	public static inline var MIP_LEVELS = #if debug 0 #else 8 #end;
+	public static inline var MIP_UP = #if debug 0 #else 8 #end;
+	public static inline var MIP_DOWN = #if debug 0 #else 2 #end;
 
 	private function resetSamplerSynth()
 	{
@@ -284,9 +285,10 @@ class MIDIPlayer
 		#if alchemy
 			FastFloatBuffer.init(1024 * 1024 * 32);
 		#end
-		seq = new Sequencer(Std.int(44100), 4096,4,null,new Reverb(2048, 1800, 1.0, 1.0, 0.93, 1200, 2048));
+		seq = new Sequencer(Std.int(44100), 4096,4,null,new Reverb(2048, 1800, 1.0, 1.0, 0.93, 780, 2048));
 		//seq = new Sequencer(Std.int(44100), 4096,8,null,new Reverb(2048, 1200, 1.0, 1.0, 0.83, 780, 1024));
-		//seq = new Sequencer(Std.int(44100), 4096, 4);		
+		//seq = new Sequencer(Std.int(44100), 4096, 4);
+		//seq = new Sequencer(Std.int(22050), 1024, 4);
 		
 		sgc = new SynthGUICommon(seq);
 		eq = new EventQueue();
@@ -303,7 +305,7 @@ class MIDIPlayer
 				eq.add(function() {
 					var melodicData = Assets.getBytes(sfzPath + "melody.sfc");
 					melodicData.endian = Endian.LITTLE_ENDIAN;
-					melodic = SFZ.loadCompressed(seq, melodicData);
+					melodic = SFZ.loadCompressed(seq, melodicData, null, MIP_UP, MIP_DOWN);
 					sgc.loader_gui.keys.infos.text = "Loaded all instruments ";
 					sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width/2;
 				});				
@@ -314,7 +316,7 @@ class MIDIPlayer
 						assign.push({sfz:0,patch:n});
 					var percussionData = Assets.getBytes(sfzPath + "percussion.sfc");
 					percussionData.endian = Endian.LITTLE_ENDIAN;
-					percussion = SFZ.loadCompressed(seq, percussionData, assign);
+					percussion = SFZ.loadCompressed(seq, percussionData, assign, MIP_UP, MIP_DOWN);
 					sgc.loader_gui.keys.infos.text = "Loaded percussion";
 					sgc.loader_gui.keys.infos.x = Main.W / 2 - sgc.loader_gui.keys.infos.width/2;
 				});
@@ -325,7 +327,7 @@ class MIDIPlayer
 				var sfzPath = "sfz/";
 				var patchGenerator = function(n) {
 					var header = WAV.read(Assets.getBytes(sfzPath + n), sfzPath + n);
-					var content : PatchGenerator=  SamplerSynth.ofWAVE(header, n);
+					var content : PatchGenerator=  SamplerSynth.ofWAVE(header, n, MIP_UP, MIP_DOWN);
 					return content;
 				}
 				
@@ -360,7 +362,7 @@ class MIDIPlayer
 		{
 			eq.add(function() {
 				sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 3.5 MB GM.sf2"));
-				for (z in sf2.init(MIP_LEVELS, true))
+				for (z in sf2.init(MIP_UP, MIP_DOWN, true))
 					eq.add(z);
 				eq.inter_queue = function()
 				{

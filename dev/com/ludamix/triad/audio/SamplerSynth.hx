@@ -60,7 +60,8 @@ class SamplerSynth implements SoftSynth
 	
 	public var resample_method : Int;
 	
-	public static var MIP_LEVELS = 8;
+	public static var MIP_UP = 6;
+	public static var MIP_DOWN = 0;
 	
 	public static inline var RESAMPLE_DROP = 0;
 	public static inline var RESAMPLE_LINEAR = 1;
@@ -119,9 +120,9 @@ class SamplerSynth implements SoftSynth
 			};
 	}
 	
-	public static function ofWAVE(wav : WAVE, name : String)
+	public static function ofWAVE(wav : WAVE, name : String, output_rate : Int, mip_up : Int = 6, mip_down : Int = 0)
 	{
-		var sample = SoundSample.ofWAVE(wav, name, MIP_LEVELS);
+		var sample = SoundSample.ofWAVE(wav, name, mip_up, mip_down, output_rate);
 		
 		return new PatchGenerator(patchOfSoundSample(sample), 
 			function(settings, seq, ev) : Array<PatchEvent> { return [new PatchEvent(ev,settings)]; }
@@ -134,7 +135,7 @@ class SamplerSynth implements SoftSynth
 		
 		for (n in 0...44100) samples.push(Math.sin(n / 44100 * Math.PI * 2));
 		
-		var sample = SoundSample.ofVector(samples, samples, 44100, 1., "default", MIP_LEVELS);
+		var sample = SoundSample.ofVector(samples, samples, 44100, 44100, 1., "default", MIP_UP, MIP_DOWN);
 		sample.loops[0].loop_mode = SoundSample.LOOP_FORWARD;
 		
 		var loops = new Array<LoopInfo>();
@@ -191,7 +192,7 @@ class SamplerSynth implements SoftSynth
 			
 			var rate_mult = sampleset[ptr].rate_multiplier;
 			
-			sample_rate = Std.int(sample_rate * rate_mult);
+			sample_rate = Std.int(sample_rate / rate_mult);
 			
 			var sample_left : FastFloatBuffer = sampleset[ptr].sample_left;
 			var sample_right : FastFloatBuffer = sampleset[ptr].sample_right;
@@ -260,8 +261,8 @@ class SamplerSynth implements SoftSynth
 		var patch : SamplerPatch = cur_follower.patch_event.patch;
 		var sample : SoundSample = patch.sample;
 		
-		var loop_start : Float = (patch.loops[0].loop_start * rate_mult);
-		var loop_end : Float = (patch.loops[0].loop_end * rate_mult);
+		var loop_start : Float = (patch.loops[0].loop_start / rate_mult);
+		var loop_end : Float = (patch.loops[0].loop_end / rate_mult);
 		var loop_len : Float = (loop_end - loop_start) + 1;
 		
 		var loop_mode = patch.loops[0].loop_mode;

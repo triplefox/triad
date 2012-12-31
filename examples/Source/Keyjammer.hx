@@ -48,7 +48,8 @@ class Keyjammer
 	var infos2 : TextField;
 	var sf2 : SF2;
 	
-	public static inline var MIP_LEVELS = 0;
+	public static inline var MIP_UP = 6;
+	public static inline var MIP_DOWN = 0;
 	
 	private function resetSamplerSynth()
 	{
@@ -138,7 +139,7 @@ class Keyjammer
 		
 		queueFunction(function() {
 			sf2 = SF2.load(seq, Assets.getBytes("assets/E-MU 3.5 MB GM.sf2"));
-			for (z in sf2.init(MIP_LEVELS, true))
+			for (z in sf2.init(MIP_UP, MIP_DOWN, true))
 				eq.add(z);
 			eq.inter_queue = function()
 			{

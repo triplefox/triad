@@ -96,7 +96,8 @@ class SF2
 	private var sample_array : Array<{left:Vector<Float>,right:Vector<Float>,header:SampleHeader}>;
 	private var reassigns : IntHash<{from:Int,to:Int}>;
 	private var ra_result : Array<SoundSample>;
-	private var mip_levels : Int;
+	private var mip_up : Int;
+	private var mip_down : Int;
 	
 	private function _load_sample()
 	{
@@ -145,9 +146,9 @@ class SF2
 		else
 		{
 			var left = cur_smp.left; var right = cur_smp.right; var sh = cur_smp.header;
-			var sample = SoundSample.ofVector(left,right,sh.sample_rate,
+			var sample = SoundSample.ofVector(left,right,sequencer.sampleRate(), sh.sample_rate,
 				tuning.midiNoteBentToFrequency(sh.original_pitch, sh.pitch_correction),
-				sh.sample_name, mip_levels, [
+				sh.sample_name, mip_up, mip_down, [
 					{loop_mode:SoundSample.NO_LOOP,
 					 loop_start:sh.triad_start_loop,loop_end:sh.triad_end_loop}]);
 			ra_result.push(sample);
@@ -172,7 +173,7 @@ class SF2
 		progress.text = p.name;
 	}
 	
-	public function init(mip_levels : Int, ?return_queue=false) : Array<Dynamic>
+	public function init(mip_up: Int, mip_down : Int, ?return_queue=false) : Array<Dynamic>
 	{
 		
 		// SF2 spec adds a lot of complexity via the linked sample construct.
@@ -185,6 +186,9 @@ class SF2
 		
 		sample_array = new Array();
 		reassigns = new IntHash();
+		
+		this.mip_up = mip_up;
+		this.mip_down = mip_down;
 		
 		this.sample_data.sample_data.endian = Endian.LITTLE_ENDIAN;
 		
@@ -259,7 +263,6 @@ class SF2
 			reassigns = null;
 			sample_idx = 0;
 			ra_result = null;
-			mip_levels = 0;
 		});
 		
 		if (return_queue) return queue;

@@ -62,7 +62,7 @@ class SoundSample
 		};	
 	}
 
-	public static function ofWAVE(wav : WAVE, name : String, mip_levels : Int)
+	public static function ofWAVE(wav : WAVE, name : String, mip_up : Int, mip_down : Int, output_rate : Int)
 	{
 		
 		var wav_data = wav.data;
@@ -95,12 +95,13 @@ class SoundSample
 		
 		var sample = new SoundSample();
 		sample.mip_levels = SampleMipMap.genRaw(
-			SampleMipMap.genMips(wav.data[0], wav.data[1], mip_levels, wav.header.samplingRate));			
+			SampleMipMap.genMips(wav.data[0], wav.data[1], mip_up, mip_down, 
+				Std.int(Math.min(output_rate, wav.header.samplingRate))));
 		sample.loops = loops;
 		
 		var tuning = { base_frequency: EvenTemperament.cache.midiNoteToFrequency( 
 			midi_unity_note + midi_pitch_fraction / 0xFFFFFFFF),
-			sample_rate : wav.header.samplingRate };
+			sample_rate : Std.int(Math.min(output_rate, wav.header.samplingRate)) };
 		sample.tuning = tuning;
 		
 		sample.stereo = sample.mip_levels[0].sample_left != sample.mip_levels[0].sample_right;
@@ -111,13 +112,14 @@ class SoundSample
 	}
 	
 	public static function ofVector(left : Vector<Float>, right : Vector<Float>, 
-		sample_rate : Int, base_frequency : Float,
-		name : String, mip_levels : Int, ?loops : Array<LoopInfo> = null)
+		output_rate : Int, sample_rate : Int, base_frequency : Float,
+		name : String, mip_up : Int, mip_down : Int, ?loops : Array<LoopInfo> = null)
 	{
 		var sample = new SoundSample();
 		
-		sample.mip_levels = SampleMipMap.genRaw(SampleMipMap.genMips(left, right, mip_levels, sample_rate));
-		sample.tuning = { base_frequency: base_frequency, sample_rate : sample_rate };
+		sample.mip_levels = SampleMipMap.genRaw(SampleMipMap.genMips(left, right, mip_up, mip_down, 
+			Std.int(Math.min(output_rate, sample_rate))));
+		sample.tuning = { base_frequency: base_frequency, sample_rate : Std.int(Math.min(output_rate, sample_rate)) };
 		sample.stereo = (left != right);
 		sample.name = name;
 		sample.mono_mode = MONOMODE_BOTH;
@@ -132,12 +134,12 @@ class SoundSample
 		sampleset : Array<RawSample>)
 	{
 		// select an appropriate mipmap
-		var ptr = 0;
-		var best_dist = 99999999999.;
+		var ptr = -1;
+		var best_dist = 0.;
 		for (n in 0...sampleset.length)
 		{
-			var dist = Math.abs(wavelength - (sample_rate / base_frequency) * sampleset[n].rate_multiplier);
-			if (dist < best_dist)
+			var dist = Math.abs(wavelength - ((sample_rate / sampleset[n].rate_multiplier) / base_frequency));			
+			if (dist < best_dist || ptr == -1)
 				{ best_dist = dist; ptr = n; }
 		}
 		return ptr;

@@ -150,7 +150,7 @@ class SFZ
     }
     
     public static function loadCompressed(seq:Sequencer, file : ByteArray, 
-		programs:Array<SFZPatchAssignment> = null, ?mip_levels = 8) : SFZBank
+		programs:Array<SFZPatchAssignment> = null, output_rate : Int, ?mip_up = 6, ?mip_down = 2) : SFZBank
     {
         var sfzBank = new SFZBank(seq);
         
@@ -179,7 +179,7 @@ class SFZ
             file.readBytes(bytes, 0, byteCount);
             
             sfzBank.samples.set(name, 
-				SamplerSynth.patchOfSoundSample(SoundSample.ofWAVE(WAV.read(bytes), name, SamplerSynth.MIP_LEVELS)));
+				SamplerSynth.patchOfSoundSample(SoundSample.ofWAVE(WAV.read(bytes), name, mip_up, mip_down, output_rate)));
 
         }
         
