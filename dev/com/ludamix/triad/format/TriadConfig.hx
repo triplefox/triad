@@ -13,8 +13,8 @@ Example:
 	
 	Plain text strings are mostly transparent. Leading and ending whitespace are trimmed.
 	If I want to maximize string flexibility, I open a "long string":
-		[" Now I can use ; _ = and [] as often as I please. 
-			As well, whitespace is preserved exactly within the markers. "];
+		{" Now I can use ; _ = and [] as often as I please. 
+			As well, whitespace is preserved exactly within the markers. "};
 	
 	A key-value = Hello world!;
 	My First Sequence = [1;2;3;4;5;6]
@@ -22,7 +22,7 @@ Example:
 	Null value = _;
 	Nested key-value stores = [
 		Key One=Moo;
-		Key Two=[ 1.3; 5.6; 7.8; ["Some string data"] ]
+		Key Two=[ 1.3; 5.6; 7.8; {"Some string data"} ]
 	]
 	13.3=Numeric key;
 
@@ -45,8 +45,8 @@ Spec:
 		Numbers are parsed.
 		Delimiters are stripped.
 		Each [ ] pairing forms a tree of Sequences, which contain any number of Atoms and Sequences.
-	3. The tokens of each Sequence are rewritten according to these rules:
-		Atom = Atom, Sequence = Atom, Atom = Sequence, Sequence = Sequence are rewritten to KeyValue. 
+	3. Grouped tokens of each Sequence are rewritten according to these rules:
+		Atom = Atom, Sequence = Atom, Atom = Sequence, Sequence = Sequence are each rewritten to a single KeyValue.
 		The mapping of non-string keys is implementation-defined.
 		KeyValue chaining is not allowed - i.e. you cannot do Moo=Foo=Boo.
 	4. Native values are emitted according to these rules:
